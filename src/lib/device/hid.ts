@@ -1,5 +1,4 @@
 import { Console, Effect } from 'effect'
-import { capabilityInitializers } from '../capabilities'
 import type { PendingDevice, Device, ReadyDevice, FailedDevice } from './device'
 import { SUPPORTED_DEVICE_INFO, type SupportedDeviceInfo } from './supported'
 import { RazerReport } from './razer_report'
@@ -83,23 +82,21 @@ export const identifyDevice = (hid: HIDDevice): Effect.Effect<SupportedDeviceInf
     return yield* Effect.fail(new DeviceNotSupportedError(vid, pid))
   })
 
-export const hydrateDevice = (device: Device): Effect.Effect<ReadyDevice | FailedDevice, DeviceInitializationError> =>
+export const hydrateDevice = (
+  device: Device,
+  deviceInfo: SupportedDeviceInfo
+): Effect.Effect<ReadyDevice | FailedDevice, DeviceInitializationError> =>
   Effect.gen(function* () {
     const errors: Error[] = []
 
-    for (const capability of Object.keys(device.capabilities) as Array<keyof typeof device.capabilities>) {
-      if (device.capabilities[capability]) {
-        const init = capabilityInitializers[capability]
-        if (init) {
-          yield* init(device).pipe(
-            Effect.catchAll((e) => {
-              Console.error(`${capability} init failed:`, e)
-              errors.push(e)
-              return Effect.void
-            })
-          )
-        }
-      }
+    for (const init of deviceInfo.init) {
+      yield* init(device).pipe(
+        Effect.catchAll((e) => {
+          Console.error(`Capability init failed:`, e)
+          errors.push(e)
+          return Effect.void
+        })
+      )
     }
     return { ...device, status: 'Ready' as const }
   })
@@ -146,7 +143,7 @@ export const connectDevice = (
       device: pendingDevice,
       initialize: () =>
         Effect.gen(function* () {
-          const device = yield* hydrateDevice(pendingDevice)
+          const device = yield* hydrateDevice(pendingDevice, deviceInfo)
           return { device }
         })
     }
