@@ -1,10 +1,20 @@
-import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
+import { Effect } from 'effect'
+import { connectDevice } from './lib/device/hid'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const connect = async () => {
+    try {
+      const pendingDevice = await Effect.runPromise(connectDevice())
+      console.log('Connected device', pendingDevice)
+      const readyDevice = await Effect.runPromise(pendingDevice.initialize())
+      console.log(readyDevice)
+    } catch (e) {
+      console.error('Failed to connect device', e)
+    }
+  }
 
   return (
     <>
@@ -18,7 +28,7 @@ function App() {
       </div>
       <h1>Vite + React</h1>
       <div className='card'>
-        <button onClick={() => setCount((count) => count + 1)}>count is {count}</button>
+        <button onClick={connect}>Connect</button>
         <p>
           Edit <code>src/App.tsx</code> and save to test HMR
         </p>

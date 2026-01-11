@@ -4,17 +4,20 @@ import type { Polling2Data } from '../capabilities/polling2'
 export type UnknownCapabilities = {
   dpi?: boolean
   polling2?: boolean
+  serial?: boolean
 }
 
 export type CapabilityData = {
   dpi?: DpiData
   polling2?: Polling2Data
+  serial?: string
 }
 
 export type DeviceStatus = 'Ready' | 'Pending' | 'Failed' | 'Disconnected'
 
 export type Device = {
-  capabilities: Partial<UnknownCapabilities>
+  name: string
+  capabilities: UnknownCapabilities
   data: CapabilityData
   error?: Error
   hid: HIDDevice
