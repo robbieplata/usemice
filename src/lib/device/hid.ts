@@ -1,6 +1,5 @@
 import { Console, Effect } from 'effect'
-import { init_dpi } from '../capabilities/dpi'
-import { init_polling2 } from '../capabilities/polling2'
+import { capabilityInitializers } from '../capabilities'
 import type { PendingDevice, Device, ReadyDevice, FailedDevice } from './device'
 import { SUPPORTED_DEVICE_INFO, type SupportedDeviceInfo } from './supported'
 import { RazerReport } from './razer_report'
@@ -88,33 +87,20 @@ export const hydrateDevice = (device: Device): Effect.Effect<ReadyDevice | Faile
   Effect.gen(function* () {
     const errors: Error[] = []
 
-    if (device.capabilities.polling2) {
-      yield* init_polling2(device).pipe(
-        Effect.catchAll((e) => {
-          Console.error('Polling2 init failed:', e)
-          errors.push(e)
-          return Effect.void
-        })
-      )
-    }
-
-    if (device.capabilities.dpi) {
-      yield* init_dpi(device).pipe(
-        Effect.catchAll((e) => {
-          errors.push(e)
-          return Effect.void
-        })
-      )
-    }
-
-    if (errors.length > 0) {
-      return {
-        ...device,
-        status: 'Failed' as const,
-        error: new DeviceInitializationError(`Failed to initialize ${errors.length} capability(ies)`, errors)
+    for (const capability of Object.keys(device.capabilities) as Array<keyof typeof device.capabilities>) {
+      if (device.capabilities[capability]) {
+        const init = capabilityInitializers[capability]
+        if (init) {
+          yield* init(device).pipe(
+            Effect.catchAll((e) => {
+              Console.error(`${capability} init failed:`, e)
+              errors.push(e)
+              return Effect.void
+            })
+          )
+        }
       }
     }
-
     return { ...device, status: 'Ready' as const }
   })
 
