@@ -1,4 +1,4 @@
-import { Console, Effect, Option } from 'effect'
+import { Console, Effect, Option, Ref } from 'effect'
 import type { PendingDevice, Device, CapabilityKey, FailedDevice } from './device'
 import { SUPPORTED_DEVICE_INFO, type SupportedDeviceInfo } from './supported'
 import { RazerReport } from './razer_report'
@@ -111,13 +111,18 @@ export const connectDevice = (options?: HIDDeviceRequestOptions) =>
       return yield* Effect.fail(new DeviceNotSupportedError(hid.vendorId, hid.productId))
     }
 
+    const lock = yield* Effect.makeSemaphore(1)
+    const txId = yield* Ref.make(1)
+
     const pendingDevice: PendingDevice = {
       name: deviceInfoOption.value.name,
       status: 'Pending',
       hid,
       capabilities: deviceInfoOption.value.capabilities,
       limits: deviceInfoOption.value.limits,
-      data: {}
+      data: {},
+      _lock: lock,
+      _txId: txId
     }
 
     const device = yield* hydrateDevice(pendingDevice, deviceInfoOption.value).pipe(
@@ -135,34 +140,25 @@ export const connectDevice = (options?: HIDDeviceRequestOptions) =>
 
 const delay = (ms: number) => Effect.promise(() => new Promise((resolve) => setTimeout(resolve, ms)))
 
-export const sendFeatureReport = (hid: HIDDevice, report: RazerReport) =>
+const sendInternal = (hid: HIDDevice, report: RazerReport) =>
   Effect.tryPromise({
     try: async () => {
       if (!hid.opened) throw new OpenHidDeviceError('Device is not opened')
-      Console.log('Sending feature report, size:', report.buffer.byteLength)
-      Console.log('Report data:', report.args)
       await hid.sendFeatureReport(RAZER_REPORT_ID, report.buffer)
     },
     catch: (e) => new OpenHidDeviceError('Failed to send feature report', e)
   })
 
-export const receiveFeatureReport = (hid: HIDDevice) =>
+const receiveInternal = (hid: HIDDevice) =>
   Effect.tryPromise({
     try: async () => {
       if (!hid.opened) throw new OpenHidDeviceError('Device is not opened')
       const view = await hid.receiveFeatureReport(RAZER_REPORT_ID)
-      Console.log('Received feature report, size:', view.byteLength)
       const data = new Uint8Array(view.buffer, view.byteOffset, view.byteLength)
-      Console.log('Response data:', data.slice(0, 16))
       return data
     },
     catch: (e) => new OpenHidDeviceError('Failed to receive feature report', e)
   })
-
-const getTransactionId = (report: ArrayBuffer | Uint8Array): number => {
-  const data = report instanceof Uint8Array ? report : new Uint8Array(report)
-  return data[1]
-}
 
 const RAZER_STATUS = {
   NEW: 0x00,
@@ -173,45 +169,54 @@ const RAZER_STATUS = {
   NOT_SUPPORTED: 0x05
 } as const
 
-export const sendAndReceive = (hid: HIDDevice, report: RazerReport, maxRetries = 10) =>
+const getNextTxId = (txIdRef: Ref.Ref<number>) => Ref.getAndUpdate(txIdRef, (id) => (id % 255) + 1)
+
+export const sendCommand = (device: Device, report: RazerReport, maxRetries = 10) =>
   Effect.gen(function* () {
-    const expectedTxId = getTransactionId(report.buffer)
-    yield* sendFeatureReport(hid, report)
-    yield* delay(10)
+    return yield* device._lock.withPermits(1)(
+      Effect.gen(function* () {
+        const txId = yield* getNextTxId(device._txId)
+        report.transactionId = txId
+        const expectedTxId = txId
 
-    for (let attempt = 0; attempt < maxRetries; attempt++) {
-      const response = yield* receiveFeatureReport(hid)
-      const responseTxId = response[1]
-      const status = response[0]
-
-      if (responseTxId !== expectedTxId) {
-        Console.warn(
-          `Stale report (tx: 0x${responseTxId.toString(16)}, expected: 0x${expectedTxId.toString(16)}), retry ${
-            attempt + 1
-          }/${maxRetries}`
-        )
+        yield* sendInternal(device.hid, report)
         yield* delay(10)
-        continue
-      }
 
-      switch (status) {
-        case RAZER_STATUS.SUCCESS:
-          return RazerReport.fromBytes(response)
-        case RAZER_STATUS.BUSY:
-          Console.warn(`Device busy, retry ${attempt + 1}/${maxRetries}...`)
-          yield* delay(20)
-          continue
-        case RAZER_STATUS.FAILURE:
-          return yield* Effect.fail(new OpenHidDeviceError('Device returned failure status'))
-        case RAZER_STATUS.TIMEOUT:
-          return yield* Effect.fail(new OpenHidDeviceError('Device returned timeout status'))
-        case RAZER_STATUS.NOT_SUPPORTED:
-          return yield* Effect.fail(new OpenHidDeviceError('Command not supported by device'))
-        default:
-          Console.log(`Unknown status 0x${status.toString(16)}, retry ${attempt + 1}/${maxRetries}...`)
-          yield* delay(20)
-          continue
-      }
-    }
-    return yield* Effect.fail(new OpenHidDeviceError('Max retries exceeded waiting for device response'))
+        for (let attempt = 0; attempt < maxRetries; attempt++) {
+          const response = yield* receiveInternal(device.hid)
+          const responseTxId = response[1]
+          const status = response[0]
+
+          if (responseTxId !== expectedTxId) {
+            yield* Console.warn(
+              `Stale report (tx: 0x${responseTxId.toString(16)}, expected: 0x${expectedTxId.toString(16)}), retry ${
+                attempt + 1
+              }/${maxRetries}`
+            )
+            yield* delay(10)
+            continue
+          }
+
+          switch (status) {
+            case RAZER_STATUS.SUCCESS:
+              return RazerReport.fromBytes(response)
+            case RAZER_STATUS.BUSY:
+              yield* Console.warn(`Device busy, retry ${attempt + 1}/${maxRetries}...`)
+              yield* delay(20)
+              continue
+            case RAZER_STATUS.FAILURE:
+              return yield* Effect.fail(new OpenHidDeviceError('Device returned failure status'))
+            case RAZER_STATUS.TIMEOUT:
+              return yield* Effect.fail(new OpenHidDeviceError('Device returned timeout status'))
+            case RAZER_STATUS.NOT_SUPPORTED:
+              return yield* Effect.fail(new OpenHidDeviceError('Command not supported by device'))
+            default:
+              yield* Console.log(`Unknown status 0x${status.toString(16)}, retry ${attempt + 1}/${maxRetries}...`)
+              yield* delay(20)
+              continue
+          }
+        }
+        return yield* Effect.fail(new OpenHidDeviceError('Max retries exceeded waiting for device response'))
+      })
+    )
   })

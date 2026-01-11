@@ -1,3 +1,4 @@
+import type { Effect, Ref } from 'effect'
 import type { DpiData } from '../capabilities/dpi'
 import type { Polling2Data } from '../capabilities/polling2'
 
@@ -35,6 +36,8 @@ export type Device = {
   error?: Error
   hid: HIDDevice
   status: DeviceStatus
+  _lock: Effect.Semaphore
+  _txId: Ref.Ref<number>
 }
 
 export type ReadyDevice = Device & {
@@ -112,27 +115,3 @@ export function isCapableOf<C extends keyof Partial<UnknownCapabilities>>(
 export function isCapableOf<C extends keyof Partial<UnknownCapabilities>>(device: Device, capabilities: C[]): boolean {
   return capabilities.every((cap) => device.capabilities[cap] === true)
 }
-
-const d: ReadyDeviceWithCapabilities<'dpi'> = {
-  name: 'Test Device',
-  capabilities: {
-    dpi: true
-  },
-  limits: {
-    dpi: {
-      minDpi: 100,
-      maxDpi: 45_000,
-      maxStages: 5
-    }
-  },
-  data: {
-    dpi: {
-      activeStage: 0,
-      dpiLevels: [[100, 100]]
-    }
-  },
-  hid: {} as HIDDevice,
-  status: 'Ready' as const
-}
-
-d.limits.dpi

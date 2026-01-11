@@ -1,5 +1,5 @@
 import { Effect } from 'effect'
-import { sendAndReceive, sendFeatureReport } from '../device/hid'
+import { sendCommand } from '../device/hid'
 import type { Device } from '../device/device'
 import { RazerReport } from '../device/razer_report'
 
@@ -33,9 +33,9 @@ const DPI_SET_COMMAND_ID = 0x01
 */
 export const getDpiStages = (device: Device) =>
   Effect.gen(function* () {
-    const report = RazerReport.from(0x1f, DPI_COMMAND_CLASS, DPI_STAGES_GET_COMMAND_ID, new Uint8Array([0x01]))
+    const report = RazerReport.from(DPI_COMMAND_CLASS, DPI_STAGES_GET_COMMAND_ID, new Uint8Array([0x01]))
     report.dataSize = 0x26
-    const response = yield* sendAndReceive(device.hid, report)
+    const response = yield* sendCommand(device, report)
 
     if (response.commandClass !== DPI_COMMAND_CLASS || response.commandId !== DPI_STAGES_GET_COMMAND_ID) {
       return yield* Effect.fail(new Error('Invalid DPI stages response'))
@@ -68,8 +68,8 @@ export const getDpiStages = (device: Device) =>
 
 export const getDpi = (device: Device) =>
   Effect.gen(function* () {
-    const report = RazerReport.from(0x1f, DPI_COMMAND_CLASS, DPI_XY_GET_COMMAND_ID, new Uint8Array(0))
-    const response = yield* sendAndReceive(device.hid, report)
+    const report = RazerReport.from(DPI_COMMAND_CLASS, DPI_XY_GET_COMMAND_ID, new Uint8Array(0))
+    const response = yield* sendCommand(device, report)
 
     if (response.commandClass !== DPI_COMMAND_CLASS || response.commandId !== DPI_XY_GET_COMMAND_ID) {
       return yield* Effect.fail(new Error('Invalid DPI response'))
@@ -82,15 +82,15 @@ export const getDpi = (device: Device) =>
     return { dpiLevels: [dpiX, dpiY] }
   })
 
-export const setDpi = (hid: HIDDevice, dpi: number) =>
+export const setDpi = (device: Device, dpi: number) =>
   Effect.gen(function* () {
     const args = new Uint8Array(4)
     args[0] = (dpi >> 8) & 0xff
     args[1] = dpi & 0xff
     args[2] = (dpi >> 8) & 0xff
     args[3] = dpi & 0xff
-    const report = RazerReport.from(0x1f, DPI_COMMAND_CLASS, DPI_SET_COMMAND_ID, args)
-    yield* sendFeatureReport(hid, report)
+    const report = RazerReport.from(DPI_COMMAND_CLASS, DPI_SET_COMMAND_ID, args)
+    yield* sendCommand(device, report)
   })
 
 export const init_dpi = (device: Device) =>

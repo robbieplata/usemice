@@ -1,5 +1,5 @@
 import { Effect } from 'effect'
-import { sendAndReceive, sendFeatureReport } from '../device/hid'
+import { sendCommand } from '../device/hid'
 import type { Device } from '../device/device'
 import { RazerReport } from '../device/razer_report'
 
@@ -38,8 +38,8 @@ export class Polling2Error extends Error {
 
 export const getPolling2 = (device: Device) =>
   Effect.gen(function* () {
-    const report = RazerReport.from(0x1f, POLLING2_CLASS, POLLING2_GET, new Uint8Array([0x00]))
-    const response = yield* sendAndReceive(device.hid, report)
+    const report = RazerReport.from(POLLING2_CLASS, POLLING2_GET, new Uint8Array([0x00]))
+    const response = yield* sendCommand(device, report)
 
     if (response.commandClass !== POLLING2_CLASS || response.commandId !== POLLING2_GET) {
       return yield* Effect.fail(new Polling2Error('Invalid response for Polling2 get'))
@@ -60,8 +60,8 @@ export const setPolling2 = (device: Device, data: Polling2Data) =>
     if (value === undefined) {
       return yield* Effect.fail(new Polling2Error('Unsupported polling interval set'))
     }
-    const report = RazerReport.from(0x1f, POLLING2_CLASS, POLLING2_SET, new Uint8Array([0x00, value]))
-    yield* sendFeatureReport(device.hid, report)
+    const report = RazerReport.from(POLLING2_CLASS, POLLING2_SET, new Uint8Array([0x00, value]))
+    yield* sendCommand(device, report)
   })
 
 export const init_polling2 = (device: Device) =>
