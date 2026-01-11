@@ -13,9 +13,14 @@ const GET_COMMAND_ID = 0x82
 export const getSerial = (device: Device) =>
   Effect.gen(function* () {
     const report = RazerReport.from(0x1f, COMMAND_CLASS, GET_COMMAND_ID, new Uint8Array([0]))
+    report.dataSize = 0x16
     const response = yield* sendAndReceive(device.hid, report)
-    const decoder = new TextDecoder('utf-8')
-    return decoder.decode(response.args.slice(0, 22))
+
+    const bytes = response.args.slice(0, 22)
+    const nullIdx = bytes.indexOf(0x00)
+    const serialBytes = nullIdx === -1 ? bytes : bytes.slice(0, nullIdx)
+
+    return new TextDecoder('utf-8').decode(serialBytes)
   })
 
 export const init_serial = (device: Device) =>

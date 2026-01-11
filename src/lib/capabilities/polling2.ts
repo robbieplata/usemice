@@ -65,11 +65,7 @@ export const setPolling2 = (device: Device, data: Polling2Data) =>
   })
 
 export const init_polling2 = (device: Device) =>
-  getPolling2(device).pipe(
-    Effect.tap((p2) =>
-      Effect.sync(() => {
-        device.data.polling2 = p2
-      })
-    ),
-    Effect.as(device)
-  )
+  Effect.flatMap(getPolling2(device), (data) => {
+    device.data.polling2 = data
+    return Effect.succeed(device)
+  })

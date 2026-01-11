@@ -94,7 +94,7 @@ export const setDpi = (hid: HIDDevice, dpi: number) =>
   })
 
 export const init_dpi = (device: Device) =>
-  Effect.gen(function* () {
-    device.data.dpi = yield* getDpiStages(device)
-    return device
+  Effect.flatMap(getDpiStages(device), (data) => {
+    device.data.dpi = data
+    return Effect.succeed(device)
   })

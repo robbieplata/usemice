@@ -6,13 +6,25 @@ import { connectDevice } from './lib/device/hid'
 
 function App() {
   const connect = async () => {
-    try {
-      const pendingDevice = await Effect.runPromise(connectDevice())
-      console.log('Connected device', pendingDevice)
-      const readyDevice = await Effect.runPromise(pendingDevice.initialize())
-      console.log(readyDevice)
-    } catch (e) {
-      console.error('Failed to connect device', e)
+    const device = await Effect.runPromise(connectDevice().pipe(Effect.either))
+    if (device._tag === 'Left') {
+      switch (device.left._tag) {
+        case 'DeviceNotSupportedError':
+          console.error(
+            `Device not supported: VID=0x${device.left.vid.toString(16)}, PID=0x${device.left.pid.toString(16)}`
+          )
+          break
+        case 'OpenHidDeviceError':
+          console.error('Failed to open HID device:', device.left)
+          break
+        case 'RequestHidDeviceError':
+          console.error('Failed to request HID device:', device.left)
+          break
+        default:
+          console.error('Failed to connect device:', device.left)
+      }
+    } else {
+      console.log('Connected device', device.right)
     }
   }
 

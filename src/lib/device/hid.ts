@@ -1,5 +1,5 @@
-import { Console, Effect } from 'effect'
-import type { PendingDevice, Device, ReadyDevice, FailedDevice } from './device'
+import { Console, Effect, Option } from 'effect'
+import type { PendingDevice, Device, CapabilityKey, FailedDevice } from './device'
 import { SUPPORTED_DEVICE_INFO, type SupportedDeviceInfo } from './supported'
 import { RazerReport } from './razer_report'
 
@@ -24,35 +24,35 @@ export class RequestHidDeviceError extends Error {
 export const requestDevice = (options?: HIDDeviceRequestOptions) =>
   Effect.tryPromise({
     try: async () => {
-      const devices = await navigator.hid.requestDevice(options ?? { filters: [{ vendorId: RAZER_VID }] })
-      const device = devices[0]
+      const [device] = await navigator.hid.requestDevice(options ?? { filters: [{ vendorId: RAZER_VID }] })
       if (!device) throw new RequestHidDeviceError('No device selected')
 
       const allDevices = await navigator.hid.getDevices()
       const sameProduct = allDevices.filter((d) => d.vendorId === device.vendorId && d.productId === device.productId)
 
-      const configInterface = sameProduct.find((d) =>
-        d.collections.some((c) => c.featureReports && c.featureReports.length > 0)
-      )
-
-      if (configInterface) {
-        Console.log('Found configuration interface with feature reports')
-        return configInterface
-      }
+      const configInterface = sameProduct.find((d) => d.collections.some((c) => (c.featureReports?.length ?? 0) > 0))
+      if (configInterface) return { device: configInterface, reason: 'featureReports' as const }
 
       const vendorInterface = sameProduct.find((d) => d.collections.some((c) => c.usagePage === 0xff00))
+      if (vendorInterface) return { device: vendorInterface, reason: 'vendorUsagePage' as const }
 
-      if (vendorInterface) {
-        Console.log('Found vendor-specific interface (usagePage 0xFF00)')
-        return vendorInterface
-      }
-
-      Console.warn('No interface with feature reports found, using selected device')
-      return device
+      return { device, reason: 'selected' as const }
     },
     catch: (cause) =>
       cause instanceof RequestHidDeviceError ? cause : new RequestHidDeviceError('Failed to request HID device', cause)
-  })
+  }).pipe(
+    Effect.tap(({ reason }) => {
+      switch (reason) {
+        case 'featureReports':
+          return Console.log('Found configuration interface with feature reports')
+        case 'vendorUsagePage':
+          return Console.log('Found vendor-specific interface (usagePage 0xFF00)')
+        case 'selected':
+          return Console.warn('No interface with feature reports found, using selected device')
+      }
+    }),
+    Effect.map(({ device }) => device)
+  )
 
 export class DeviceNotSupportedError extends Error {
   readonly _tag = 'DeviceNotSupportedError'
@@ -68,35 +68,15 @@ export class DeviceInitializationError extends Error {
   }
 }
 
-export const identifyDevice = (hid: HIDDevice): Effect.Effect<SupportedDeviceInfo, DeviceNotSupportedError> =>
+export const identifyDevice = (hid: HIDDevice) =>
+  Effect.findFirst(SUPPORTED_DEVICE_INFO, (device) =>
+    Effect.succeed(device.vid === hid.vendorId && device.pid === hid.productId)
+  )
+
+export const hydrateDevice = <T extends CapabilityKey>(device: Device, deviceInfo: SupportedDeviceInfo<T>) =>
   Effect.gen(function* () {
-    const vid = hid.vendorId
-    const pid = hid.productId
-
-    for (const device of SUPPORTED_DEVICE_INFO) {
-      if (device.vid === vid && device.pid === pid) {
-        return yield* Effect.succeed(device)
-      }
-    }
-
-    return yield* Effect.fail(new DeviceNotSupportedError(vid, pid))
-  })
-
-export const hydrateDevice = (
-  device: Device,
-  deviceInfo: SupportedDeviceInfo
-): Effect.Effect<ReadyDevice | FailedDevice, DeviceInitializationError> =>
-  Effect.gen(function* () {
-    const errors: Error[] = []
-
     for (const init of deviceInfo.init) {
-      yield* init(device).pipe(
-        Effect.catchAll((e) => {
-          Console.error(`Capability init failed:`, e)
-          errors.push(e)
-          return Effect.void
-        })
-      )
+      yield* init(device)
     }
     return { ...device, status: 'Ready' as const }
   })
@@ -111,42 +91,46 @@ export type PendingInitializationResult = {
 }
 
 export const openDevice = (hid: HIDDevice) =>
-  Effect.tryPromise({
-    try: async () => {
-      if (hid.opened) return hid
-      await hid.open()
-      return hid
-    },
-    catch: (e) => new OpenHidDeviceError('Failed to open HID device', e)
-  })
+  hid.opened
+    ? Effect.succeed(hid)
+    : Effect.tryPromise({
+        try: () => hid.open().then(() => hid),
+        catch: (e) => new OpenHidDeviceError('Failed to open HID device', e)
+      })
 
-export const connectDevice = (
-  options?: HIDDeviceRequestOptions
-): Effect.Effect<PendingInitializationResult, DeviceNotSupportedError | Error> =>
+export const connectDevice = (options?: HIDDeviceRequestOptions) =>
   Effect.gen(function* () {
-    Console.log('Requesting device...')
+    yield* Console.log('Requesting device...')
     const hid = yield* requestDevice(options ?? { filters: [{ vendorId: RAZER_VID }] })
 
     yield* openDevice(hid)
 
-    const deviceInfo = yield* identifyDevice(hid)
+    const deviceInfoOption = yield* identifyDevice(hid)
+
+    if (Option.isNone(deviceInfoOption)) {
+      return yield* Effect.fail(new DeviceNotSupportedError(hid.vendorId, hid.productId))
+    }
 
     const pendingDevice: PendingDevice = {
-      name: deviceInfo.name,
+      name: deviceInfoOption.value.name,
+      status: 'Pending',
       hid,
-      capabilities: deviceInfo.capabilities,
-      data: {},
-      status: 'Pending'
+      capabilities: deviceInfoOption.value.capabilities,
+      limits: deviceInfoOption.value.limits,
+      data: {}
     }
 
-    return {
-      device: pendingDevice,
-      initialize: () =>
-        Effect.gen(function* () {
-          const device = yield* hydrateDevice(pendingDevice, deviceInfo)
-          return { device }
-        })
-    }
+    const device = yield* hydrateDevice(pendingDevice, deviceInfoOption.value).pipe(
+      Effect.map((device) => ({ device })),
+      Effect.catchAll((error) =>
+        Effect.succeed({
+          ...pendingDevice,
+          status: 'Failed',
+          error
+        } satisfies FailedDevice)
+      )
+    )
+    return device
   })
 
 const delay = (ms: number) => Effect.promise(() => new Promise((resolve) => setTimeout(resolve, ms)))
