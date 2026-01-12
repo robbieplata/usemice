@@ -1,10 +1,9 @@
-import type { Effect } from 'effect'
 import type { CapabilityKey, Device, HydratedSupportedCapabilities, HydratedCapabilityLimits } from './device'
 
 export type Adapter<K extends CapabilityKey, TLimits = {}, TMethods = {}> = {
   readonly key: K
   readonly limits: TLimits
-  readonly init: (device: Device) => Effect.Effect<Device, Error>
+  readonly init: (device: Device) => Promise<Device>
   readonly methods: (device: Device) => TMethods
 }
 
@@ -20,7 +19,7 @@ export type DeviceDefinition<C extends CapabilityKey> = {
   readonly pid: number
   readonly supportedCapabilities: HydratedSupportedCapabilities<C>
   readonly limits: HydratedCapabilityLimits<C>
-  readonly init: Array<(device: Device) => Effect.Effect<Device, Error>>
+  readonly init: Array<(device: Device) => Promise<Device>>
   readonly methodFactories: Record<string, MethodsFactory>
 }
 
@@ -45,7 +44,7 @@ export class DeviceBuilder<T extends Adapters = []> {
   build(): DeviceDefinition<AdaptersKeys<T> & CapabilityKey> {
     const supportedCapabilities = {} as Record<string, true>
     const limits = {} as Record<string, unknown>
-    const init: Array<(device: Device) => Effect.Effect<Device, Error>> = []
+    const init: Array<(device: Device) => Promise<Device>> = []
     const methodFactories = {} as Record<string, MethodsFactory>
 
     for (const adapter of this.adapters) {

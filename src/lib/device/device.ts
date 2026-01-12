@@ -1,7 +1,7 @@
-import type { Effect, Ref } from 'effect'
 import type { DpiData, DpiMethods } from '../capabilities/dpi'
 import type { Polling2Data, Polling2Methods } from '../capabilities/polling2'
 import type { SerialMethods } from '../capabilities/serial'
+import type { Mutex } from '../mutex'
 
 export type DeviceStatus = 'Ready' | 'Pending' | 'Failed'
 
@@ -14,8 +14,8 @@ export type Device = {
   error?: Error
   hid: HIDDevice
   status: DeviceStatus
-  _lock: Effect.Semaphore
-  _txId: Ref.Ref<number>
+  _lock: Mutex
+  _txId: { value: number }
 }
 
 export type ReadyDevice = Device & {

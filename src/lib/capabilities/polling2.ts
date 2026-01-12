@@ -1,4 +1,3 @@
-import { Effect } from 'effect'
 import { sendCommand } from '../device/hid'
 import type { Device } from '../device/device'
 import { RazerReport } from '../device/razer_report'
@@ -13,8 +12,8 @@ export type Polling2Limits = {
 }
 
 export type Polling2Methods = {
-  getPolling: () => Effect.Effect<Polling2Data, Error>
-  setPolling: (data: Polling2Data) => Effect.Effect<void, Error>
+  getPolling: () => Promise<Polling2Data>
+  setPolling: (data: Polling2Data) => Promise<void>
 }
 
 const POLLING2_CLASS = 0x00
@@ -40,45 +39,42 @@ const MAPPING: Record<number, number> = {
 }
 
 export class Polling2Error extends Error {
-  readonly _tag = 'Polling2Error'
   constructor(message: string, readonly cause?: unknown) {
     super(message)
   }
 }
 
-export const getPolling2 = (device: Device) =>
-  Effect.gen(function* () {
-    const report = RazerReport.from(POLLING2_CLASS, POLLING2_GET, new Uint8Array([0x00]))
-    const response = yield* sendCommand(device, report)
+export const getPolling2 = async (device: Device): Promise<Polling2Data> => {
+  const report = RazerReport.from(POLLING2_CLASS, POLLING2_GET, new Uint8Array([0x00]))
+  const response = await sendCommand(device, report)
 
-    if (response.commandClass !== POLLING2_CLASS || response.commandId !== POLLING2_GET) {
-      return yield* Effect.fail(new Polling2Error('Invalid response for Polling2 get'))
-    }
+  if (response.commandClass !== POLLING2_CLASS || response.commandId !== POLLING2_GET) {
+    throw new Polling2Error('Invalid response for Polling2 get')
+  }
 
-    const value = response.args[1]
+  const value = response.args[1]
 
-    const interval = MAPPING[value]
-    if (interval === undefined) {
-      return yield* Effect.fail(new Polling2Error(`Unsupported polling interval received: 0x${value.toString(16)}`))
-    }
-    return { interval } satisfies Polling2Data
-  })
+  const interval = MAPPING[value]
+  if (interval === undefined) {
+    throw new Polling2Error(`Unsupported polling interval received: 0x${value.toString(16)}`)
+  }
+  return { interval }
+}
 
-export const setPolling2 = (device: Device, data: Polling2Data) =>
-  Effect.gen(function* () {
-    const value = MAPPING[data.interval]
-    if (value === undefined) {
-      return yield* Effect.fail(new Polling2Error('Unsupported polling interval set'))
-    }
-    const report = RazerReport.from(POLLING2_CLASS, POLLING2_SET, new Uint8Array([0x00, value]))
-    yield* sendCommand(device, report)
-  })
+export const setPolling2 = async (device: Device, data: Polling2Data): Promise<void> => {
+  const value = MAPPING[data.interval]
+  if (value === undefined) {
+    throw new Polling2Error('Unsupported polling interval set')
+  }
+  const report = RazerReport.from(POLLING2_CLASS, POLLING2_SET, new Uint8Array([0x00, value]))
+  await sendCommand(device, report)
+}
 
-export const init = (device: Device) =>
-  Effect.flatMap(getPolling2(device), (data) => {
-    device.capabilityData.polling2 = data
-    return Effect.succeed(device)
-  })
+export const init = async (device: Device): Promise<Device> => {
+  const data = await getPolling2(device)
+  device.capabilityData.polling2 = data
+  return device
+}
 
 const methods = (device: Device): Polling2Methods => ({
   getPolling: () => getPolling2(device),
