@@ -4,7 +4,13 @@ import type { Device } from '../device/device'
 import { RazerReport } from '../device/razer_report'
 import type { Adapter } from '../device/builder'
 
+export type SerialData = string
+
 export type SerialLimits = {}
+
+export type SerialMethods = {
+  getSerial: () => Effect.Effect<string, Error>
+}
 
 const COMMAND_CLASS = 0x00
 const GET_COMMAND_ID = 0x82
@@ -24,12 +30,17 @@ export const getSerial = (device: Device) =>
 
 export const init = (device: Device) =>
   Effect.gen(function* () {
-    device.data.serial = yield* getSerial(device)
+    device.capabilityData.serial = yield* getSerial(device)
     return device
   })
 
-export const serialAdapter = (): Adapter<'serial', SerialLimits> => ({
+const methods = (device: Device): SerialMethods => ({
+  getSerial: () => getSerial(device)
+})
+
+export const serialAdapter = (): Adapter<'serial', SerialLimits, SerialMethods> => ({
   key: 'serial',
   limits: {},
-  init
+  init,
+  methods
 })

@@ -79,6 +79,11 @@ export const hydrateDevice = <T extends CapabilityKey>(device: Device, deviceInf
     for (const init of deviceInfo.init) {
       yield* init(device)
     }
+
+    device.capabilities = Object.fromEntries(
+      Object.entries(deviceInfo.methodFactories).map(([key, factory]) => [key, factory(device)])
+    )
+
     return { ...device, status: 'Ready' as const }
   })
 
@@ -119,15 +124,16 @@ export const connectDevice = (options?: HIDDeviceRequestOptions) =>
       name: deviceInfoOption.value.name,
       status: 'Pending',
       hid,
-      capabilities: deviceInfoOption.value.capabilities,
+      supportedCapabilities: deviceInfoOption.value.supportedCapabilities,
       limits: deviceInfoOption.value.limits,
-      data: {},
+      capabilityData: {},
+      capabilities: {},
       _lock: lock,
       _txId: txId
     }
 
     const device = yield* hydrateDevice(pendingDevice, deviceInfoOption.value).pipe(
-      Effect.map((device) => ({ device })),
+      Effect.map((device) => device),
       Effect.catchAll((error) =>
         Effect.succeed({
           ...pendingDevice,

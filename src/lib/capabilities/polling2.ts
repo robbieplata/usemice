@@ -12,6 +12,11 @@ export type Polling2Limits = {
   supportedIntervals: number[]
 }
 
+export type Polling2Methods = {
+  getPolling: () => Effect.Effect<Polling2Data, Error>
+  setPolling: (data: Polling2Data) => Effect.Effect<void, Error>
+}
+
 const POLLING2_CLASS = 0x00
 const POLLING2_GET = 0xc0
 const POLLING2_SET = 0x40
@@ -71,12 +76,18 @@ export const setPolling2 = (device: Device, data: Polling2Data) =>
 
 export const init = (device: Device) =>
   Effect.flatMap(getPolling2(device), (data) => {
-    device.data.polling2 = data
+    device.capabilityData.polling2 = data
     return Effect.succeed(device)
   })
 
-export const polling2Adapter = (limits: Polling2Limits): Adapter<'polling2', Polling2Limits> => ({
+const methods = (device: Device): Polling2Methods => ({
+  getPolling: () => getPolling2(device),
+  setPolling: (data) => setPolling2(device, data)
+})
+
+export const polling2Adapter = (limits: Polling2Limits): Adapter<'polling2', Polling2Limits, Polling2Methods> => ({
   key: 'polling2',
   limits,
-  init
+  init,
+  methods
 })

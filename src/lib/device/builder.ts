@@ -1,23 +1,27 @@
 import type { Effect } from 'effect'
-import type { CapabilityKey, Device, KnownCapabilities, KnownCapabilityLimits } from './device'
+import type { CapabilityKey, Device, HydratedSupportedCapabilities, HydratedCapabilityLimits } from './device'
 
-export type Adapter<K extends string, TLimits = {}> = {
+export type Adapter<K extends string, TLimits = {}, TMethods = {}> = {
   readonly key: K
   readonly limits: TLimits
   readonly init: (device: Device) => Effect.Effect<Device, Error>
+  readonly methods: (device: Device) => TMethods
 }
 
-export type Adapters = readonly Adapter<string, unknown>[]
+export type Adapters = readonly Adapter<string, unknown, unknown>[]
 
-export type AdaptersKeys<T extends Adapters> = T[number] extends Adapter<infer K, unknown> ? K : never
+export type AdaptersKeys<T extends Adapters> = T[number] extends Adapter<infer K, unknown, unknown> ? K : never
+
+type MethodsFactory = (device: Device) => unknown
 
 export type DeviceDefinition<C extends CapabilityKey> = {
   readonly name: string
   readonly vid: number
   readonly pid: number
-  readonly capabilities: KnownCapabilities<C>
-  readonly limits: KnownCapabilityLimits<C>
+  readonly supportedCapabilities: HydratedSupportedCapabilities<C>
+  readonly limits: HydratedCapabilityLimits<C>
   readonly init: Array<(device: Device) => Effect.Effect<Device, Error>>
+  readonly methodFactories: Record<string, MethodsFactory>
 }
 
 export class DeviceBuilder<T extends Adapters = []> {
@@ -32,28 +36,33 @@ export class DeviceBuilder<T extends Adapters = []> {
     return new DeviceBuilder(name, vid, pid, [])
   }
 
-  with<K extends string, TLimits>(adapter: Adapter<K, TLimits>): DeviceBuilder<readonly [...T, Adapter<K, TLimits>]> {
+  with<K extends string, TLimits, TMethods>(
+    adapter: Adapter<K, TLimits, TMethods>
+  ): DeviceBuilder<readonly [...T, Adapter<K, TLimits, TMethods>]> {
     return new DeviceBuilder(this.name, this.vid, this.pid, [...this.adapters, adapter] as const)
   }
 
   build(): DeviceDefinition<AdaptersKeys<T> & CapabilityKey> {
-    const capabilities = {} as Record<string, true>
+    const supportedCapabilities = {} as Record<string, true>
     const limits = {} as Record<string, unknown>
     const init: Array<(device: Device) => Effect.Effect<Device, Error>> = []
+    const methodFactories = {} as Record<string, MethodsFactory>
 
     for (const adapter of this.adapters) {
-      capabilities[adapter.key] = true
+      supportedCapabilities[adapter.key] = true
       limits[adapter.key] = adapter.limits
       init.push(adapter.init)
+      methodFactories[adapter.key] = adapter.methods
     }
 
     return {
       name: this.name,
       vid: this.vid,
       pid: this.pid,
-      capabilities,
+      supportedCapabilities,
       limits,
-      init
+      init,
+      methodFactories
     } as DeviceDefinition<AdaptersKeys<T> & CapabilityKey>
   }
 

@@ -3,6 +3,7 @@ import viteLogo from '/vite.svg'
 import './App.css'
 import { Effect } from 'effect'
 import { connectDevice } from './lib/device/hid'
+import { isCapableOf, isStatus } from './lib/device/device'
 
 function App() {
   const connect = async () => {
@@ -24,7 +25,16 @@ function App() {
           console.error('Failed to connect device:', device.left)
       }
     } else {
-      console.log('Connected device', device.right)
+      const readyDevice = device.right
+      if (isStatus(readyDevice, 'Failed')) {
+        console.error('Device is not ready:', readyDevice)
+        return
+      } else {
+        if (isCapableOf(readyDevice, ['polling2'])) {
+          console.log('Device supports polling2 capability')
+          readyDevice.error
+        }
+      }
     }
   }
 

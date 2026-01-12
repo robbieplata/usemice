@@ -15,6 +15,12 @@ export type DpiLimits = {
   maxStages: number
 }
 
+export type DpiMethods = {
+  getDpiStages: () => Effect.Effect<DpiData, Error>
+  getDpi: () => Effect.Effect<{ dpiLevels: number[] }, Error>
+  setDpi: (dpi: number) => Effect.Effect<void, Error>
+}
+
 const DPI_COMMAND_CLASS = 0x04
 
 const DPI_STAGES_GET_COMMAND_ID = 0x86
@@ -102,12 +108,19 @@ export const setDpi = (device: Device, dpi: number) =>
 
 export const init = (device: Device) =>
   Effect.flatMap(getDpiStages(device), (data) => {
-    device.data.dpi = data
+    device.capabilityData.dpi = data
     return Effect.succeed(device)
   })
 
-export const dpiAdapter = (limits: DpiLimits): Adapter<'dpi', DpiLimits> => ({
+const methods = (device: Device): DpiMethods => ({
+  getDpiStages: () => getDpiStages(device),
+  getDpi: () => getDpi(device),
+  setDpi: (dpi) => setDpi(device, dpi)
+})
+
+export const dpiAdapter = (limits: DpiLimits): Adapter<'dpi', DpiLimits, DpiMethods> => ({
   key: 'dpi',
   limits,
-  init
+  init,
+  methods
 })

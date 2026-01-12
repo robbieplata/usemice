@@ -1,37 +1,15 @@
 import type { Effect, Ref } from 'effect'
-import type { DpiData } from '../capabilities/dpi'
-import type { Polling2Data } from '../capabilities/polling2'
+import type { DpiData, DpiMethods } from '../capabilities/dpi'
+import type { Polling2Data, Polling2Methods } from '../capabilities/polling2'
+import type { SerialMethods } from '../capabilities/serial'
 
-export type UnknownCapabilities = {
-  dpi?: boolean
-  polling2?: boolean
-  serial?: boolean
-}
-
-export type UnknownCapabilityData = {
-  dpi?: DpiData
-  polling2?: Polling2Data
-  serial?: string
-}
-
-export type UnknownCapabilityLimits = {
-  dpi?: {
-    minDpi: number
-    maxDpi: number
-    maxStages: number
-  }
-  polling2?: {
-    supportedIntervals: number[]
-  }
-  serial?: {}
-}
-
-export type DeviceStatus = 'Ready' | 'Pending' | 'Failed' | 'Disconnected'
+export type DeviceStatus = 'Ready' | 'Pending' | 'Failed'
 
 export type Device = {
   name: string
-  capabilities: UnknownCapabilities
-  data: UnknownCapabilityData
+  supportedCapabilities: SupportedCapabilities
+  capabilityData: CapabilityData
+  capabilities: CapabilityMethods
   limits: UnknownCapabilityLimits
   error?: Error
   hid: HIDDevice
@@ -53,44 +31,85 @@ export type FailedDevice = Device & {
   error: Error
 }
 
-export type CapabilityKey = keyof UnknownCapabilities
+export type SupportedCapabilities = {
+  dpi?: boolean
+  polling2?: boolean
+  serial?: boolean
+}
 
-export type KnownCapabilities<C extends CapabilityKey> = Record<C, true>
+export type CapabilityData = {
+  dpi?: DpiData
+  polling2?: Polling2Data
+  serial?: string
+}
+
+export type CapabilityMethods = {
+  dpi?: DpiMethods
+  polling2?: Polling2Methods
+  serial?: SerialMethods
+}
+
+export type UnknownCapabilityLimits = {
+  dpi?: {
+    minDpi: number
+    maxDpi: number
+    maxStages: number
+  }
+  polling2?: {
+    supportedIntervals: number[]
+  }
+  serial?: {
+    length: string
+  }
+}
+
+export type CapabilityKey = keyof SupportedCapabilities
+
+export type HydratedSupportedCapabilities<C extends CapabilityKey> = Record<C, true>
 
 export type PossibleCapabilityLimits<C extends CapabilityKey> = Pick<
   UnknownCapabilityLimits,
   Extract<C, keyof UnknownCapabilityLimits>
 >
 
-export type KnownCapabilityLimits<C extends CapabilityKey> = {
+export type HydratedCapabilityLimits<C extends CapabilityKey> = {
   [K in Extract<C, keyof UnknownCapabilityLimits>]: Exclude<UnknownCapabilityLimits[K], undefined>
 }
 
-export type PossibleDeviceData<C extends CapabilityKey> = Pick<
-  UnknownCapabilityData,
-  Extract<C, keyof UnknownCapabilityData>
+export type PossibleCapabilityData<C extends CapabilityKey> = Pick<CapabilityData, Extract<C, keyof CapabilityData>>
+
+export type PossibleCapabilityMethods<C extends CapabilityKey> = Pick<
+  CapabilityMethods,
+  Extract<C, keyof CapabilityMethods>
 >
 
 export type HydratedDeviceData<C extends CapabilityKey> = {
-  [K in Extract<C, keyof UnknownCapabilityData>]: Exclude<UnknownCapabilityData[K], undefined>
+  [K in Extract<C, keyof CapabilityData>]: Exclude<CapabilityData[K], undefined>
+}
+
+export type HydratedCapabilityMethods<C extends CapabilityKey> = {
+  [K in Extract<C, keyof CapabilityMethods>]: Exclude<CapabilityMethods[K], undefined>
 }
 
 export type DeviceWithCapabilities<C extends CapabilityKey> = Device & {
-  capabilities: KnownCapabilities<C>
-  limits: KnownCapabilityLimits<C>
-  data: PossibleDeviceData<C>
+  supportedCapabilities: HydratedSupportedCapabilities<C>
+  limits: HydratedCapabilityLimits<C>
+  capabilityData: PossibleCapabilityData<C>
+  capabilities: PossibleCapabilityMethods<C>
 }
 
 export type FailedDeviceWithCapabilities<C extends CapabilityKey> = FailedDevice & {
-  capabilities: KnownCapabilities<C>
-  limits: KnownCapabilityLimits<C>
-  data: never
+  supportedCapabilities: HydratedSupportedCapabilities<C>
+  limits: never
+  capabilityData: never
+  capabilities: never
 }
 
 export type ReadyDeviceWithCapabilities<C extends CapabilityKey> = ReadyDevice & {
-  capabilities: KnownCapabilities<C>
-  limits: KnownCapabilityLimits<C>
-  data: HydratedDeviceData<C>
+  supportedCapabilities: HydratedSupportedCapabilities<C>
+  limits: HydratedCapabilityLimits<C>
+  capabilityData: HydratedDeviceData<C>
+  capabilities: HydratedCapabilityMethods<C>
 }
 
 export function isStatus(device: Device, status: 'Ready'): device is ReadyDevice
@@ -100,18 +119,21 @@ export function isStatus(device: Device, status: DeviceStatus): boolean {
   return device.status === status
 }
 
-export function isCapableOf<C extends keyof Partial<UnknownCapabilities>>(
+export function isCapableOf<C extends keyof Partial<SupportedCapabilities>>(
   device: FailedDevice,
-  capabilities: C[]
+  supportedCapabilities: C[]
 ): device is FailedDeviceWithCapabilities<C>
-export function isCapableOf<C extends keyof Partial<UnknownCapabilities>>(
+export function isCapableOf<C extends keyof Partial<SupportedCapabilities>>(
   device: ReadyDevice,
-  capabilities: C[]
+  supportedCapabilities: C[]
 ): device is ReadyDeviceWithCapabilities<C>
-export function isCapableOf<C extends keyof Partial<UnknownCapabilities>>(
+export function isCapableOf<C extends keyof Partial<SupportedCapabilities>>(
   device: Device,
-  capabilities: C[]
+  supportedCapabilities: C[]
 ): device is DeviceWithCapabilities<C>
-export function isCapableOf<C extends keyof Partial<UnknownCapabilities>>(device: Device, capabilities: C[]): boolean {
-  return capabilities.every((cap) => device.capabilities[cap] === true)
+export function isCapableOf<C extends keyof Partial<SupportedCapabilities>>(
+  device: Device,
+  supportedCapabilities: C[]
+): boolean {
+  return supportedCapabilities.every((cap) => device.supportedCapabilities[cap] === true)
 }
