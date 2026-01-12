@@ -2,10 +2,17 @@ import { Effect } from 'effect'
 import { sendCommand } from '../device/hid'
 import type { Device } from '../device/device'
 import { RazerReport } from '../device/razer_report'
+import type { Adapter } from '../device/builder'
 
 export type DpiData = {
   dpiLevels: [number, number][]
   activeStage: number
+}
+
+export type DpiLimits = {
+  minDpi: number
+  maxDpi: number
+  maxStages: number
 }
 
 const DPI_COMMAND_CLASS = 0x04
@@ -93,8 +100,14 @@ export const setDpi = (device: Device, dpi: number) =>
     yield* sendCommand(device, report)
   })
 
-export const init_dpi = (device: Device) =>
+export const init = (device: Device) =>
   Effect.flatMap(getDpiStages(device), (data) => {
     device.data.dpi = data
     return Effect.succeed(device)
   })
+
+export const dpiAdapter = (limits: DpiLimits): Adapter<'dpi', DpiLimits> => ({
+  key: 'dpi',
+  limits,
+  init
+})

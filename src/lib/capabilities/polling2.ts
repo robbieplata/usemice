@@ -2,9 +2,14 @@ import { Effect } from 'effect'
 import { sendCommand } from '../device/hid'
 import type { Device } from '../device/device'
 import { RazerReport } from '../device/razer_report'
+import type { Adapter } from '../device/builder'
 
 export type Polling2Data = {
   interval: number
+}
+
+export type Polling2Limits = {
+  supportedIntervals: number[]
 }
 
 const POLLING2_CLASS = 0x00
@@ -64,8 +69,14 @@ export const setPolling2 = (device: Device, data: Polling2Data) =>
     yield* sendCommand(device, report)
   })
 
-export const init_polling2 = (device: Device) =>
+export const init = (device: Device) =>
   Effect.flatMap(getPolling2(device), (data) => {
     device.data.polling2 = data
     return Effect.succeed(device)
   })
+
+export const polling2Adapter = (limits: Polling2Limits): Adapter<'polling2', Polling2Limits> => ({
+  key: 'polling2',
+  limits,
+  init
+})

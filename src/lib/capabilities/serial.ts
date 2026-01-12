@@ -2,10 +2,9 @@ import { Effect } from 'effect'
 import { sendCommand } from '../device/hid'
 import type { Device } from '../device/device'
 import { RazerReport } from '../device/razer_report'
+import type { Adapter } from '../device/builder'
 
-export type DpiData = {
-  dpiLevels: number[]
-}
+export type SerialLimits = {}
 
 const COMMAND_CLASS = 0x00
 const GET_COMMAND_ID = 0x82
@@ -23,8 +22,14 @@ export const getSerial = (device: Device) =>
     return new TextDecoder('utf-8').decode(serialBytes)
   })
 
-export const init_serial = (device: Device) =>
+export const init = (device: Device) =>
   Effect.gen(function* () {
     device.data.serial = yield* getSerial(device)
     return device
   })
+
+export const serialAdapter = (): Adapter<'serial', SerialLimits> => ({
+  key: 'serial',
+  limits: {},
+  init
+})

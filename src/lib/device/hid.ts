@@ -1,6 +1,7 @@
 import { Console, Effect, Option, Ref } from 'effect'
 import type { PendingDevice, Device, CapabilityKey, FailedDevice } from './device'
-import { SUPPORTED_DEVICE_INFO, type SupportedDeviceInfo } from './supported'
+import { SUPPORTED_DEVICE_INFO } from './supported'
+import type { DeviceDefinition } from './builder'
 import { RazerReport } from './razer_report'
 
 export const RAZER_REPORT_SIZE = 90
@@ -73,7 +74,7 @@ export const identifyDevice = (hid: HIDDevice) =>
     Effect.succeed(device.vid === hid.vendorId && device.pid === hid.productId)
   )
 
-export const hydrateDevice = <T extends CapabilityKey>(device: Device, deviceInfo: SupportedDeviceInfo<T>) =>
+export const hydrateDevice = <T extends CapabilityKey>(device: Device, deviceInfo: DeviceDefinition<T>) =>
   Effect.gen(function* () {
     for (const init of deviceInfo.init) {
       yield* init(device)
