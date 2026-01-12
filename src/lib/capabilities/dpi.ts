@@ -92,7 +92,7 @@ export const getDpi = (device: Device) =>
     if (dpiX !== dpiY || dpiX < 50 || dpiX > 35000) {
       return yield* Effect.fail(new Error('Invalid DPI values'))
     }
-    return { dpiLevels: [dpiX, dpiY] }
+    return { dpiLevels: [dpiX, dpiY] } as { dpiLevels: number[] }
   })
 
 export const setDpi = (device: Device, dpi: number) =>

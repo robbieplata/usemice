@@ -1,14 +1,14 @@
 import type { Effect } from 'effect'
 import type { CapabilityKey, Device, HydratedSupportedCapabilities, HydratedCapabilityLimits } from './device'
 
-export type Adapter<K extends string, TLimits = {}, TMethods = {}> = {
+export type Adapter<K extends CapabilityKey, TLimits = {}, TMethods = {}> = {
   readonly key: K
   readonly limits: TLimits
   readonly init: (device: Device) => Effect.Effect<Device, Error>
   readonly methods: (device: Device) => TMethods
 }
 
-export type Adapters = readonly Adapter<string, unknown, unknown>[]
+export type Adapters = readonly Adapter<CapabilityKey, unknown, unknown>[]
 
 export type AdaptersKeys<T extends Adapters> = T[number] extends Adapter<infer K, unknown, unknown> ? K : never
 
@@ -36,7 +36,7 @@ export class DeviceBuilder<T extends Adapters = []> {
     return new DeviceBuilder(name, vid, pid, [])
   }
 
-  with<K extends string, TLimits, TMethods>(
+  with<K extends CapabilityKey, TLimits, TMethods>(
     adapter: Adapter<K, TLimits, TMethods>
   ): DeviceBuilder<readonly [...T, Adapter<K, TLimits, TMethods>]> {
     return new DeviceBuilder(this.name, this.vid, this.pid, [...this.adapters, adapter] as const)
