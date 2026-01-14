@@ -11,12 +11,16 @@ const DeviceInfo = observer(({ device }: { device: Device }) => {
   return (
     <div className='device-info'>
       <h2>{device.name}</h2>
-      <p>Status: {device.status}</p>
       {device.error && <p className='error'>Error: {device.error.message}</p>}
-
       {isCapableOf(device, ['serial']) && <p>Serial: {device.capabilityData.serial}</p>}
-      {isCapableOf(device, ['firmwareVersion']) && <p>Firmware: {device.capabilityData.firmwareVersion.version}</p>}
-
+      {isCapableOf(device, ['firmwareVersion']) && (
+        <p>
+          Firmware: v{device.capabilityData.firmwareVersion.major}.{device.capabilityData.firmwareVersion.minor}
+        </p>
+      )}
+      {isCapableOf(device, ['chargeLevel']) && (
+        <p>Charge: {device.capabilityData.chargeLevel.percentage.toFixed(0)}%</p>
+      )}
       {isCapableOf(device, ['dpi']) && (
         <div>
           <p>Dpi: {device.capabilityData.dpi.x}</p>

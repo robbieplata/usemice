@@ -1,4 +1,4 @@
-import type { CapabilityKey, HydratedSupportedCapabilities, HydratedCapabilityLimits } from './device'
+import type { CapabilityKey, HydratedCapabilityLimits, SupportedCapabilities } from './device'
 /**
  * Static device information for supported device
  */
@@ -6,7 +6,7 @@ export type DeviceInfo<C extends CapabilityKey> = {
   readonly name: string
   readonly vid: number
   readonly pid: number
-  readonly supportedCapabilities: HydratedSupportedCapabilities<C>
+  readonly supportedCapabilities: SupportedCapabilities
   readonly limits: HydratedCapabilityLimits<C>
 }
 

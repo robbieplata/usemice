@@ -5,6 +5,7 @@ import type { PollingData, PollingLimits } from '../capabilities/polling'
 import { Mutex } from '../mutex'
 import type { SerialLimits } from '../capabilities/serial'
 import type { FirmwareVersionLimits, FirmwareVersionData } from '../capabilities/firmwareVersion'
+import type { ChargeLevelData, ChargeLevelLimits } from '../capabilities/chargeLevel'
 
 export type DeviceStatus = 'Ready' | 'Pending' | 'Failed'
 
@@ -14,6 +15,7 @@ export type SupportedCapabilities = {
   polling?: boolean
   serial?: boolean
   firmwareVersion?: boolean
+  chargeLevel?: boolean
 }
 
 export type CapabilityData = {
@@ -22,6 +24,7 @@ export type CapabilityData = {
   polling?: PollingData
   serial?: string
   firmwareVersion?: FirmwareVersionData
+  chargeLevel?: ChargeLevelData
 }
 
 export type CapabilityLimits = {
@@ -30,6 +33,7 @@ export type CapabilityLimits = {
   polling?: PollingLimits
   serial?: SerialLimits
   firmwareVersion?: FirmwareVersionLimits
+  chargeLevel?: ChargeLevelLimits
 }
 
 export type CapabilityKey = keyof SupportedCapabilities
