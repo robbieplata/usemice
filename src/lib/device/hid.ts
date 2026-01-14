@@ -1,11 +1,11 @@
-import type { PendingDevice, Device, CapabilityKey, FailedDevice } from './device'
-import { Mutex } from '../mutex'
-import { SUPPORTED_DEVICE_INFO } from './supported'
-import type { DeviceDefinition } from './builder'
-import { RazerReport } from './razer_report'
+import { runInAction } from 'mobx'
+import { Device, type CapabilityKey, isCapableOf } from './device'
+import { RAZER_VID, SUPPORTED_DEVICE_INFO } from './devices'
+import type { DeviceInfo } from './builder'
+import { RazerReport } from './report'
+import { DEVICE_COMMANDS } from './commands'
 
 export const RAZER_REPORT_SIZE = 90
-export const RAZER_VID = 0x1532
 export const RAZER_REPORT_ID = 0x00
 
 export class OpenHidDeviceError extends Error {
@@ -55,28 +55,21 @@ export const requestDevice = async (options?: HIDDeviceRequestOptions): Promise<
   return device
 }
 
-export const identifyDevice = (hid: HIDDevice): DeviceDefinition<CapabilityKey> | undefined => {
-  for (const device of SUPPORTED_DEVICE_INFO) {
-    if (device.vid === hid.vendorId && device.pid === hid.productId) {
-      return device
+export const identifyDevice = (hid: HIDDevice): DeviceInfo<CapabilityKey> | undefined => {
+  for (const info of SUPPORTED_DEVICE_INFO) {
+    if (info.vid === hid.vendorId && info.pid === hid.productId) {
+      return info
     }
   }
   return undefined
 }
 
-export const hydrateDevice = async <T extends CapabilityKey>(
-  device: Device,
-  deviceInfo: DeviceDefinition<T>
-): Promise<Device> => {
-  for (const init of deviceInfo.init) {
-    await init(device)
+const syncDevice = async (device: Device): Promise<void> => {
+  const tasks: Promise<unknown>[] = []
+  for (const cap of Object.keys(device.supportedCapabilities) as CapabilityKey[]) {
+    if (isCapableOf(device, [cap])) tasks.push(DEVICE_COMMANDS[cap].fetch(device))
   }
-
-  device.capabilities = Object.fromEntries(
-    Object.entries(deviceInfo.methodFactories).map(([key, factory]) => [key, factory(device)])
-  )
-
-  return { ...device, status: 'Ready' as const }
+  await Promise.all(tasks)
 }
 
 export const openDevice = async (hid: HIDDevice): Promise<HIDDevice> => {
@@ -86,7 +79,7 @@ export const openDevice = async (hid: HIDDevice): Promise<HIDDevice> => {
   return hid
 }
 
-export const connectDevice = async (options?: HIDDeviceRequestOptions): Promise<Device | FailedDevice> => {
+export const connectDevice = async (options?: HIDDeviceRequestOptions): Promise<Device> => {
   console.log('Requesting device...')
   const hid = await requestDevice(options ?? { filters: [{ vendorId: RAZER_VID }] })
 
@@ -98,27 +91,26 @@ export const connectDevice = async (options?: HIDDeviceRequestOptions): Promise<
     throw new DeviceNotSupportedError(hid.vendorId, hid.productId)
   }
 
-  const pendingDevice: PendingDevice = {
+  const device = new Device({
     name: deviceInfo.name,
-    status: 'Pending',
     hid,
     supportedCapabilities: deviceInfo.supportedCapabilities,
-    limits: deviceInfo.limits,
-    capabilityData: {},
-    capabilities: {},
-    _lock: new Mutex(),
-    _txId: { value: 1 }
-  }
+    limits: deviceInfo.limits
+  })
 
   try {
-    return await hydrateDevice(pendingDevice, deviceInfo)
+    await syncDevice(device)
+    runInAction(() => {
+      device.status = 'Ready'
+    })
   } catch (error) {
-    return {
-      ...pendingDevice,
-      status: 'Failed',
-      error: error instanceof Error ? error : new Error(String(error))
-    } satisfies FailedDevice
+    runInAction(() => {
+      device.status = 'Failed'
+      device.error = error instanceof Error ? error : new Error(String(error))
+    })
   }
+
+  return device
 }
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -154,14 +146,28 @@ export const sendCommand = async (device: Device, report: RazerReport, maxRetrie
     const txId = getNextTxId(device._txId)
     report.transactionId = txId
     const expectedTxId = txId
+    const expectedCommandClass = report.commandClass
+    const expectedCommandId = report.commandId
 
     await sendInternal(device.hid, report)
     await delay(10)
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
-      const response = await receiveInternal(device.hid)
-      const responseTxId = response[1]
-      const status = response[0]
+      const response = RazerReport.fromBytes(await receiveInternal(device.hid))
+      const responseTxId = response.transactionId
+      const status = response.status
+      const responseCommandClass = response.commandClass
+      const responseCommandId = response.commandId
+
+      if (responseCommandClass !== expectedCommandClass || responseCommandId !== expectedCommandId) {
+        console.warn(
+          `Mismatched command in response (class: 0x${responseCommandClass.toString(
+            16
+          )}, id: 0x${responseCommandId.toString(16)}), retry ${attempt + 1}/${maxRetries}`
+        )
+        await delay(10)
+        continue
+      }
 
       if (responseTxId !== expectedTxId) {
         console.warn(
@@ -175,7 +181,7 @@ export const sendCommand = async (device: Device, report: RazerReport, maxRetrie
 
       switch (status) {
         case RAZER_STATUS.SUCCESS:
-          return RazerReport.fromBytes(response)
+          return response
         case RAZER_STATUS.BUSY:
           console.warn(`Device busy, retry ${attempt + 1}/${maxRetries}...`)
           await delay(20)
