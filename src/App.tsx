@@ -15,6 +15,7 @@ const DeviceInfo = observer(({ device }: { device: Device }) => {
       {device.error && <p className='error'>Error: {device.error.message}</p>}
 
       {isCapableOf(device, ['serial']) && <p>Serial: {device.capabilityData.serial}</p>}
+      {isCapableOf(device, ['firmwareVersion']) && <p>Firmware: {device.capabilityData.firmwareVersion.version}</p>}
 
       {isCapableOf(device, ['dpi']) && (
         <div>

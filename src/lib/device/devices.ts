@@ -13,13 +13,15 @@ const DEATHADDER_V4_PRO_WIRED = defineDevice({
     dpi: true,
     dpiStages: true,
     polling: true,
-    serial: true
+    serial: true,
+    firmwareVersion: true
   },
   limits: {
     dpi: { minDpi: 100, maxDpi: 45_000 },
     dpiStages: { minDpi: 100, maxDpi: 45_000, maxStages: 5 },
     polling: { supportedIntervals: [125, 250, 500, 1_000, 2_000, 4_000, 8_000] },
-    serial: undefined as never
+    serial: undefined as never,
+    firmwareVersion: undefined as never
   }
 })
 

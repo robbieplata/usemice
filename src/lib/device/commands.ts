@@ -4,6 +4,7 @@ import { getDpi, setDpi as setDpiRaw, type DpiData } from '../capabilities/dpi'
 import { getDpiStages, type DpiStagesData } from '../capabilities/dpi-stages'
 import { getPolling, setPolling, type PollingData } from '../capabilities/polling'
 import { getSerial, type SerialData } from '../capabilities/serial'
+import { getFirmwareVersion, type FirmwareVersionData } from '../capabilities/firmwareVersion'
 
 type CapabilityCommand<C extends CapabilityKey, T> = {
   fetch: (device: DeviceWithCapabilities<C>) => Promise<T>
@@ -67,9 +68,23 @@ const serial: CapabilityCommand<'serial', SerialData> = {
   }
 }
 
+const firmwareVersion: CapabilityCommand<'firmwareVersion', FirmwareVersionData> = {
+  async fetch(device: DeviceWithCapabilities<'firmwareVersion'>) {
+    const data: FirmwareVersionData = await getFirmwareVersion(device)
+    runInAction(() => {
+      device.capabilityData.firmwareVersion = data
+    })
+    return data
+  },
+  async set(_device: DeviceWithCapabilities<'firmwareVersion'>, _data: FirmwareVersionData) {
+    throw new Error('Not implemented')
+  }
+}
+
 export const DEVICE_COMMANDS: { [K in CapabilityKey]: CapabilityCommand<K, NonNullable<CapabilityData[K]>> } = {
   dpi,
   dpiStages,
+  firmwareVersion,
   polling,
   serial
 }

@@ -4,6 +4,7 @@ import type { DpiStagesData, DpiStagesLimits } from '../capabilities/dpi-stages'
 import type { PollingData, PollingLimits } from '../capabilities/polling'
 import { Mutex } from '../mutex'
 import type { SerialLimits } from '../capabilities/serial'
+import type { FirmwareVersionLimits, FirmwareVersionData } from '../capabilities/firmwareVersion'
 
 export type DeviceStatus = 'Ready' | 'Pending' | 'Failed'
 
@@ -12,6 +13,7 @@ export type SupportedCapabilities = {
   dpiStages?: boolean
   polling?: boolean
   serial?: boolean
+  firmwareVersion?: boolean
 }
 
 export type CapabilityData = {
@@ -19,6 +21,7 @@ export type CapabilityData = {
   dpiStages?: DpiStagesData
   polling?: PollingData
   serial?: string
+  firmwareVersion?: FirmwareVersionData
 }
 
 export type CapabilityLimits = {
@@ -26,6 +29,7 @@ export type CapabilityLimits = {
   dpiStages?: DpiStagesLimits
   polling?: PollingLimits
   serial?: SerialLimits
+  firmwareVersion?: FirmwareVersionLimits
 }
 
 export type CapabilityKey = keyof SupportedCapabilities
