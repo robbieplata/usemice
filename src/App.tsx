@@ -14,9 +14,9 @@ const DeviceInfo = observer(({ device }: { device: Device }) => {
       <p>Status: {device.status}</p>
       {device.error && <p className='error'>Error: {device.error.message}</p>}
 
-      {isCapableOf(device, ['serial']) && device.capabilityData.serial && <p>Serial: {device.capabilityData.serial}</p>}
+      {isCapableOf(device, ['serial']) && <p>Serial: {device.capabilityData.serial}</p>}
 
-      {isCapableOf(device, ['dpi']) && device.capabilityData.dpi && (
+      {isCapableOf(device, ['dpi']) && (
         <div>
           <p>Dpi: {device.capabilityData.dpi.x}</p>
           <div>
@@ -33,7 +33,7 @@ const DeviceInfo = observer(({ device }: { device: Device }) => {
         </div>
       )}
 
-      {isCapableOf(device, ['polling']) && device.capabilityData.polling && (
+      {isCapableOf(device, ['polling']) && (
         <div>
           <p>Polling Rate: {device.capabilityData.polling.interval} Hz</p>
           {device.limits.polling && (
