@@ -1,18 +1,20 @@
 import { runInAction } from 'mobx'
 import type { CapabilityData, CapabilityKey, DeviceWithCapabilities } from './device'
 import { getDpi, setDpi as setDpiRaw, type DpiData } from '../capabilities/dpi'
-import { getDpiStages, type DpiStagesData } from '../capabilities/dpi-stages'
+import { getDpiStages, type DpiStagesData } from '../capabilities/dpiStages'
 import { getPolling, setPolling, type PollingData } from '../capabilities/polling'
 import { getSerial, type SerialData } from '../capabilities/serial'
 import { getFirmwareVersion, type FirmwareVersionData } from '../capabilities/firmwareVersion'
 import { getChargeLevel, type ChargeLevelData } from '../capabilities/chargeLevel'
+import { getChargeStatus, type ChargeStatusData } from '../capabilities/chargeStatus'
+import { getIdleTime, setIdleTime, type IdleTimeData } from '../capabilities/idleTime'
 
 type CapabilityCommand<C extends CapabilityKey, T> = {
   fetch: (device: DeviceWithCapabilities<C>) => Promise<T>
   set: (device: DeviceWithCapabilities<C>, value: T) => Promise<T>
 }
 
-const dpi: CapabilityCommand<'dpi', DpiData> = {
+export const dpi: CapabilityCommand<'dpi', DpiData> = {
   async fetch(device: DeviceWithCapabilities<'dpi'>) {
     const data = await getDpi(device)
     runInAction(() => {
@@ -27,7 +29,7 @@ const dpi: CapabilityCommand<'dpi', DpiData> = {
   }
 }
 
-const dpiStages: CapabilityCommand<'dpiStages', DpiStagesData> = {
+export const dpiStages: CapabilityCommand<'dpiStages', DpiStagesData> = {
   async fetch(device: DeviceWithCapabilities<'dpiStages'>) {
     const data = await getDpiStages(device)
     runInAction(() => {
@@ -41,7 +43,7 @@ const dpiStages: CapabilityCommand<'dpiStages', DpiStagesData> = {
   }
 }
 
-const polling: CapabilityCommand<'polling', PollingData> = {
+export const polling: CapabilityCommand<'polling', PollingData> = {
   async fetch(device: DeviceWithCapabilities<'polling'>) {
     const data = await getPolling(device)
     runInAction(() => {
@@ -56,7 +58,7 @@ const polling: CapabilityCommand<'polling', PollingData> = {
   }
 }
 
-const serial: CapabilityCommand<'serial', SerialData> = {
+export const serial: CapabilityCommand<'serial', SerialData> = {
   async fetch(device: DeviceWithCapabilities<'serial'>) {
     const data = await getSerial(device)
     runInAction(() => {
@@ -69,7 +71,7 @@ const serial: CapabilityCommand<'serial', SerialData> = {
   }
 }
 
-const firmwareVersion: CapabilityCommand<'firmwareVersion', FirmwareVersionData> = {
+export const firmwareVersion: CapabilityCommand<'firmwareVersion', FirmwareVersionData> = {
   async fetch(device: DeviceWithCapabilities<'firmwareVersion'>) {
     const data: FirmwareVersionData = await getFirmwareVersion(device)
     runInAction(() => {
@@ -82,7 +84,7 @@ const firmwareVersion: CapabilityCommand<'firmwareVersion', FirmwareVersionData>
   }
 }
 
-const chargeLevel: CapabilityCommand<'chargeLevel', ChargeLevelData> = {
+export const chargeLevel: CapabilityCommand<'chargeLevel', ChargeLevelData> = {
   async fetch(device: DeviceWithCapabilities<'chargeLevel'>) {
     const chargeLevel = await getChargeLevel(device)
     runInAction(() => {
@@ -95,13 +97,40 @@ const chargeLevel: CapabilityCommand<'chargeLevel', ChargeLevelData> = {
   }
 }
 
+export const chargeStatus: CapabilityCommand<'chargeStatus', ChargeStatusData> = {
+  async fetch(device: DeviceWithCapabilities<'chargeStatus'>) {
+    const chargeStatus = await getChargeStatus(device)
+    runInAction(() => {
+      device.capabilityData.chargeStatus = chargeStatus
+    })
+    return chargeStatus
+  },
+  async set(_device: DeviceWithCapabilities<'chargeStatus'>, _data: ChargeStatusData) {
+    throw new Error('Not implemented')
+  }
+}
+
+export const idleTime: CapabilityCommand<'idleTime', IdleTimeData> = {
+  async fetch(device: DeviceWithCapabilities<'idleTime'>) {
+    const idleTime = await getIdleTime(device)
+    runInAction(() => {
+      device.capabilityData.idleTime = idleTime
+    })
+    return idleTime
+  },
+  async set(device: DeviceWithCapabilities<'idleTime'>, data: IdleTimeData) {
+    await setIdleTime(device, data)
+    return await this.fetch(device)
+  }
+}
+
 export const DEVICE_COMMANDS: { [K in CapabilityKey]: CapabilityCommand<K, NonNullable<CapabilityData[K]>> } = {
   chargeLevel,
+  chargeStatus,
   dpi,
   dpiStages,
   firmwareVersion,
+  idleTime,
   polling,
   serial
 }
-
-export { dpi, dpiStages, polling, serial }

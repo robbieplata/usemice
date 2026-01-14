@@ -1,44 +1,50 @@
 import { makeAutoObservable } from 'mobx'
 import type { DpiData, DpiLimits } from '../capabilities/dpi'
-import type { DpiStagesData, DpiStagesLimits } from '../capabilities/dpi-stages'
+import type { DpiStagesData, DpiStagesLimits } from '../capabilities/dpiStages'
 import type { PollingData, PollingLimits } from '../capabilities/polling'
 import { Mutex } from '../mutex'
-import type { SerialLimits } from '../capabilities/serial'
+import type { SerialData, SerialLimits } from '../capabilities/serial'
 import type { FirmwareVersionLimits, FirmwareVersionData } from '../capabilities/firmwareVersion'
 import type { ChargeLevelData, ChargeLevelLimits } from '../capabilities/chargeLevel'
+import type { ChargeStatusData, ChargeStatusLimits } from '../capabilities/chargeStatus'
+import type { IdleTimeData, IdleTimeLimits } from '../capabilities/idleTime'
 
 export type DeviceStatus = 'Ready' | 'Pending' | 'Failed'
 
 export type SupportedCapabilities = {
-  dpi?: boolean
-  dpiStages?: boolean
-  polling?: boolean
-  serial?: boolean
-  firmwareVersion?: boolean
-  chargeLevel?: boolean
+  chargeLevel: boolean
+  chargeStatus: boolean
+  dpi: boolean
+  dpiStages: boolean
+  firmwareVersion: boolean
+  idleTime: boolean
+  polling: boolean
+  serial: boolean
 }
 
 export type CapabilityData = {
+  chargeLevel?: ChargeLevelData
+  chargeStatus?: ChargeStatusData
   dpi?: DpiData
   dpiStages?: DpiStagesData
-  polling?: PollingData
-  serial?: string
   firmwareVersion?: FirmwareVersionData
-  chargeLevel?: ChargeLevelData
+  idleTime?: IdleTimeData
+  polling?: PollingData
+  serial?: SerialData
 }
 
 export type CapabilityLimits = {
+  chargeLevel?: ChargeLevelLimits
+  chargeStatus?: ChargeStatusLimits
   dpi?: DpiLimits
   dpiStages?: DpiStagesLimits
+  firmwareVersion?: FirmwareVersionLimits
+  idleTime?: IdleTimeLimits
   polling?: PollingLimits
   serial?: SerialLimits
-  firmwareVersion?: FirmwareVersionLimits
-  chargeLevel?: ChargeLevelLimits
 }
 
 export type CapabilityKey = keyof SupportedCapabilities
-
-export type HydratedSupportedCapabilities<C extends CapabilityKey> = Record<C, true>
 
 export type HydratedCapabilityLimits<C extends CapabilityKey> = {
   [K in Extract<C, keyof CapabilityLimits>]: Exclude<CapabilityLimits[K], undefined>
@@ -50,7 +56,7 @@ export class Device {
   capabilityData: CapabilityData = {}
 
   readonly hid: HIDDevice
-  readonly supportedCapabilities: HydratedSupportedCapabilities<CapabilityKey>
+  readonly supportedCapabilities: SupportedCapabilities
   readonly limits: CapabilityLimits
   readonly _lock: Mutex
   readonly _txId: { value: number }
@@ -58,7 +64,7 @@ export class Device {
   constructor(params: {
     name: string
     hid: HIDDevice
-    supportedCapabilities: HydratedSupportedCapabilities<CapabilityKey>
+    supportedCapabilities: SupportedCapabilities
     limits: CapabilityLimits
   }) {
     this.name = params.name
@@ -83,7 +89,7 @@ export type HydratedCapabilityData<C extends CapabilityKey> = {
 }
 
 export type DeviceWithCapabilities<C extends CapabilityKey> = Device & {
-  supportedCapabilities: HydratedSupportedCapabilities<C>
+  supportedCapabilities: SupportedCapabilities
   limits: HydratedCapabilityLimits<C>
   capabilityData: HydratedCapabilityData<C>
 }

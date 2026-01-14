@@ -5,7 +5,7 @@ import viteLogo from '/vite.svg'
 import './App.css'
 import { connectDevice, DeviceNotSupportedError, OpenHidDeviceError, RequestHidDeviceError } from './lib/device/hid'
 import { isCapableOf, isFailed, type Device } from './lib/device/device'
-import { dpi, polling } from './lib/device/commands'
+import { dpi, idleTime, polling } from './lib/device/commands'
 
 const DeviceInfo = observer(({ device }: { device: Device }) => {
   return (
@@ -20,6 +20,24 @@ const DeviceInfo = observer(({ device }: { device: Device }) => {
       )}
       {isCapableOf(device, ['chargeLevel']) && (
         <p>Charge: {device.capabilityData.chargeLevel.percentage.toFixed(0)}%</p>
+      )}
+      {isCapableOf(device, ['chargeStatus']) && (
+        <p>{device.capabilityData.chargeStatus.status ? 'Charging' : 'Not Charging'}</p>
+      )}
+      {isCapableOf(device, ['idleTime']) && (
+        <div>
+          <p>Idle time: {device.capabilityData.idleTime.seconds}s</p>
+          <input
+            type='range'
+            step={1}
+            min={device.limits.idleTime.minSeconds}
+            max={device.limits.idleTime.maxSeconds}
+            value={device.capabilityData.idleTime.seconds}
+            onChange={(e) =>
+              device.capabilityData.idleTime && idleTime.set(device, { seconds: parseInt(e.target.value) })
+            }
+          />
+        </div>
       )}
       {isCapableOf(device, ['dpi']) && (
         <div>
