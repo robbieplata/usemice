@@ -13,15 +13,11 @@ export type DpiLimits = {
   maxDpi: number
 }
 
-const COMMAND_CLASS = 0x04
-const GET_COMMAND_ID = 0x85
-const SET_COMMAND_ID = 0x05
-
 export const getDpi = async (device: Device): Promise<DpiData> => {
   switch (device.hid.productId) {
     case PID_DEATHADDER_V4_PRO_WIRED:
     case PID_DEATHADDER_V4_PRO_WIRELESS: {
-      const report = RazerReport.from(COMMAND_CLASS, GET_COMMAND_ID, new Uint8Array(0))
+      const report = RazerReport.from(0x04, 0x85, 0x07, new Uint8Array(0))
       const response = await sendCommand(device, report)
       const x = (response.args[1] << 8) | response.args[2]
       const y = (response.args[3] << 8) | response.args[4]
@@ -46,8 +42,7 @@ export const setDpi = async (device: Device, dpi: DpiData): Promise<void> => {
       args[4] = x & 0xff
       args[5] = 0x00
       args[6] = 0x00
-      const report = RazerReport.from(COMMAND_CLASS, SET_COMMAND_ID, args)
-      report.dataSize = 0x07
+      const report = RazerReport.from(0x04, 0x05, 0x07, args)
       await sendCommand(device, report)
       return
     }

@@ -6,12 +6,13 @@ const MAX_ARGS = CRC_INDEX - PAYLOAD_OFFSET
 export class RazerReport {
   private readonly bytes = new Uint8Array(RAZER_REPORT_SIZE)
 
-  static from(commandClass: number, commandId: number, args: Uint8Array): RazerReport {
+  static from(commandClass: number, commandId: number, dataSize: number, args: Uint8Array): RazerReport {
     const r = new RazerReport()
     r.status = 0x00
     r.transactionId = 0x00
     r.commandClass = commandClass
     r.commandId = commandId
+    r.dataSize = dataSize
     r.args = args
     r.crc = RazerReport.computeCrc(r.bytes)
     return r

@@ -17,10 +17,6 @@ export class PollingError extends Error {
   }
 }
 
-const COMMAND_CLASS = 0x00
-const GET_COMMAND_ID = 0xc0
-const SET_COMMAND_ID = 0x40
-
 const MAPPING: Record<number, number> = {
   0x40: 125,
   0x20: 250,
@@ -43,7 +39,7 @@ export const getPolling = async (device: Device): Promise<PollingData> => {
   switch (device.hid.productId) {
     case PID_DEATHADDER_V4_PRO_WIRED:
     case PID_DEATHADDER_V4_PRO_WIRELESS: {
-      const report = RazerReport.from(COMMAND_CLASS, GET_COMMAND_ID, new Uint8Array([0x00]))
+      const report = RazerReport.from(0x00, 0xc0, 0x01, new Uint8Array([0x00]))
       const response = await sendCommand(device, report)
       const value = response.args[1]
       const interval = MAPPING[value]
@@ -66,7 +62,7 @@ export const setPolling = async (device: Device, data: PollingData): Promise<voi
       if (value === undefined) {
         throw new PollingError('Unsupported polling interval set')
       }
-      const report = RazerReport.from(COMMAND_CLASS, SET_COMMAND_ID, new Uint8Array([0x00, value]))
+      const report = RazerReport.from(0x00, 0x40, 0x02, new Uint8Array([0x00, value]))
       await sendCommand(device, report)
       return
     }

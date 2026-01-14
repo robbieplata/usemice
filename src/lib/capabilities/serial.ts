@@ -6,14 +6,11 @@ import { PID_DEATHADDER_V4_PRO_WIRED, PID_DEATHADDER_V4_PRO_WIRELESS } from '../
 export type SerialData = string
 export type SerialLimits = never
 
-const COMMAND_CLASS = 0x00
-const GET_COMMAND_ID = 0x82
-
 export const getSerial = async (device: Device): Promise<string> => {
   switch (device.hid.productId) {
     case PID_DEATHADDER_V4_PRO_WIRED:
     case PID_DEATHADDER_V4_PRO_WIRELESS: {
-      const report = RazerReport.from(COMMAND_CLASS, GET_COMMAND_ID, new Uint8Array([0]))
+      const report = RazerReport.from(0x00, 0x82, 0x16, new Uint8Array([0]))
       report.dataSize = 0x16
       const response = await sendCommand(device, report)
       const bytes = response.args.slice(0, 22)

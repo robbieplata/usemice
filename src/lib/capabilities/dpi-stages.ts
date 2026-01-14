@@ -33,7 +33,7 @@ export const getDpiStages = async (device: Device): Promise<DpiStagesData> => {
   switch (device.hid.productId) {
     case PID_DEATHADDER_V4_PRO_WIRED:
     case PID_DEATHADDER_V4_PRO_WIRELESS: {
-      const report = RazerReport.from(0x04, 0x86, new Uint8Array([0x01]))
+      const report = RazerReport.from(0x04, 0x86, 0x26, new Uint8Array([0x01]))
       report.dataSize = 0x26
       const response = await sendCommand(device, report)
 
