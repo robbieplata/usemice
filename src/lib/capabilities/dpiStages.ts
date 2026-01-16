@@ -1,5 +1,5 @@
 import { sendReport } from '../device/hid'
-import type { Device } from '../device/device'
+import type { DeviceWithCapabilities } from '../device/device'
 import { RazerReport } from '../device/report'
 import { PID_DEATHADDER_V4_PRO_WIRED, PID_DEATHADDER_V4_PRO_WIRELESS } from '../device/devices'
 
@@ -29,7 +29,7 @@ export type DpiStagesLimits = {
  * 07 08 second stage DPI Y = 1800
  * 00 00 reserved
  */
-export const getDpiStages = async (device: Device): Promise<DpiStagesData> => {
+export const getDpiStages = async (device: DeviceWithCapabilities<'dpiStages'>): Promise<DpiStagesData> => {
   switch (device.hid.productId) {
     case PID_DEATHADDER_V4_PRO_WIRED:
     case PID_DEATHADDER_V4_PRO_WIRELESS: {

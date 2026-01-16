@@ -1,4 +1,3 @@
-import type { CapabilityKey } from '../device/device'
 import { defineDevice, deviceVariant, type DeviceInfo } from './builder'
 
 export const RAZER_VID = 0x1532
@@ -40,7 +39,4 @@ const DEATHADDER_V4_PRO_WIRELESS = deviceVariant(
   PID_DEATHADDER_V4_PRO_WIRELESS
 )
 
-export const SUPPORTED_DEVICE_INFO: Set<DeviceInfo<CapabilityKey>> = new Set([
-  DEATHADDER_V4_PRO_WIRED,
-  DEATHADDER_V4_PRO_WIRELESS
-])
+export const SUPPORTED_DEVICE_INFO: Set<DeviceInfo> = new Set([DEATHADDER_V4_PRO_WIRED, DEATHADDER_V4_PRO_WIRELESS])

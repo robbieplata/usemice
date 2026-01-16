@@ -1,5 +1,5 @@
 import { sendReport } from '../device/hid'
-import type { Device } from '../device/device'
+import type { DeviceWithCapabilities } from '../device/device'
 import { RazerReport } from '../device/report'
 import { PID_DEATHADDER_V4_PRO_WIRED, PID_DEATHADDER_V4_PRO_WIRELESS } from '../device/devices'
 
@@ -10,7 +10,9 @@ export type FirmwareVersionData = {
 
 export type FirmwareVersionLimits = never
 
-export const getFirmwareVersion = async (device: Device): Promise<FirmwareVersionData> => {
+export const getFirmwareVersion = async (
+  device: DeviceWithCapabilities<'firmwareVersion'>
+): Promise<FirmwareVersionData> => {
   switch (device.hid.productId) {
     case PID_DEATHADDER_V4_PRO_WIRED:
     case PID_DEATHADDER_V4_PRO_WIRELESS: {

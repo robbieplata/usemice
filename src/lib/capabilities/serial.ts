@@ -1,12 +1,14 @@
 import { sendReport } from '../device/hid'
-import type { Device } from '../device/device'
+import type { DeviceWithCapabilities } from '../device/device'
 import { RazerReport } from '../device/report'
 import { PID_DEATHADDER_V4_PRO_WIRED, PID_DEATHADDER_V4_PRO_WIRELESS } from '../device/devices'
 
-export type SerialData = string
+export type SerialData = {
+  serialNumber: string
+}
 export type SerialLimits = never
 
-export const getSerial = async (device: Device): Promise<string> => {
+export const getSerial = async (device: DeviceWithCapabilities<'serial'>): Promise<SerialData> => {
   switch (device.hid.productId) {
     case PID_DEATHADDER_V4_PRO_WIRED:
     case PID_DEATHADDER_V4_PRO_WIRELESS: {
@@ -16,7 +18,7 @@ export const getSerial = async (device: Device): Promise<string> => {
       const bytes = response.args.slice(0, 22)
       const nullIdx = bytes.indexOf(0x00)
       const serialBytes = nullIdx === -1 ? bytes : bytes.slice(0, nullIdx)
-      return new TextDecoder('utf-8').decode(serialBytes)
+      return { serialNumber: new TextDecoder('utf-8').decode(serialBytes) }
     }
 
     default:

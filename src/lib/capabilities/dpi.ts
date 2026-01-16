@@ -1,5 +1,5 @@
 import { sendReport } from '../device/hid'
-import type { Device } from '../device/device'
+import type { Device, DeviceWithCapabilities } from '../device/device'
 import { RazerReport } from '../device/report'
 import { PID_DEATHADDER_V4_PRO_WIRED, PID_DEATHADDER_V4_PRO_WIRELESS } from '../device/devices'
 
@@ -29,7 +29,7 @@ export const getDpi = async (device: Device): Promise<DpiData> => {
   }
 }
 
-export const setDpi = async (device: Device, dpi: DpiData): Promise<void> => {
+export const setDpi = async (device: DeviceWithCapabilities<'dpi'>, dpi: DpiData): Promise<void> => {
   switch (device.hid.productId) {
     case PID_DEATHADDER_V4_PRO_WIRED:
     case PID_DEATHADDER_V4_PRO_WIRELESS: {

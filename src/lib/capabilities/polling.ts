@@ -1,5 +1,5 @@
 import { sendReport } from '../device/hid'
-import type { Device } from '../device/device'
+import type { Device, DeviceWithCapabilities } from '../device/device'
 import { RazerReport } from '../device/report'
 import { PID_DEATHADDER_V4_PRO_WIRED, PID_DEATHADDER_V4_PRO_WIRELESS } from '../device/devices'
 
@@ -35,7 +35,7 @@ const MAPPING: Record<number, number> = {
   8000: 0x01
 }
 
-export const getPolling = async (device: Device): Promise<PollingData> => {
+export const getPolling = async (device: DeviceWithCapabilities<'polling'>): Promise<PollingData> => {
   switch (device.hid.productId) {
     case PID_DEATHADDER_V4_PRO_WIRED:
     case PID_DEATHADDER_V4_PRO_WIRELESS: {

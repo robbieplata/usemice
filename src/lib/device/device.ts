@@ -10,7 +10,29 @@ import type { ChargeStatusData, ChargeStatusLimits } from '../capabilities/charg
 import type { IdleTimeData, IdleTimeLimits } from '../capabilities/idleTime'
 import type { DeviceInfo } from './builder'
 
-export type DeviceStatus = 'Ready' | 'Pending' | 'Failed'
+export type DeviceStatus = 'Ready' | 'Failed' | 'Initializing'
+
+export type IDevice = {
+  name: string
+  status: DeviceStatus
+  error: Error | null
+  capabilityData: CapabilityData
+  hid: HIDDevice
+  supportedCapabilities: SupportedCapabilities
+  limits: CapabilityLimits
+  _lock: Mutex
+  _txId: { value: number }
+  setCapabilityData<K extends keyof CapabilityData>(key: K, data: CapabilityData[K]): void
+}
+
+export type ReadyDevice = IDevice & {
+  status: 'Ready'
+}
+
+export type FailedDevice = IDevice & {
+  status: 'Failed'
+  error: Error
+}
 
 export type SupportedCapabilities = {
   chargeLevel: boolean
@@ -45,48 +67,55 @@ export type CapabilityLimits = {
   serial?: SerialLimits
 }
 
-export type CapabilityKey = keyof SupportedCapabilities
-
-export type HydratedCapabilityLimits<C extends CapabilityKey> = {
-  [K in Extract<C, keyof CapabilityLimits>]: Exclude<CapabilityLimits[K], undefined>
+export type HydratedCapabilityLimits<C extends keyof SupportedCapabilities> = {
+  [K in Extract<C, keyof CapabilityLimits>]-?: NonNullable<CapabilityLimits[K]>
 }
 
-export type HydratedCapabilityData<C extends CapabilityKey> = {
-  [K in Extract<C, keyof CapabilityData>]: Exclude<CapabilityData[K], undefined>
+export type PossibleCapabilityData<C extends keyof SupportedCapabilities> = {
+  [K in Extract<C, keyof CapabilityData>]: CapabilityData[K]
 }
 
-export type DeviceWithCapabilities<C extends CapabilityKey> = Device & {
+export type HydratedCapabilityData<C extends keyof SupportedCapabilities> = {
+  [K in Extract<C, keyof CapabilityData>]-?: NonNullable<CapabilityData[K]>
+}
+
+export type DeviceWithCapabilities<C extends keyof SupportedCapabilities> = IDevice & {
+  supportedCapabilities: SupportedCapabilities
+  limits: HydratedCapabilityLimits<C>
+  capabilityData: PossibleCapabilityData<C>
+}
+
+export type ReadyDeviceWithCapabilities<C extends keyof SupportedCapabilities> = ReadyDevice & {
   supportedCapabilities: SupportedCapabilities
   limits: HydratedCapabilityLimits<C>
   capabilityData: HydratedCapabilityData<C>
 }
 
-export type ReadyDevice = Device & {
-  status: 'Ready'
-}
-
-export type FailedDevice = Device & {
-  status: 'Failed'
-  error: Error
-}
-
-export function isCapableOf<C extends CapabilityKey>(
-  device: Device,
+export function isCapableOf<C extends keyof SupportedCapabilities>(
+  device: ReadyDevice,
   capabilities: C[]
-): device is DeviceWithCapabilities<C> {
+): device is ReadyDeviceWithCapabilities<C>
+
+export function isCapableOf<C extends keyof SupportedCapabilities>(
+  device: IDevice,
+  capabilities: C[]
+): device is DeviceWithCapabilities<C>
+
+export function isCapableOf<C extends keyof SupportedCapabilities>(device: IDevice, capabilities: C[]): boolean {
   return capabilities.every((cap) => device.supportedCapabilities[cap] === true)
 }
-export function isStatus(device: Device, status: 'Failed'): device is FailedDevice
-export function isStatus(device: Device, status: 'Ready'): device is ReadyDevice
-export function isStatus(device: Device, status: DeviceStatus): boolean {
+
+export function isStatus(device: IDevice, status: 'Failed'): device is FailedDevice
+export function isStatus(device: IDevice, status: 'Ready'): device is ReadyDevice
+export function isStatus(device: IDevice, status: DeviceStatus): boolean {
   return device.status === status
 }
 
-export class Device {
+export class Device implements IDevice {
   @observable accessor name: string
-  @observable accessor status: DeviceStatus = 'Pending'
+  @observable accessor status: DeviceStatus = 'Initializing'
   @observable accessor error: Error | null = null
-  @observable accessor capabilityData: CapabilityData
+  @observable accessor capabilityData: CapabilityData = {}
 
   readonly hid: HIDDevice
   readonly supportedCapabilities: SupportedCapabilities
@@ -94,10 +123,9 @@ export class Device {
   readonly _lock: Mutex
   readonly _txId: { value: number }
 
-  constructor(deviceInfo: DeviceInfo<CapabilityKey>, hid: HIDDevice) {
+  constructor(deviceInfo: DeviceInfo, hid: HIDDevice) {
     this.name = deviceInfo.name
     this.hid = hid
-    this.capabilityData = {}
     this.supportedCapabilities = deviceInfo.supportedCapabilities
     this.limits = deviceInfo.limits
     this._lock = new Mutex()
@@ -109,3 +137,7 @@ export class Device {
     this.capabilityData[key] = data
   }
 }
+
+const d: DeviceWithCapabilities<'dpi'> = null as never
+
+d.capabilityData.dpi

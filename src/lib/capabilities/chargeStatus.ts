@@ -1,5 +1,5 @@
 import { sendReport } from '../device/hid'
-import type { Device } from '../device/device'
+import type { DeviceWithCapabilities } from '../device/device'
 import { RazerReport } from '../device/report'
 import { PID_DEATHADDER_V4_PRO_WIRED, PID_DEATHADDER_V4_PRO_WIRELESS } from '../device/devices'
 
@@ -9,7 +9,7 @@ export type ChargeStatusData = {
 
 export type ChargeStatusLimits = never
 
-export const getChargeStatus = async (device: Device): Promise<ChargeStatusData> => {
+export const getChargeStatus = async (device: DeviceWithCapabilities<'chargeStatus'>): Promise<ChargeStatusData> => {
   switch (device.hid.productId) {
     case PID_DEATHADDER_V4_PRO_WIRED:
     case PID_DEATHADDER_V4_PRO_WIRELESS: {
