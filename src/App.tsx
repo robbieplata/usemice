@@ -55,7 +55,6 @@ const DeviceInfo = observer(({ device }: { device: Device }) => {
           </div>
         </div>
       )}
-
       {isCapableOf(device, ['polling']) && (
         <div>
           <p>Polling Rate: {device.capabilityData.polling.interval} Hz</p>
