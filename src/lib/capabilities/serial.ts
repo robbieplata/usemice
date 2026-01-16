@@ -1,4 +1,4 @@
-import { sendCommand } from '../device/hid'
+import { sendReport } from '../device/hid'
 import type { Device } from '../device/device'
 import { RazerReport } from '../device/report'
 import { PID_DEATHADDER_V4_PRO_WIRED, PID_DEATHADDER_V4_PRO_WIRELESS } from '../device/devices'
@@ -12,7 +12,7 @@ export const getSerial = async (device: Device): Promise<string> => {
     case PID_DEATHADDER_V4_PRO_WIRELESS: {
       const report = RazerReport.from(0x00, 0x82, 0x16, new Uint8Array([0]))
       report.dataSize = 0x16
-      const response = await sendCommand(device, report)
+      const response = await sendReport(device, report)
       const bytes = response.args.slice(0, 22)
       const nullIdx = bytes.indexOf(0x00)
       const serialBytes = nullIdx === -1 ? bytes : bytes.slice(0, nullIdx)

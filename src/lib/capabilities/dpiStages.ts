@@ -1,4 +1,4 @@
-import { sendCommand } from '../device/hid'
+import { sendReport } from '../device/hid'
 import type { Device } from '../device/device'
 import { RazerReport } from '../device/report'
 import { PID_DEATHADDER_V4_PRO_WIRED, PID_DEATHADDER_V4_PRO_WIRELESS } from '../device/devices'
@@ -34,7 +34,7 @@ export const getDpiStages = async (device: Device): Promise<DpiStagesData> => {
     case PID_DEATHADDER_V4_PRO_WIRED:
     case PID_DEATHADDER_V4_PRO_WIRELESS: {
       const report = RazerReport.from(0x04, 0x86, 0x26, new Uint8Array([0x01]))
-      const response = await sendCommand(device, report)
+      const response = await sendReport(device, report)
 
       const args = response.args
       const dataSize = Math.min(response.dataSize)

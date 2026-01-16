@@ -1,4 +1,4 @@
-import { sendCommand } from '../device/hid'
+import { sendReport } from '../device/hid'
 import type { Device } from '../device/device'
 import { RazerReport } from '../device/report'
 import { PID_DEATHADDER_V4_PRO_WIRED, PID_DEATHADDER_V4_PRO_WIRELESS } from '../device/devices'
@@ -14,7 +14,7 @@ export const getChargeLevel = async (device: Device): Promise<ChargeLevelData> =
     case PID_DEATHADDER_V4_PRO_WIRED:
     case PID_DEATHADDER_V4_PRO_WIRELESS: {
       const report = RazerReport.from(0x07, 0x80, 0x02, new Uint8Array(0))
-      const response = await sendCommand(device, report)
+      const response = await sendReport(device, report)
       return { percentage: (response.args[1] / 0xff) * 100 }
     }
 

@@ -1,4 +1,4 @@
-import { sendCommand } from '../device/hid'
+import { sendReport } from '../device/hid'
 import type { DeviceWithCapabilities } from '../device/device'
 import { RazerReport } from '../device/report'
 import { PID_DEATHADDER_V4_PRO_WIRED, PID_DEATHADDER_V4_PRO_WIRELESS } from '../device/devices'
@@ -17,7 +17,7 @@ export const getIdleTime = async (device: DeviceWithCapabilities<'idleTime'>): P
     case PID_DEATHADDER_V4_PRO_WIRED:
     case PID_DEATHADDER_V4_PRO_WIRELESS: {
       const report = RazerReport.from(0x07, 0x83, 0x02, new Uint8Array(0))
-      const response = await sendCommand(device, report)
+      const response = await sendReport(device, report)
       return { seconds: (response.args[0] << 8) | (response.args[1] & 0xff) }
     }
 
@@ -38,7 +38,7 @@ export const setIdleTime = async (device: DeviceWithCapabilities<'idleTime'>, da
       args[0] = (data.seconds >> 8) & 0xff
       args[1] = data.seconds & 0xff
       const report = RazerReport.from(0x07, 0x03, 0x02, args)
-      await sendCommand(device, report)
+      await sendReport(device, report)
       return
     }
 

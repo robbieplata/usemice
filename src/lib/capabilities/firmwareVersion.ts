@@ -1,4 +1,4 @@
-import { sendCommand } from '../device/hid'
+import { sendReport } from '../device/hid'
 import type { Device } from '../device/device'
 import { RazerReport } from '../device/report'
 import { PID_DEATHADDER_V4_PRO_WIRED, PID_DEATHADDER_V4_PRO_WIRELESS } from '../device/devices'
@@ -16,7 +16,7 @@ export const getFirmwareVersion = async (device: Device): Promise<FirmwareVersio
     case PID_DEATHADDER_V4_PRO_WIRELESS: {
       const report = RazerReport.from(0x00, 0x81, 0x02, new Uint8Array(0))
       report.transactionId = 0x1f
-      const response = await sendCommand(device, report)
+      const response = await sendReport(device, report)
       return { major: response.args[0], minor: response.args[1] }
     }
 

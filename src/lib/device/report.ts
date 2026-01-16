@@ -1,4 +1,5 @@
-const RAZER_REPORT_SIZE = 90
+export const RAZER_REPORT_SIZE = 90
+export const RAZER_REPORT_ID = 0x00
 const PAYLOAD_OFFSET = 8
 const CRC_INDEX = 88
 const MAX_ARGS = CRC_INDEX - PAYLOAD_OFFSET

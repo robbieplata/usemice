@@ -1,4 +1,4 @@
-import { makeAutoObservable } from 'mobx'
+import { action, observable } from 'mobx'
 import type { DpiData, DpiLimits } from '../capabilities/dpi'
 import type { DpiStagesData, DpiStagesLimits } from '../capabilities/dpiStages'
 import type { PollingData, PollingLimits } from '../capabilities/polling'
@@ -8,6 +8,7 @@ import type { FirmwareVersionLimits, FirmwareVersionData } from '../capabilities
 import type { ChargeLevelData, ChargeLevelLimits } from '../capabilities/chargeLevel'
 import type { ChargeStatusData, ChargeStatusLimits } from '../capabilities/chargeStatus'
 import type { IdleTimeData, IdleTimeLimits } from '../capabilities/idleTime'
+import type { DeviceInfo } from './builder'
 
 export type DeviceStatus = 'Ready' | 'Pending' | 'Failed'
 
@@ -49,40 +50,6 @@ export type CapabilityKey = keyof SupportedCapabilities
 export type HydratedCapabilityLimits<C extends CapabilityKey> = {
   [K in Extract<C, keyof CapabilityLimits>]: Exclude<CapabilityLimits[K], undefined>
 }
-export class Device {
-  name: string
-  status: DeviceStatus = 'Pending'
-  error: Error | null = null
-  capabilityData: CapabilityData = {}
-
-  readonly hid: HIDDevice
-  readonly supportedCapabilities: SupportedCapabilities
-  readonly limits: CapabilityLimits
-  readonly _lock: Mutex
-  readonly _txId: { value: number }
-
-  constructor(params: {
-    name: string
-    hid: HIDDevice
-    supportedCapabilities: SupportedCapabilities
-    limits: CapabilityLimits
-  }) {
-    this.name = params.name
-    this.hid = params.hid
-    this.supportedCapabilities = params.supportedCapabilities
-    this.limits = params.limits
-    this._lock = new Mutex()
-    this._txId = { value: 1 }
-
-    makeAutoObservable(this, {
-      hid: false,
-      supportedCapabilities: false,
-      limits: false,
-      _lock: false,
-      _txId: false
-    })
-  }
-}
 
 export type HydratedCapabilityData<C extends CapabilityKey> = {
   [K in Extract<C, keyof CapabilityData>]: Exclude<CapabilityData[K], undefined>
@@ -109,11 +76,36 @@ export function isCapableOf<C extends CapabilityKey>(
 ): device is DeviceWithCapabilities<C> {
   return capabilities.every((cap) => device.supportedCapabilities[cap] === true)
 }
-
-export function isReady(device: Device): device is ReadyDevice {
-  return device.status === 'Ready'
+export function isStatus(device: Device, status: 'Failed'): device is FailedDevice
+export function isStatus(device: Device, status: 'Ready'): device is ReadyDevice
+export function isStatus(device: Device, status: DeviceStatus): boolean {
+  return device.status === status
 }
 
-export function isFailed(device: Device): device is FailedDevice {
-  return device.status === 'Failed'
+export class Device {
+  @observable accessor name: string
+  @observable accessor status: DeviceStatus = 'Pending'
+  @observable accessor error: Error | null = null
+  @observable accessor capabilityData: CapabilityData
+
+  readonly hid: HIDDevice
+  readonly supportedCapabilities: SupportedCapabilities
+  readonly limits: CapabilityLimits
+  readonly _lock: Mutex
+  readonly _txId: { value: number }
+
+  constructor(deviceInfo: DeviceInfo<CapabilityKey>, hid: HIDDevice) {
+    this.name = deviceInfo.name
+    this.hid = hid
+    this.capabilityData = {}
+    this.supportedCapabilities = deviceInfo.supportedCapabilities
+    this.limits = deviceInfo.limits
+    this._lock = new Mutex()
+    this._txId = { value: 1 }
+  }
+
+  @action
+  setCapabilityData<K extends keyof CapabilityData>(key: K, data: CapabilityData[K]) {
+    this.capabilityData[key] = data
+  }
 }

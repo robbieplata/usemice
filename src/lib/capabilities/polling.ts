@@ -1,4 +1,4 @@
-import { sendCommand } from '../device/hid'
+import { sendReport } from '../device/hid'
 import type { Device } from '../device/device'
 import { RazerReport } from '../device/report'
 import { PID_DEATHADDER_V4_PRO_WIRED, PID_DEATHADDER_V4_PRO_WIRELESS } from '../device/devices'
@@ -40,7 +40,7 @@ export const getPolling = async (device: Device): Promise<PollingData> => {
     case PID_DEATHADDER_V4_PRO_WIRED:
     case PID_DEATHADDER_V4_PRO_WIRELESS: {
       const report = RazerReport.from(0x00, 0xc0, 0x01, new Uint8Array([0x00]))
-      const response = await sendCommand(device, report)
+      const response = await sendReport(device, report)
       const value = response.args[1]
       const interval = MAPPING[value]
       if (interval === undefined) {
@@ -63,7 +63,7 @@ export const setPolling = async (device: Device, data: PollingData): Promise<voi
         throw new PollingError('Unsupported polling interval set')
       }
       const report = RazerReport.from(0x00, 0x40, 0x02, new Uint8Array([0x00, value]))
-      await sendCommand(device, report)
+      await sendReport(device, report)
       return
     }
 

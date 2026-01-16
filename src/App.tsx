@@ -4,7 +4,7 @@ import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
 import { connectDevice, DeviceNotSupportedError, OpenHidDeviceError, RequestHidDeviceError } from './lib/device/hid'
-import { isCapableOf, isFailed, type Device } from './lib/device/device'
+import { isCapableOf, isStatus, type Device } from './lib/device/device'
 import { dpi, idleTime, polling } from './lib/device/commands'
 
 const DeviceInfo = observer(({ device }: { device: Device }) => {
@@ -84,7 +84,7 @@ function App() {
     setError(null)
     try {
       const device = await connectDevice()
-      if (isFailed(device)) {
+      if (isStatus(device, 'Failed')) {
         setError(device.error.message)
         return
       }
