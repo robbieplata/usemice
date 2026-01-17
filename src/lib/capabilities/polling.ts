@@ -12,7 +12,10 @@ export type PollingLimits = {
 }
 
 export class PollingError extends Error {
-  constructor(message: string, readonly cause?: unknown) {
+  constructor(
+    message: string,
+    readonly cause?: unknown
+  ) {
     super(message)
   }
 }

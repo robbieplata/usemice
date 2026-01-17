@@ -1,23 +1,44 @@
+import { observer } from 'mobx-react-lite'
+import { flowResult } from 'mobx'
 import './App.css'
-import useDevice from './lib/hooks/useDevice'
 import DeviceView from './components/DeviceView'
+import { useStore } from './stores'
+import { noop } from 'lodash'
 
-function App() {
-  const { device, isLoading, error, requestDevice, disconnect } = useDevice()
+const App = observer(() => {
+  const {
+    deviceStore: { addDevice, requestDevice, removeDevice, selectedDevice, devices, setSelectedDeviceId }
+  } = useStore()
 
-  if (isLoading) {
-    return <p>Connecting to device...</p>
+  const connect = async () => {
+    const requestResult = await flowResult(requestDevice())
+    if (!requestResult.error) {
+      const addResult = await flowResult(addDevice(requestResult.value))
+      if (addResult.error) {
+        console.error('Failed to add device:', addResult.error)
+      }
+    }
   }
+
+  const disconnect = () => (selectedDevice ? removeDevice(selectedDevice) : noop())
 
   return (
     <>
       <div className='card'>
-        {<button onClick={device ? disconnect : requestDevice}>{device ? 'Disconnect' : 'Connect'}</button>}
-        {error && <p className='error'>{error}</p>}
-        {device && <DeviceView device={device} />}
+        {devices.map((device) => (
+          <button key={device.hid.productId} onClick={() => setSelectedDeviceId(device.id)}>
+            <span>
+              {device.hid.productName} - {device.status}
+            </span>
+          </button>
+        ))}
+      </div>
+      <div className='card'>
+        {<button onClick={!selectedDevice ? connect : disconnect}>{selectedDevice ? 'Disconnect' : 'Connect'}</button>}
+        {selectedDevice !== undefined && <DeviceView device={selectedDevice} />}
       </div>
     </>
   )
-}
+})
 
 export default App

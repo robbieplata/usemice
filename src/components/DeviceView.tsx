@@ -6,7 +6,7 @@ const DeviceView = observer(({ device }: { device: IDevice }) => {
   if (isStatus(device, 'Failed')) {
     return (
       <div className='device-info'>
-        <h2>{device.name}</h2>
+        <h2>{device.hid.productName}</h2>
         <p className='error'>Device failed to initialize: {device.error.message}</p>
       </div>
     )
@@ -18,7 +18,7 @@ const DeviceView = observer(({ device }: { device: IDevice }) => {
 
   return (
     <div className='device-info'>
-      <h2>{device.name}</h2>
+      <h2>{device.hid.productName}</h2>
       {device.error && <p className='error'>Error: {device.error.message}</p>}
       {isCapableOf(device, ['serial']) && <p>Serial: {device.capabilityData.serial.serialNumber}</p>}
       {isCapableOf(device, ['firmwareVersion']) && (

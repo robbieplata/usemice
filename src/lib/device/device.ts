@@ -13,7 +13,7 @@ import type { DeviceInfo } from './builder'
 export type DeviceStatus = 'Ready' | 'Failed' | 'Initializing'
 
 export type IDevice = {
-  name: string
+  id: number
   status: DeviceStatus
   error: Error | null
   capabilityData: CapabilityData
@@ -112,7 +112,7 @@ export function isStatus(device: IDevice, status: DeviceStatus): boolean {
 }
 
 export class Device implements IDevice {
-  @observable accessor name: string
+  @observable accessor id: number
   @observable accessor status: DeviceStatus = 'Initializing'
   @observable accessor error: Error | null = null
   @observable accessor capabilityData: CapabilityData = {}
@@ -124,8 +124,8 @@ export class Device implements IDevice {
   readonly _txId: { value: number }
 
   constructor(deviceInfo: DeviceInfo, hid: HIDDevice) {
-    this.name = deviceInfo.name
     this.hid = hid
+    this.id = (hid.vendorId << 16) + hid.productId
     this.supportedCapabilities = deviceInfo.supportedCapabilities
     this.limits = deviceInfo.limits
     this._lock = new Mutex()
@@ -137,7 +137,3 @@ export class Device implements IDevice {
     this.capabilityData[key] = data
   }
 }
-
-const d: DeviceWithCapabilities<'dpi'> = null as never
-
-d.capabilityData.dpi

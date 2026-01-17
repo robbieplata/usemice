@@ -7,7 +7,6 @@ export type DeviceInfo<C extends keyof SupportedCapabilities = keyof SupportedCa
   DeviceWithCapabilities<C>,
   'limits' | 'supportedCapabilities'
 > & {
-  name: string
   vid: number
   pid: number
 }
@@ -15,10 +14,8 @@ export type DeviceInfo<C extends keyof SupportedCapabilities = keyof SupportedCa
 export const defineDevice = <C extends keyof SupportedCapabilities>(info: DeviceInfo<C>): DeviceInfo<C> => info
 export const deviceVariant = <C extends keyof SupportedCapabilities>(
   base: DeviceInfo<C>,
-  name: string,
   pid: number
 ): DeviceInfo<C> => ({
   ...base,
-  name,
   pid
 })

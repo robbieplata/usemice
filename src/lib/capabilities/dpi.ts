@@ -1,7 +1,12 @@
 import { sendReport } from '../device/hid'
 import type { Device, DeviceWithCapabilities } from '../device/device'
 import { RazerReport } from '../device/report'
-import { PID_DEATHADDER_V4_PRO_WIRED, PID_DEATHADDER_V4_PRO_WIRELESS } from '../device/devices'
+import {
+  PID_DEATHADDER_V3_PRO_WIRED_ALT,
+  PID_DEATHADDER_V3_PRO_WIRELESS_ALT,
+  PID_DEATHADDER_V4_PRO_WIRED,
+  PID_DEATHADDER_V4_PRO_WIRELESS
+} from '../device/devices'
 
 export type DpiData = {
   x: number
@@ -16,7 +21,9 @@ export type DpiLimits = {
 export const getDpi = async (device: Device): Promise<DpiData> => {
   switch (device.hid.productId) {
     case PID_DEATHADDER_V4_PRO_WIRED:
-    case PID_DEATHADDER_V4_PRO_WIRELESS: {
+    case PID_DEATHADDER_V4_PRO_WIRELESS:
+    case PID_DEATHADDER_V3_PRO_WIRED_ALT:
+    case PID_DEATHADDER_V3_PRO_WIRELESS_ALT: {
       const report = RazerReport.from(0x04, 0x85, 0x07, new Uint8Array(0))
       const response = await sendReport(device, report)
       const x = (response.args[1] << 8) | response.args[2]
@@ -32,7 +39,9 @@ export const getDpi = async (device: Device): Promise<DpiData> => {
 export const setDpi = async (device: DeviceWithCapabilities<'dpi'>, dpi: DpiData): Promise<void> => {
   switch (device.hid.productId) {
     case PID_DEATHADDER_V4_PRO_WIRED:
-    case PID_DEATHADDER_V4_PRO_WIRELESS: {
+    case PID_DEATHADDER_V4_PRO_WIRELESS:
+    case PID_DEATHADDER_V3_PRO_WIRED_ALT:
+    case PID_DEATHADDER_V3_PRO_WIRELESS_ALT: {
       const args = new Uint8Array(4)
       const { x } = dpi
       args[0] = 0x01

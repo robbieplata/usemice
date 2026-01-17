@@ -1,33 +1,34 @@
-import type { ReadyDevice, FailedDevice, SupportedCapabilities } from './device'
-import { Device, isCapableOf } from './device'
+import { Device } from './device'
 import { RAZER_VID, SUPPORTED_DEVICE_INFO } from './devices'
 import type { DeviceInfo } from './builder'
 import { RAZER_REPORT_ID, RazerReport } from './report'
-import { DEVICE_COMMANDS } from './commands'
+import { find, groupBy, some } from 'lodash'
 
 type Result<T, E> = { value: T; error?: never } | { error: E }
 
-export class OpenHidDeviceError {
+export class OpenHidDeviceError extends Error {
   readonly name = 'OpenHidDeviceError'
   readonly message: string
-  constructor(message: string, readonly cause?: unknown) {
-    this.message = message
-  }
-}
-
-export class RequestHidDeviceError {
-  readonly name = 'RequestHidDeviceError'
-  readonly message: string
   constructor(message: string) {
+    super()
     this.message = message
   }
 }
 
-export class DeviceNotSupportedError {
+export class RequestHidDeviceError extends Error {
+  readonly name = 'RequestHidDeviceError'
+  constructor(message: string) {
+    super(message)
+  }
+}
+
+export class DeviceNotSupportedError extends Error {
   readonly name = 'DeviceNotSupportedError'
-  readonly message: string
-  constructor(readonly vid: number, readonly pid: number) {
-    this.message = `Device not supported: VID=${vid.toString(16)}, PID=${pid.toString(16)}`
+  constructor(
+    readonly vid: number,
+    readonly pid: number
+  ) {
+    super(`Device not supported: VID=${vid.toString(16)}, PID=${pid.toString(16)}`)
   }
 }
 
@@ -39,7 +40,7 @@ export class DeviceInitializationError {
   }
 }
 
-const _delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+const _sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 const _send = async (hid: HIDDevice, report: RazerReport): Promise<Result<undefined, OpenHidDeviceError>> => {
   if (!hid.opened) {
     return { error: new OpenHidDeviceError('Device is not opened') }
@@ -55,53 +56,76 @@ const _receive = async (hid: HIDDevice): Promise<Result<Uint8Array, OpenHidDevic
   return { value: new Uint8Array(view.buffer, view.byteOffset, view.byteLength) }
 }
 
-const selectBestInterface = (sameProduct: HIDDevice[], fallback: HIDDevice): HIDDevice => {
-  const configInterface = sameProduct.find((d) => d.collections.some((c) => (c.featureReports?.length ?? 0) > 0))
-  if (configInterface) {
-    console.log('Found configuration interface with feature reports')
-    return configInterface
-  }
+type HidProductKey = `${number}:${number}`
 
-  const vendorInterface = sameProduct.find((d) => d.collections.some((c) => c.usagePage === 0xff00))
-  if (vendorInterface) {
-    console.log('Found vendor-specific interface (usagePage 0xFF00)')
-    return vendorInterface
-  }
+const productKey = (d: HIDDevice): HidProductKey => `${d.vendorId}:${d.productId}`
 
-  console.warn('No interface with feature reports found, using selected device')
-  return fallback
-}
-
-export const retrieveHidDevice = async (
-  options?: HIDDeviceRequestOptions
-): Promise<Result<HIDDevice, RequestHidDeviceError>> => {
-  const filters = options?.filters ?? [{ vendorId: RAZER_VID }]
-
-  const existingDevices = await navigator.hid.getDevices()
-  const matchingDevice = existingDevices.find((d) =>
-    filters.some(
-      (f) =>
-        (f.vendorId === undefined || f.vendorId === d.vendorId) &&
-        (f.productId === undefined || f.productId === d.productId)
-    )
+const matchesFilters = (d: HIDDevice, filters: HIDDeviceFilter[]) =>
+  some(
+    filters,
+    (f) =>
+      (f.vendorId === undefined || f.vendorId === d.vendorId) &&
+      (f.productId === undefined || f.productId === d.productId)
   )
 
-  if (matchingDevice) {
-    console.log('Using existing HID device')
-    const sameProduct = existingDevices.filter(
-      (d) => d.vendorId === matchingDevice.vendorId && d.productId === matchingDevice.productId
-    )
-    return { value: selectBestInterface(sameProduct, matchingDevice) }
-  }
+const selectBestInterface = (sameProduct: HIDDevice[], fallback: HIDDevice): HIDDevice => {
+  return (
+    find(sameProduct, (dev) => dev.collections.some((c) => (c.featureReports?.length ?? 0) > 0)) ??
+    find(sameProduct, (dev) => dev.collections.some((c) => c.usagePage === 0xff00)) ??
+    fallback
+  )
+}
 
-  const [device] = await navigator.hid.requestDevice(options ?? { filters })
-  if (!device) {
-    return { error: new RequestHidDeviceError('No device selected') }
-  }
+const pickBestInterfaces = (devices: HIDDevice[], fallbackByKey?: Map<HidProductKey, HIDDevice>) => {
+  const groups = groupBy(devices, productKey)
+  return Object.entries(groups).map(([key, sameProduct]) =>
+    selectBestInterface(sameProduct, fallbackByKey?.get(key as HidProductKey) ?? sameProduct[0])
+  )
+}
 
-  const allDevices = await navigator.hid.getDevices()
-  const sameProduct = allDevices.filter((d) => d.vendorId === device.vendorId && d.productId === device.productId)
-  return { value: selectBestInterface(sameProduct, device) }
+const defaultFilters = (options?: HIDDeviceRequestOptions) => options?.filters ?? [{ vendorId: RAZER_VID }]
+
+export const getHidInterfaces = async (
+  options?: HIDDeviceRequestOptions
+): Promise<Result<HIDDevice, RequestHidDeviceError | OpenHidDeviceError>[]> => {
+  const filters = defaultFilters(options)
+  const all = await navigator.hid.getDevices()
+  const matching = all.filter((d) => matchesFilters(d, filters))
+  const bestInterfaces = pickBestInterfaces(matching)
+  const results = []
+  for (const hid of bestInterfaces) {
+    if (!hid.opened) {
+      try {
+        await hid.open()
+      } catch (e) {
+        results.push({ error: new OpenHidDeviceError('Failed to open HID device') })
+        continue
+      }
+    }
+    results.push({ value: hid })
+  }
+  return results
+}
+
+export const requestHidInterface = async (
+  options?: HIDDeviceRequestOptions
+): Promise<Result<HIDDevice, RequestHidDeviceError | OpenHidDeviceError>> => {
+  const filters = defaultFilters(options)
+  try {
+    const [requested] = await navigator.hid.requestDevice(options ?? { filters })
+    if (!requested) return { error: new RequestHidDeviceError('No device selected') }
+    const bestInterface = pickBestInterfaces([requested])[0]
+    if (!bestInterface.opened) {
+      try {
+        await bestInterface.open()
+      } catch {
+        return { error: new OpenHidDeviceError('Failed to open HID device') }
+      }
+    }
+    return { value: bestInterface }
+  } catch {
+    return { error: new RequestHidDeviceError('User cancelled or requestDevice failed') }
+  }
 }
 
 export const identifyDevice = (hid: HIDDevice): DeviceInfo | undefined => {
@@ -110,56 +134,6 @@ export const identifyDevice = (hid: HIDDevice): DeviceInfo | undefined => {
       return info
     }
   }
-}
-
-const createDevice = async (
-  deviceInfo: DeviceInfo,
-  hid: HIDDevice
-): Promise<Result<ReadyDevice | FailedDevice, Error>> => {
-  const device = new Device(deviceInfo, hid)
-  const supportedCapabilities = Object.keys(device.supportedCapabilities) as (keyof SupportedCapabilities)[]
-  const fetchCommands = []
-  for (const cap of supportedCapabilities) {
-    if (isCapableOf(device, [cap])) {
-      const fetchCommand = DEVICE_COMMANDS[cap].fetch(device)
-      fetchCommands.push(fetchCommand)
-    }
-  }
-  return await Promise.all(fetchCommands)
-    .then(() => {
-      device.status = 'Ready'
-      return { value: device as ReadyDevice }
-    })
-    .catch(() => {
-      device.status = 'Failed'
-      return { value: device as FailedDevice }
-    })
-}
-
-export const connectDevice = async (
-  options?: HIDDeviceRequestOptions
-): Promise<Result<ReadyDevice | FailedDevice, DeviceNotSupportedError | RequestHidDeviceError | Error>> => {
-  console.log('Requesting device...')
-  const hidResult = await retrieveHidDevice(options ?? { filters: [{ vendorId: RAZER_VID }] })
-  if (hidResult.error) {
-    return { error: hidResult.error }
-  }
-  const hid = hidResult.value
-
-  if (!hid.opened) {
-    await hid.open()
-  }
-  const deviceInfo = identifyDevice(hid)
-
-  if (!deviceInfo) {
-    return { error: new DeviceNotSupportedError(hid.vendorId, hid.productId) }
-  }
-  const deviceResult = await createDevice(deviceInfo, hid)
-  if (deviceResult.error) {
-    return { error: deviceResult.error }
-  }
-
-  return { value: deviceResult.value }
 }
 
 enum RAZER_STATUS {
@@ -197,7 +171,7 @@ export const sendReport = async <D extends Device>(
     const expectedCommandId = report.commandId
 
     await _send(device.hid, report)
-    await _delay(10)
+    await _sleep(10)
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       const result = await _receive(device.hid)
@@ -217,7 +191,7 @@ export const sendReport = async <D extends Device>(
             16
           )}, id: 0x${responseCommandId.toString(16)}), retry ${attempt + 1}/${maxRetries}`
         )
-        await _delay(10)
+        await _sleep(10)
         continue
       }
 
@@ -227,7 +201,7 @@ export const sendReport = async <D extends Device>(
             attempt + 1
           }/${maxRetries}`
         )
-        await _delay(10)
+        await _sleep(10)
         continue
       }
 
@@ -236,7 +210,7 @@ export const sendReport = async <D extends Device>(
           return response
         case RAZER_STATUS.BUSY:
           console.warn(`Device busy, retry ${attempt + 1}/${maxRetries}...`)
-          await _delay(20)
+          await _sleep(20)
           continue
         case RAZER_STATUS.FAILURE:
           throw new TransactionError('Device returned failure status')
@@ -246,7 +220,7 @@ export const sendReport = async <D extends Device>(
           throw new TransactionError('Command not supported by device')
         default:
           console.log(`Unknown status 0x${status.toString(16)}, retry ${attempt + 1}/${maxRetries}...`)
-          await _delay(20)
+          await _sleep(20)
           continue
       }
     }
