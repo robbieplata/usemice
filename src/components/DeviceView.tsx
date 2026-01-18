@@ -1,5 +1,5 @@
 import { observer } from 'mobx-react-lite'
-import { idleTime, dpi, polling } from '../lib/capabilities'
+import { idleTime, dpi, polling2, polling } from '../lib/capabilities'
 import { isCapableOf, isStatus, type IDevice } from '../lib/device/device'
 
 const DeviceView = observer(({ device }: { device: IDevice }) => {
@@ -61,6 +61,23 @@ const DeviceView = observer(({ device }: { device: IDevice }) => {
               />
             )}
           </div>
+        </div>
+      )}
+      {isCapableOf(device, ['polling2']) && (
+        <div>
+          <p>Polling Rate: {device.capabilityData.polling2.interval} Hz</p>
+          {device.capabilityInfo.polling2 && (
+            <select
+              value={device.capabilityData.polling2.interval}
+              onChange={(e) => polling2.set(device, { interval: parseInt(e.target.value) })}
+            >
+              {device.capabilityInfo.polling2.supportedIntervals.map((interval) => (
+                <option key={interval} value={interval}>
+                  {interval} Hz
+                </option>
+              ))}
+            </select>
+          )}
         </div>
       )}
       {isCapableOf(device, ['polling']) && (

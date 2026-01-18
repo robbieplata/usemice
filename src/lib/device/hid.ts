@@ -158,6 +158,7 @@ export const sendReport = async <D extends Device>(
   maxRetries = 10
 ): Promise<RazerReport> => {
   return device._lock.withLock(async () => {
+    if (report.commandId === 0x85 && report.commandClass === 0x00) console.log(report.toBytes)
     const expectedCommandClass = report.commandClass
     const expectedCommandId = report.commandId
 
@@ -187,6 +188,7 @@ export const sendReport = async <D extends Device>(
 
       switch (status) {
         case RAZER_STATUS.SUCCESS:
+          console.log('Received successful response from device')
           return response
         case RAZER_STATUS.BUSY:
           console.warn(`Device busy, retry ${attempt + 1}/${maxRetries}...`)

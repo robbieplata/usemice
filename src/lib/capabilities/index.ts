@@ -1,12 +1,13 @@
 import type { CapabilityData, DeviceWithCapabilities, SupportedCapabilities } from '../device/device'
 import { getDpi, setDpi } from '../capabilities/dpi'
 import { getDpiStages } from '../capabilities/dpiStages'
-import { getPolling, setPolling } from '../capabilities/polling'
+import { getPolling2, setPolling2 } from './polling2'
 import { getSerial } from '../capabilities/serial'
 import { getFirmwareVersion } from '../capabilities/firmwareVersion'
 import { getChargeLevel } from '../capabilities/chargeLevel'
 import { getChargeStatus } from '../capabilities/chargeStatus'
 import { getIdleTime, setIdleTime } from '../capabilities/idleTime'
+import { getPolling, setPolling } from './polling'
 
 export type CapabilityCommand<C extends keyof SupportedCapabilities, T> = {
   get: (device: DeviceWithCapabilities<C>) => Promise<T>
@@ -40,6 +41,7 @@ export const dpiStages = createCapability('dpiStages', getDpiStages)
 export const firmwareVersion = createCapability('firmwareVersion', getFirmwareVersion)
 export const idleTime = createCapability('idleTime', getIdleTime, setIdleTime)
 export const polling = createCapability('polling', getPolling, setPolling)
+export const polling2 = createCapability('polling2', getPolling2, setPolling2)
 export const serial = createCapability('serial', getSerial)
 
 export const DEVICE_CAPABILITIES: {
@@ -52,5 +54,6 @@ export const DEVICE_CAPABILITIES: {
   firmwareVersion,
   idleTime,
   polling,
+  polling2,
   serial
 }

@@ -1,7 +1,7 @@
 import { action, observable } from 'mobx'
 import type { DpiData, DpiInfo } from '../capabilities/dpi'
 import type { DpiStagesData, DpiStagesInfo } from '../capabilities/dpiStages'
-import type { PollingData, PollingInfo } from '../capabilities/polling'
+import type { Polling2Data, Polling2Info } from '../capabilities/polling2'
 import { Mutex } from '../mutex'
 import type { SerialData, SerialInfo } from '../capabilities/serial'
 import type { FirmwareVersionInfo, FirmwareVersionData } from '../capabilities/firmwareVersion'
@@ -9,6 +9,7 @@ import type { ChargeLevelData, ChargeLevelInfo } from '../capabilities/chargeLev
 import type { ChargeStatusData, ChargeStatusInfo } from '../capabilities/chargeStatus'
 import type { IdleTimeData, IdleTimeInfo } from '../capabilities/idleTime'
 import type { DeviceInfo } from './builder'
+import type { PollingData, PollingInfo } from '../capabilities/polling'
 
 export type DeviceStatus = 'Ready' | 'Failed' | 'Initializing'
 
@@ -42,6 +43,7 @@ export type SupportedCapabilities = {
   firmwareVersion: boolean
   idleTime: boolean
   polling: boolean
+  polling2: boolean
   serial: boolean
 }
 
@@ -53,6 +55,7 @@ export type CapabilityData = {
   firmwareVersion?: FirmwareVersionData
   idleTime?: IdleTimeData
   polling?: PollingData
+  polling2?: Polling2Data
   serial?: SerialData
 }
 
@@ -64,6 +67,7 @@ export type CapabilityInfo = {
   firmwareVersion?: FirmwareVersionInfo
   idleTime?: IdleTimeInfo
   polling?: PollingInfo
+  polling2?: Polling2Info
   serial?: SerialInfo
 }
 
