@@ -7,7 +7,7 @@ export type PollingData = {
   interval: number
 }
 
-export type PollingLimits = {
+export type PollingInfo = {
   supportedIntervals: number[]
 }
 

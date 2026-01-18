@@ -6,7 +6,7 @@ export type IdleTimeData = {
   seconds: number
 }
 
-export type IdleTimeLimits = {
+export type IdleTimeInfo = {
   minSeconds: number
   maxSeconds: number
 }
@@ -19,7 +19,7 @@ export const getIdleTime = async (device: DeviceWithCapabilities<'idleTime'>): P
 
 export const setIdleTime = async (device: DeviceWithCapabilities<'idleTime'>, data: IdleTimeData): Promise<void> => {
   const args = new Uint8Array(2)
-  const { minSeconds, maxSeconds } = device.limits.idleTime
+  const { minSeconds, maxSeconds } = device.capabilityInfo.idleTime
   if (data.seconds < minSeconds || data.seconds > maxSeconds) {
     throw new Error(`Idle time seconds must be between ${minSeconds} and ${maxSeconds}`)
   }

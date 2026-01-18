@@ -5,7 +5,7 @@ import type { DeviceWithCapabilities, SupportedCapabilities } from './device'
 
 export type DeviceInfo<C extends keyof SupportedCapabilities = keyof SupportedCapabilities> = Pick<
   DeviceWithCapabilities<C>,
-  'limits' | 'supportedCapabilities'
+  'capabilityInfo' | 'supportedCapabilities'
 > & {
   vid: number
   pid: number

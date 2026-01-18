@@ -38,8 +38,8 @@ const DeviceView = observer(({ device }: { device: IDevice }) => {
           <input
             type='range'
             step={1}
-            min={device.limits.idleTime.minSeconds}
-            max={device.limits.idleTime.maxSeconds}
+            min={device.capabilityInfo.idleTime.minSeconds}
+            max={device.capabilityInfo.idleTime.maxSeconds}
             value={device.capabilityData.idleTime.seconds}
             onChange={(e) =>
               device.capabilityData.idleTime && idleTime.set(device, { seconds: parseInt(e.target.value) })
@@ -51,11 +51,11 @@ const DeviceView = observer(({ device }: { device: IDevice }) => {
         <div>
           <p>Dpi: {device.capabilityData.dpi.x}</p>
           <div>
-            {device.limits.dpi && (
+            {device.capabilityInfo.dpi && (
               <input
                 type='range'
-                min={device.limits.dpi.minDpi}
-                max={device.limits.dpi.maxDpi}
+                min={device.capabilityInfo.dpi.minDpi}
+                max={device.capabilityInfo.dpi.maxDpi}
                 value={device.capabilityData.dpi.x}
                 onChange={(e) => dpi.set(device, { x: parseInt(e.target.value), y: parseInt(e.target.value) })}
               />
@@ -66,12 +66,12 @@ const DeviceView = observer(({ device }: { device: IDevice }) => {
       {isCapableOf(device, ['polling']) && (
         <div>
           <p>Polling Rate: {device.capabilityData.polling.interval} Hz</p>
-          {device.limits.polling && (
+          {device.capabilityInfo.polling && (
             <select
               value={device.capabilityData.polling.interval}
               onChange={(e) => polling.set(device, { interval: parseInt(e.target.value) })}
             >
-              {device.limits.polling.supportedIntervals.map((interval) => (
+              {device.capabilityInfo.polling.supportedIntervals.map((interval) => (
                 <option key={interval} value={interval}>
                   {interval} Hz
                 </option>

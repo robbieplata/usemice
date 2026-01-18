@@ -19,7 +19,7 @@ const DEATHADDER_V4_PRO_WIRED = defineDevice({
     chargeStatus: true,
     idleTime: true
   },
-  limits: {
+  capabilityInfo: {
     dpi: { minDpi: 100, maxDpi: 45_000 },
     dpiStages: { minDpi: 100, maxDpi: 45_000, maxStages: 5 },
     polling: { supportedIntervals: [125, 250, 500, 1_000, 2_000, 4_000, 8_000] },
@@ -47,7 +47,7 @@ const DEATHADDER_V3_PRO_WIRED_ALT = defineDevice({
     chargeStatus: true,
     idleTime: true
   },
-  limits: {
+  capabilityInfo: {
     dpi: { minDpi: 100, maxDpi: 45_000 },
     dpiStages: { minDpi: 100, maxDpi: 45_000, maxStages: 5 },
     polling: { supportedIntervals: [125, 250, 500, 1_000, 2_000, 4_000, 8_000] },

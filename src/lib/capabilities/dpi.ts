@@ -7,7 +7,7 @@ export type DpiData = {
   y: number
 }
 
-export type DpiLimits = {
+export type DpiInfo = {
   minDpi: number
   maxDpi: number
 }

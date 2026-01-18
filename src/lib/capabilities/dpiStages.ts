@@ -7,7 +7,7 @@ export type DpiStagesData = {
   activeStage: number
 }
 
-export type DpiStagesLimits = {
+export type DpiStagesInfo = {
   minDpi: number
   maxDpi: number
   maxStages: number

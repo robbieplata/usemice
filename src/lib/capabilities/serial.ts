@@ -12,7 +12,7 @@ export type SerialData = {
   serialNumber: string
 }
 
-export type SerialLimits = never
+export type SerialInfo = never
 
 export const getSerial = async (device: DeviceWithCapabilities<'serial'>): Promise<SerialData> => {
   switch (device.hid.productId) {

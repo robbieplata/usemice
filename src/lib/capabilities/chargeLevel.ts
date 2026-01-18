@@ -6,7 +6,7 @@ export type ChargeLevelData = {
   percentage: number
 }
 
-export type ChargeLevelLimits = never
+export type ChargeLevelInfo = never
 
 export const getChargeLevel = async (device: DeviceWithCapabilities<'chargeLevel'>): Promise<ChargeLevelData> => {
   const report = RazerReport.from(0x07, 0x80, 0x02, new Uint8Array(0))

@@ -1,13 +1,13 @@
 import { action, observable } from 'mobx'
-import type { DpiData, DpiLimits } from '../capabilities/dpi'
-import type { DpiStagesData, DpiStagesLimits } from '../capabilities/dpiStages'
-import type { PollingData, PollingLimits } from '../capabilities/polling'
+import type { DpiData, DpiInfo } from '../capabilities/dpi'
+import type { DpiStagesData, DpiStagesInfo } from '../capabilities/dpiStages'
+import type { PollingData, PollingInfo } from '../capabilities/polling'
 import { Mutex } from '../mutex'
-import type { SerialData, SerialLimits } from '../capabilities/serial'
-import type { FirmwareVersionLimits, FirmwareVersionData } from '../capabilities/firmwareVersion'
-import type { ChargeLevelData, ChargeLevelLimits } from '../capabilities/chargeLevel'
-import type { ChargeStatusData, ChargeStatusLimits } from '../capabilities/chargeStatus'
-import type { IdleTimeData, IdleTimeLimits } from '../capabilities/idleTime'
+import type { SerialData, SerialInfo } from '../capabilities/serial'
+import type { FirmwareVersionInfo, FirmwareVersionData } from '../capabilities/firmwareVersion'
+import type { ChargeLevelData, ChargeLevelInfo } from '../capabilities/chargeLevel'
+import type { ChargeStatusData, ChargeStatusInfo } from '../capabilities/chargeStatus'
+import type { IdleTimeData, IdleTimeInfo } from '../capabilities/idleTime'
 import type { DeviceInfo } from './builder'
 
 export type DeviceStatus = 'Ready' | 'Failed' | 'Initializing'
@@ -19,7 +19,7 @@ export type IDevice = {
   capabilityData: CapabilityData
   hid: HIDDevice
   supportedCapabilities: SupportedCapabilities
-  limits: CapabilityLimits
+  capabilityInfo: CapabilityInfo
   _lock: Mutex
   _txId: { value: number }
   setCapabilityData<K extends keyof CapabilityData>(key: K, data: CapabilityData[K]): void
@@ -56,19 +56,19 @@ export type CapabilityData = {
   serial?: SerialData
 }
 
-export type CapabilityLimits = {
-  chargeLevel?: ChargeLevelLimits
-  chargeStatus?: ChargeStatusLimits
-  dpi?: DpiLimits
-  dpiStages?: DpiStagesLimits
-  firmwareVersion?: FirmwareVersionLimits
-  idleTime?: IdleTimeLimits
-  polling?: PollingLimits
-  serial?: SerialLimits
+export type CapabilityInfo = {
+  chargeLevel?: ChargeLevelInfo
+  chargeStatus?: ChargeStatusInfo
+  dpi?: DpiInfo
+  dpiStages?: DpiStagesInfo
+  firmwareVersion?: FirmwareVersionInfo
+  idleTime?: IdleTimeInfo
+  polling?: PollingInfo
+  serial?: SerialInfo
 }
 
-export type HydratedCapabilityLimits<C extends keyof SupportedCapabilities> = {
-  [K in Extract<C, keyof CapabilityLimits>]-?: NonNullable<CapabilityLimits[K]>
+export type HydratedCapabilityInfo<C extends keyof SupportedCapabilities> = {
+  [K in Extract<C, keyof CapabilityInfo>]-?: NonNullable<CapabilityInfo[K]>
 }
 
 export type PossibleCapabilityData<C extends keyof SupportedCapabilities> = {
@@ -81,13 +81,13 @@ export type HydratedCapabilityData<C extends keyof SupportedCapabilities> = {
 
 export type DeviceWithCapabilities<C extends keyof SupportedCapabilities> = IDevice & {
   supportedCapabilities: SupportedCapabilities
-  limits: HydratedCapabilityLimits<C>
+  capabilityInfo: HydratedCapabilityInfo<C>
   capabilityData: PossibleCapabilityData<C>
 }
 
 export type ReadyDeviceWithCapabilities<C extends keyof SupportedCapabilities> = ReadyDevice & {
   supportedCapabilities: SupportedCapabilities
-  limits: HydratedCapabilityLimits<C>
+  capabilityInfo: HydratedCapabilityInfo<C>
   capabilityData: HydratedCapabilityData<C>
 }
 
@@ -119,7 +119,7 @@ export class Device implements IDevice {
 
   readonly hid: HIDDevice
   readonly supportedCapabilities: SupportedCapabilities
-  readonly limits: CapabilityLimits
+  readonly capabilityInfo: CapabilityInfo
   readonly _lock: Mutex
   readonly _txId: { value: number }
 
@@ -127,7 +127,7 @@ export class Device implements IDevice {
     this.hid = hid
     this.id = (hid.vendorId << 16) + hid.productId
     this.supportedCapabilities = deviceInfo.supportedCapabilities
-    this.limits = deviceInfo.limits
+    this.capabilityInfo = deviceInfo.capabilityInfo
     this._lock = new Mutex()
     this._txId = { value: 1 }
   }
