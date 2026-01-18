@@ -2,7 +2,7 @@ import { action, computed, flow, observable } from 'mobx'
 import { Device, isCapableOf, type IDevice, type SupportedCapabilities } from '../lib/device/device'
 import { DeviceNotSupportedError, getHidInterfaces, identifyDevice, requestHidInterface } from '../lib/device/hid'
 import { RAZER_VID } from '../lib/device/devices'
-import { DEVICE_COMMANDS } from '../lib/device/commands'
+import { DEVICE_CAPABILITIES } from '../lib/capabilities'
 
 export class DeviceStore {
   @observable accessor devices: IDevice[] = []
@@ -57,7 +57,7 @@ export class DeviceStore {
     const fetchCommands = []
     for (const cap of supportedCapabilities) {
       if (isCapableOf(device, [cap])) {
-        const fetchCommand = DEVICE_COMMANDS[cap].fetch(device)
+        const fetchCommand = DEVICE_CAPABILITIES[cap].get(device)
         fetchCommands.push(fetchCommand)
       }
     }

@@ -1,5 +1,5 @@
 import { observer } from 'mobx-react-lite'
-import { idleTime, dpi, polling } from '../lib/device/commands'
+import { idleTime, dpi, polling } from '../lib/capabilities'
 import { isCapableOf, isStatus, type IDevice } from '../lib/device/device'
 
 const DeviceView = observer(({ device }: { device: IDevice }) => {

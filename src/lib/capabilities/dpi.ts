@@ -1,13 +1,6 @@
 import { sendReport } from '../device/hid'
 import type { Device, DeviceWithCapabilities } from '../device/device'
 import { RazerReport } from '../device/report'
-import {
-  PID_DEATHADDER_V3_PRO_WIRED_ALT,
-  PID_DEATHADDER_V3_PRO_WIRELESS_ALT,
-  PID_DEATHADDER_V4_PRO_WIRED,
-  PID_DEATHADDER_V4_PRO_WIRELESS
-} from '../device/devices'
-
 export type DpiData = {
   x: number
   y: number
@@ -19,44 +12,24 @@ export type DpiLimits = {
 }
 
 export const getDpi = async (device: Device): Promise<DpiData> => {
-  switch (device.hid.productId) {
-    case PID_DEATHADDER_V4_PRO_WIRED:
-    case PID_DEATHADDER_V4_PRO_WIRELESS:
-    case PID_DEATHADDER_V3_PRO_WIRED_ALT:
-    case PID_DEATHADDER_V3_PRO_WIRELESS_ALT: {
-      const report = RazerReport.from(0x04, 0x85, 0x07, new Uint8Array(0))
-      const response = await sendReport(device, report)
-      const x = (response.args[1] << 8) | response.args[2]
-      const y = (response.args[3] << 8) | response.args[4]
-      return { x, y }
-    }
-
-    default:
-      throw new Error(`No DPI implementation for device PID: 0x${device.hid.productId.toString(16)}`)
-  }
+  const report = RazerReport.from(0x04, 0x85, 0x07, new Uint8Array(0))
+  const response = await sendReport(device, report)
+  const x = (response.args[1] << 8) | response.args[2]
+  const y = (response.args[3] << 8) | response.args[4]
+  return { x, y }
 }
 
 export const setDpi = async (device: DeviceWithCapabilities<'dpi'>, dpi: DpiData): Promise<void> => {
-  switch (device.hid.productId) {
-    case PID_DEATHADDER_V4_PRO_WIRED:
-    case PID_DEATHADDER_V4_PRO_WIRELESS:
-    case PID_DEATHADDER_V3_PRO_WIRED_ALT:
-    case PID_DEATHADDER_V3_PRO_WIRELESS_ALT: {
-      const args = new Uint8Array(4)
-      const { x } = dpi
-      args[0] = 0x01
-      args[1] = (x >> 8) & 0xff
-      args[2] = x & 0xff
-      args[3] = (x >> 8) & 0xff
-      args[4] = x & 0xff
-      args[5] = 0x00
-      args[6] = 0x00
-      const report = RazerReport.from(0x04, 0x05, 0x07, args)
-      await sendReport(device, report)
-      return
-    }
-
-    default:
-      throw new Error(`No DPI implementation for device PID: 0x${device.hid.productId.toString(16)}`)
-  }
+  const args = new Uint8Array(4)
+  const { x } = dpi
+  args[0] = 0x01
+  args[1] = (x >> 8) & 0xff
+  args[2] = x & 0xff
+  args[3] = (x >> 8) & 0xff
+  args[4] = x & 0xff
+  args[5] = 0x00
+  args[6] = 0x00
+  const report = RazerReport.from(0x04, 0x05, 0x07, args)
+  await sendReport(device, report)
+  return
 }

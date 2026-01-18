@@ -1,12 +1,6 @@
 import { sendReport } from '../device/hid'
 import type { DeviceWithCapabilities } from '../device/device'
 import { RazerReport } from '../device/report'
-import {
-  PID_DEATHADDER_V3_PRO_WIRED_ALT,
-  PID_DEATHADDER_V3_PRO_WIRELESS_ALT,
-  PID_DEATHADDER_V4_PRO_WIRED,
-  PID_DEATHADDER_V4_PRO_WIRELESS
-} from '../device/devices'
 
 export type DpiStagesData = {
   dpiLevels: [number, number][]
@@ -35,34 +29,24 @@ export type DpiStagesLimits = {
  * 00 00 reserved
  */
 export const getDpiStages = async (device: DeviceWithCapabilities<'dpiStages'>): Promise<DpiStagesData> => {
-  switch (device.hid.productId) {
-    case PID_DEATHADDER_V4_PRO_WIRED:
-    case PID_DEATHADDER_V4_PRO_WIRELESS:
-    case PID_DEATHADDER_V3_PRO_WIRED_ALT:
-    case PID_DEATHADDER_V3_PRO_WIRELESS_ALT: {
-      const report = RazerReport.from(0x04, 0x86, 0x26, new Uint8Array([0x01]))
-      const response = await sendReport(device, report)
+  const report = RazerReport.from(0x04, 0x86, 0x26, new Uint8Array([0x01]))
+  const response = await sendReport(device, report)
 
-      const args = response.args
-      const dataSize = Math.min(response.dataSize)
+  const args = response.args
+  const dataSize = Math.min(response.dataSize)
 
-      const activeStage = args[1]
-      const stagesCount = args[2]
-      const dpiLevels: [number, number][] = []
+  const activeStage = args[1]
+  const stagesCount = args[2]
+  const dpiLevels: [number, number][] = []
 
-      let argsOffset = 4
-      for (let i = 0; i < stagesCount; i++) {
-        if (argsOffset + 4 > dataSize) break
-        const dpiX = (args[argsOffset] << 8) | args[argsOffset + 1]
-        const dpiY = (args[argsOffset + 2] << 8) | args[argsOffset + 3]
-        dpiLevels.push([dpiX, dpiY])
-        argsOffset += 7
-      }
-
-      return { dpiLevels, activeStage }
-    }
-
-    default:
-      throw new Error(`No DPI Stages implementation for device PID: 0x${device.hid.productId.toString(16)}`)
+  let argsOffset = 4
+  for (let i = 0; i < stagesCount; i++) {
+    if (argsOffset + 4 > dataSize) break
+    const dpiX = (args[argsOffset] << 8) | args[argsOffset + 1]
+    const dpiY = (args[argsOffset + 2] << 8) | args[argsOffset + 3]
+    dpiLevels.push([dpiX, dpiY])
+    argsOffset += 7
   }
+
+  return { dpiLevels, activeStage }
 }
