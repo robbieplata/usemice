@@ -4,13 +4,21 @@ const PAYLOAD_OFFSET = 8
 const CRC_INDEX = 88
 const MAX_ARGS = CRC_INDEX - PAYLOAD_OFFSET
 
+type RazerReportParams = {
+  idByte?: number
+  commandClass: number
+  commandId: number
+  dataSize: number
+  args: Uint8Array
+}
+
 export class RazerReport {
   private readonly bytes = new Uint8Array(RAZER_REPORT_SIZE)
 
-  static from(commandClass: number, commandId: number, dataSize: number, args: Uint8Array): RazerReport {
+  static from({ idByte, commandClass, commandId, dataSize, args }: RazerReportParams): RazerReport {
     const r = new RazerReport()
     r.status = 0x00
-    r.transactionId = 0x00
+    r.idByte = idByte ?? 0x00
     r.commandClass = commandClass
     r.commandId = commandId
     r.dataSize = dataSize
@@ -64,10 +72,11 @@ export class RazerReport {
     this.setByte(0, v)
   }
 
-  get transactionId() {
+  // aka the transaction id, but for razer idByte is device specific
+  get idByte() {
     return this.getByte(1)
   }
-  set transactionId(v: number) {
+  set idByte(v: number) {
     this.setByte(1, v)
   }
 

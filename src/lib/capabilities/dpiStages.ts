@@ -29,7 +29,7 @@ export type DpiStagesInfo = {
  * 00 00 reserved
  */
 export const getDpiStages = async (device: DeviceWithCapabilities<'dpiStages'>): Promise<DpiStagesData> => {
-  const report = RazerReport.from(0x04, 0x86, 0x26, new Uint8Array([0x01]))
+  const report = RazerReport.from({ commandClass: 0x04, commandId: 0x86, dataSize: 0x26, args: new Uint8Array([0x01]) })
   const response = await sendReport(device, report)
 
   const args = response.args

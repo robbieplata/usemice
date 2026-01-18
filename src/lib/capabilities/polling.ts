@@ -39,38 +39,31 @@ const MAPPING: Record<number, number> = {
 }
 
 export const getPolling = async (device: DeviceWithCapabilities<'polling'>): Promise<PollingData> => {
-  switch (device.hid.productId) {
-    case PID_DEATHADDER_V4_PRO_WIRED:
-    case PID_DEATHADDER_V4_PRO_WIRELESS: {
-      const report = RazerReport.from(0x00, 0xc0, 0x01, new Uint8Array([0x00]))
-      const response = await sendReport(device, report)
-      const value = response.args[1]
-      const interval = MAPPING[value]
-      if (interval === undefined) {
-        throw new PollingError(`Unsupported polling interval received: 0x${value.toString(16)}`)
-      }
-      return { interval }
-    }
-
-    default:
-      throw new Error(`No Polling implementation for device PID: 0x${device.hid.productId.toString(16)}`)
+  const report = RazerReport.from({
+    commandClass: 0x00,
+    commandId: 0xc0,
+    dataSize: 0x01,
+    args: new Uint8Array([0x00])
+  })
+  const response = await sendReport(device, report)
+  const value = response.args[1]
+  const interval = MAPPING[value]
+  if (interval === undefined) {
+    throw new PollingError(`Unsupported polling interval received: 0x${value.toString(16)}`)
   }
+  return { interval }
 }
 
 export const setPolling = async (device: Device, data: PollingData): Promise<void> => {
-  switch (device.hid.productId) {
-    case PID_DEATHADDER_V4_PRO_WIRED:
-    case PID_DEATHADDER_V4_PRO_WIRELESS: {
-      const value = MAPPING[data.interval]
-      if (value === undefined) {
-        throw new PollingError('Unsupported polling interval set')
-      }
-      const report = RazerReport.from(0x00, 0x40, 0x02, new Uint8Array([0x00, value]))
-      await sendReport(device, report)
-      return
-    }
-
-    default:
-      throw new Error(`No Polling implementation for device PID: 0x${device.hid.productId.toString(16)}`)
+  const value = MAPPING[data.interval]
+  if (value === undefined) {
+    throw new PollingError('Unsupported polling interval set')
   }
+  const report = RazerReport.from({
+    commandClass: 0x00,
+    commandId: 0x40,
+    dataSize: 0x02,
+    args: new Uint8Array([0x00, value])
+  })
+  await sendReport(device, report)
 }
