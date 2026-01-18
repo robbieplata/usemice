@@ -11,6 +11,7 @@ import {
 export type SerialData = {
   serialNumber: string
 }
+
 export type SerialLimits = never
 
 export const getSerial = async (device: DeviceWithCapabilities<'serial'>): Promise<SerialData> => {

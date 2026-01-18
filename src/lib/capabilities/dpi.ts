@@ -1,6 +1,7 @@
 import { sendReport } from '../device/hid'
 import type { Device, DeviceWithCapabilities } from '../device/device'
 import { RazerReport } from '../device/report'
+
 export type DpiData = {
   x: number
   y: number
@@ -20,16 +21,14 @@ export const getDpi = async (device: Device): Promise<DpiData> => {
 }
 
 export const setDpi = async (device: DeviceWithCapabilities<'dpi'>, dpi: DpiData): Promise<void> => {
-  const args = new Uint8Array(4)
-  const { x } = dpi
-  args[0] = 0x01
-  args[1] = (x >> 8) & 0xff
-  args[2] = x & 0xff
-  args[3] = (x >> 8) & 0xff
-  args[4] = x & 0xff
-  args[5] = 0x00
-  args[6] = 0x00
-  const report = RazerReport.from(0x04, 0x05, 0x07, args)
+  const report = RazerReport.from(0x04, 0x05, 0x07, new Uint8Array(0))
+  const { x, y } = dpi
+  report.args[0] = 0x01
+  report.args[1] = (x >> 8) & 0xff
+  report.args[2] = x & 0xff
+  report.args[3] = (y >> 8) & 0xff
+  report.args[4] = y & 0xff
+  report.args[5] = 0x00
+  report.args[6] = 0x00
   await sendReport(device, report)
-  return
 }

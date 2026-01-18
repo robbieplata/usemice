@@ -145,12 +145,6 @@ enum RAZER_STATUS {
   NOT_SUPPORTED = 0x05
 }
 
-const getNextTxId = (txId: { value: number }): number => {
-  const current = txId.value
-  txId.value = (current % 255) + 1
-  return current
-}
-
 class TransactionError extends Error {
   readonly name = 'TransactionError'
   constructor(message: string) {
@@ -164,9 +158,6 @@ export const sendReport = async <D extends Device>(
   maxRetries = 10
 ): Promise<RazerReport> => {
   return device._lock.withLock(async () => {
-    const txId = getNextTxId(device._txId)
-    report.transactionId = txId
-    const expectedTxId = txId
     const expectedCommandClass = report.commandClass
     const expectedCommandId = report.commandId
 
@@ -180,7 +171,6 @@ export const sendReport = async <D extends Device>(
       }
       const bytes = result.value
       const response = RazerReport.fromBytes(bytes)
-      const responseTxId = response.transactionId
       const status = response.status
       const responseCommandClass = response.commandClass
       const responseCommandId = response.commandId
@@ -190,16 +180,6 @@ export const sendReport = async <D extends Device>(
           `Mismatched command in response (class: 0x${responseCommandClass.toString(
             16
           )}, id: 0x${responseCommandId.toString(16)}), retry ${attempt + 1}/${maxRetries}`
-        )
-        await _sleep(10)
-        continue
-      }
-
-      if (responseTxId !== expectedTxId) {
-        console.warn(
-          `Stale report (tx: 0x${responseTxId.toString(16)}, expected: 0x${expectedTxId.toString(16)}), retry ${
-            attempt + 1
-          }/${maxRetries}`
         )
         await _sleep(10)
         continue
