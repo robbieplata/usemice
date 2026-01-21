@@ -1,5 +1,12 @@
 import { action, computed, flow, observable, reaction, type IReactionDisposer } from 'mobx'
-import { Device, isCapableOf, type IDevice, type SupportedCapabilities } from '../lib/device/device'
+import {
+  Device,
+  isCapableOf,
+  type FailedDevice,
+  type IDevice,
+  type ReadyDevice,
+  type SupportedCapabilities
+} from '../lib/device/device'
 import {
   DeviceNotSupportedError,
   getHidInterfaces,
@@ -52,7 +59,6 @@ export class DeviceStore {
     navigator.hid.addEventListener('connect', this.onConnect)
     navigator.hid.addEventListener('disconnect', this.onDisconnect)
     getHidInterfaces().then((d) => {
-      console.log('HID device connected:')
       d.forEach(this.addDevice)
     })
   }
@@ -86,7 +92,7 @@ export class DeviceStore {
 
   @computed
   get selectedDevice(): IDevice | undefined {
-    return this.devices.find((d) => d.id === this.selectedDeviceId)
+    return this.devices.find((d): d is IDevice => d.id === this.selectedDeviceId)
   }
 
   @flow.bound
@@ -98,7 +104,7 @@ export class DeviceStore {
     if (!deviceInfo) {
       return { error: new DeviceNotSupportedError(hid.vendorId, hid.productId) }
     }
-    const device = new Device(deviceInfo, hid)
+    const device = new Device(deviceInfo, hid) as IDevice
     this.devices.push(device)
 
     if (!hid.opened) {

@@ -1,5 +1,5 @@
 import { sendReport } from '../device/hid'
-import type { Device, DeviceWithCapabilities } from '../device/device'
+import type { DeviceWithCapabilities } from '../device/device'
 import { RazerReport } from '../device/report'
 
 export type Polling2Data = {

@@ -163,7 +163,7 @@ export const sendReport = async <D extends Device>(
       throw result.error
     }
 
-    await _sleep(10)
+    await _sleep(20)
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       const result = await _receive(device.hid)

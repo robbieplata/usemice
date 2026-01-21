@@ -11,29 +11,33 @@ import type { IdleTimeData, IdleTimeInfo } from '../capabilities/idleTime'
 import type { DeviceInfo } from './builder'
 import type { PollingData, PollingInfo } from '../capabilities/polling'
 
-export type DeviceStatus = 'Ready' | 'Failed' | 'Initializing'
-
-export type IDevice = {
+type DeviceBase = {
   id: number
-  status: DeviceStatus
-  error: Error | null
-  capabilityData: CapabilityData
   hid: HIDDevice
   supportedCapabilities: SupportedCapabilities
   capabilityInfo: CapabilityInfo
+  capabilityData: CapabilityData
   _lock: Mutex
-  _txId: { value: number }
   setCapabilityData<K extends keyof CapabilityData>(key: K, data: CapabilityData[K]): void
 }
 
-export type ReadyDevice = IDevice & {
-  status: 'Ready'
+export type InitializingDevice = DeviceBase & {
+  status: 'Initializing'
+  error: null
 }
 
-export type FailedDevice = IDevice & {
+export type ReadyDevice = DeviceBase & {
+  status: 'Ready'
+  error: null
+}
+
+export type FailedDevice = DeviceBase & {
   status: 'Failed'
   error: Error
 }
+
+export type IDevice = InitializingDevice | ReadyDevice | FailedDevice
+export type DeviceStatus = IDevice['status']
 
 export type SupportedCapabilities = {
   chargeLevel: boolean
@@ -109,13 +113,14 @@ export function isCapableOf<C extends keyof SupportedCapabilities>(device: IDevi
   return capabilities.every((cap) => device.supportedCapabilities[cap] === true)
 }
 
-export function isStatus(device: IDevice, status: 'Failed'): device is FailedDevice
 export function isStatus(device: IDevice, status: 'Ready'): device is ReadyDevice
+export function isStatus(device: IDevice, status: 'Failed'): device is FailedDevice
+export function isStatus(device: IDevice, status: 'Initializing'): device is InitializingDevice
 export function isStatus(device: IDevice, status: DeviceStatus): boolean {
   return device.status === status
 }
 
-export class Device implements IDevice {
+export class Device implements DeviceBase {
   @observable accessor id: number
   @observable accessor status: DeviceStatus = 'Initializing'
   @observable accessor error: Error | null = null
@@ -125,7 +130,6 @@ export class Device implements IDevice {
   readonly supportedCapabilities: SupportedCapabilities
   readonly capabilityInfo: CapabilityInfo
   readonly _lock: Mutex
-  readonly _txId: { value: number }
 
   constructor(deviceInfo: DeviceInfo, hid: HIDDevice) {
     this.hid = hid
@@ -133,7 +137,6 @@ export class Device implements IDevice {
     this.supportedCapabilities = deviceInfo.supportedCapabilities
     this.capabilityInfo = deviceInfo.capabilityInfo
     this._lock = new Mutex()
-    this._txId = { value: 1 }
   }
 
   @action

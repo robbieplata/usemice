@@ -26,5 +26,6 @@ export const setIdleTime = async (device: DeviceWithCapabilities<'idleTime'>, da
   args[0] = (data.seconds >> 8) & 0xff
   args[1] = data.seconds & 0xff
   const report = RazerReport.from({ commandClass: 0x07, commandId: 0x03, dataSize: 0x02, args })
+  console.log('Setting idle time to', data.seconds)
   await sendReport(device, report)
 }
