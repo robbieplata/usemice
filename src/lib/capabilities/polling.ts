@@ -38,7 +38,6 @@ export const getPolling = async (device: DeviceWithCapabilities<'polling'>): Pro
   })
   const response = await sendReport(device, report)
   const value = response.args[0]
-  console.log('Received polling interval from device:', response.toBytes)
   const interval = MAPPING[value]
   if (interval === undefined) {
     throw new PollingError(`Unsupported polling interval received: 0x${value.toString(16)}`)
