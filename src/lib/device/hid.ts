@@ -91,56 +91,33 @@ const pickBestInterfaces = (devices: HIDDevice[]): HIDDevice[] => {
 
 const defaultFilters = (options?: HIDDeviceRequestOptions) => options?.filters ?? [{ vendorId: RAZER_VID }]
 
-export const getHidInterfaces = async (
-  options?: HIDDeviceRequestOptions
-): Promise<Result<HIDDevice, RequestHidDeviceError | OpenHidDeviceError>[]> => {
+export const getHidInterfaces = async (options?: HIDDeviceRequestOptions): Promise<HIDDevice[]> => {
   const filters = defaultFilters(options)
 
   const all = await navigator.hid.getDevices()
   const matching = all.filter((d) => matchesFilters(d, filters))
-  const bestInterfaces = pickBestInterfaces(matching)
-
-  const results: Result<HIDDevice, RequestHidDeviceError | OpenHidDeviceError>[] = []
-
-  for (const hid of bestInterfaces) {
-    if (!hid.opened) {
-      try {
-        await hid.open()
-      } catch {
-        results.push({ error: new OpenHidDeviceError('Failed to open HID device') })
-        continue
-      }
-    }
-    results.push({ value: hid })
-  }
-
-  return results
+  return pickBestInterfaces(matching)
 }
 
 export const requestHidInterface = async (
   options?: HIDDeviceRequestOptions
-): Promise<Result<HIDDevice, RequestHidDeviceError | OpenHidDeviceError>> => {
+): Promise<Result<HIDDevice, RequestHidDeviceError>> => {
   const filters = defaultFilters(options)
 
   try {
     const reqOptions: HIDDeviceRequestOptions = { ...(options ?? {}), filters }
-
     const [requested] = await navigator.hid.requestDevice(reqOptions)
     if (!requested) return { error: new RequestHidDeviceError('No device selected') }
+    const vid = requested.vendorId
+    const pid = requested.productId
+    const bestInterface = await navigator.hid.getDevices().then((devices) => {
+      const sameProduct = devices.filter((d) => d.vendorId === vid && d.productId === pid)
+      return selectBestInterface(sameProduct)
+    })
 
-    const bestInterface = selectBestInterface([requested])
     if (!bestInterface) {
       return { error: new RequestHidDeviceError('No compatible HID interface found') }
     }
-
-    if (!bestInterface.opened) {
-      try {
-        await bestInterface.open()
-      } catch {
-        return { error: new OpenHidDeviceError('Failed to open HID device') }
-      }
-    }
-
     return { value: bestInterface }
   } catch {
     return { error: new RequestHidDeviceError('User cancelled or requestDevice failed') }

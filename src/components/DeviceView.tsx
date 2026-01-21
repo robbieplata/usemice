@@ -15,6 +15,21 @@ const DeviceView = observer(({ device }: { device: IDevice }) => {
     deviceStore: { removeDevice }
   } = useStore()
 
+  const setDpiDebounced = useMemo(
+    () =>
+      debounce((index: number, value: number) => {
+        if (isStatus(device, 'Ready') && isCapableOf(device, ['dpiStages'])) {
+          const newDpiLevels = [...device.capabilityData.dpiStages.dpiLevels]
+          newDpiLevels[index] = [value, value]
+          dpiStages.set(device, {
+            ...device.capabilityData.dpiStages,
+            dpiLevels: newDpiLevels
+          })
+        }
+      }, 150),
+    [device]
+  )
+
   if (isStatus(device, 'Failed')) {
     return (
       <div className='rounded-xl p-4'>
@@ -30,21 +45,6 @@ const DeviceView = observer(({ device }: { device: IDevice }) => {
     if (!device) return
     removeDevice(device, true)
   }
-
-  const setDpiDebounced = useMemo(
-    () =>
-      debounce((index: number, value: number) => {
-        if (isCapableOf(device, ['dpiStages'])) {
-          const newDpiLevels = [...device.capabilityData.dpiStages.dpiLevels]
-          newDpiLevels[index] = [value, value]
-          dpiStages.set(device, {
-            ...device.capabilityData.dpiStages,
-            dpiLevels: newDpiLevels
-          })
-        }
-      }, 150),
-    [device]
-  )
 
   return (
     <>

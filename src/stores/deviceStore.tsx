@@ -1,4 +1,4 @@
-import { action, computed, flow, observable } from 'mobx'
+import { action, computed, flow, observable, reaction, type IReactionDisposer } from 'mobx'
 import { Device, isCapableOf, type IDevice, type SupportedCapabilities } from '../lib/device/device'
 import {
   DeviceNotSupportedError,
@@ -14,58 +14,53 @@ import { toast } from 'sonner'
 export class DeviceStore {
   @observable accessor devices: IDevice[] = []
   @observable accessor selectedDeviceId: number | undefined
+  @observable accessor errors: Error[] = []
+  private reactions: IReactionDisposer[] = []
 
   constructor() {
-    navigator.hid.addEventListener('connect', async (event) => {
-      const hidDevice = selectBestInterface([event.device])
-      if (hidDevice) {
-        toast.success(`${hidDevice.productName} has been added`, {
-          duration: 4000
-        })
-        if (!hidDevice.opened) {
-          try {
-            await hidDevice.open()
-          } catch (e) {
-            if (e instanceof Error) {
-              console.error('Failed to open HID device:', e)
-            } else {
-              console.error('Failed to open HID device: unknown error')
-            }
-            toast.error('Failed to open HID device: ' + hidDevice.productName, {
-              description: 'The connected HID device could not be opened.',
+    this.reactions.push(
+      reaction(
+        () => this.errors.length,
+        (length, previousLength) => {
+          if (length > previousLength) {
+            const newError = this.errors[length - 1]
+            toast.error('Device Store Error: ' + newError.message, {
               duration: 4000
             })
-            return
           }
         }
-        this.addDevice(hidDevice)
-      }
-    })
-    navigator.hid.addEventListener('disconnect', (event) => {
-      const hidDevice = event.device
-      toast.warning('Device disconnected: ' + hidDevice.productName, {
-        duration: 4000
-      })
-      const device = this.devices.find(
-        (d) => d.hid.vendorId === hidDevice.vendorId && d.hid.productId === hidDevice.productId
       )
-      if (device) {
-        this.removeDevice(device)
-      }
+    )
+    navigator.hid.addEventListener('connect', this.onConnect)
+    navigator.hid.addEventListener('disconnect', this.onDisconnect)
+    getHidInterfaces().then((d) => d.map(this.addDevice))
+  }
+
+  onConnect = async (event: HIDConnectionEvent) => {
+    const hidDevice = selectBestInterface([event.device])
+    if (hidDevice) {
+      this.addDevice(hidDevice)
+    }
+  }
+
+  onDisconnect = async (event: HIDConnectionEvent) => {
+    const hidDevice = event.device
+    toast.warning('Device disconnected: ' + hidDevice.productName, {
+      duration: 4000
     })
-    getHidInterfaces()
-      .then((results) => {
-        results.forEach((result) => {
-          if (result.error) {
-            console.error('Failed to get HID interfaces for a device:', result.error)
-            return
-          }
-          this.addDevice(result.value)
-        })
-      })
-      .catch((error) => {
-        console.error('Error while getting HID interfaces:', error)
-      })
+    const device = this.devices.find(
+      (d) => d.hid.vendorId === hidDevice.vendorId && d.hid.productId === hidDevice.productId
+    )
+    if (device) {
+      this.removeDevice(device)
+    }
+  }
+
+  dispose() {
+    this.reactions.forEach((dispose) => dispose())
+    this.reactions = []
+    navigator.hid.removeEventListener('connect', this.onConnect)
+    navigator.hid.removeEventListener('disconnect', this.onDisconnect)
   }
 
   @computed
@@ -75,15 +70,29 @@ export class DeviceStore {
 
   @flow.bound
   *addDevice(hid: HIDDevice) {
+    const loadingToast = toast.loading(`Adding device: ${hid.productName}`, {
+      duration: 2000
+    })
     if (this.devices.find((d) => d.hid.vendorId === hid.vendorId && d.hid.productId === hid.productId)) {
       return { error: new Error('Device already added') }
     }
-
     const deviceInfo = identifyDevice(hid)
     if (!deviceInfo) {
       return { error: new DeviceNotSupportedError(hid.vendorId, hid.productId) }
     }
     const device = new Device(deviceInfo, hid)
+    this.devices.push(device)
+
+    if (!hid.opened) {
+      try {
+        yield hid.open()
+      } catch (e) {
+        const error = e instanceof Error ? e : new Error('Unknown error opening HID device')
+        this.errors.push(error)
+        toast.dismiss(loadingToast)
+        return { error }
+      }
+    }
     const supportedCapabilities = Object.keys(device.supportedCapabilities) as (keyof SupportedCapabilities)[]
     const fetchCommands = []
     for (const cap of supportedCapabilities) {
@@ -103,9 +112,10 @@ export class DeviceStore {
       } else {
         device.error = new Error('Unknown error during device initialization')
       }
+    } finally {
+      toast.dismiss(loadingToast)
     }
 
-    this.devices.push(device)
     return { value: device }
   }
 
