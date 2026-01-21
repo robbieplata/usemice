@@ -4,12 +4,14 @@ import {
   DeviceNotSupportedError,
   getHidInterfaces,
   identifyDevice,
+  RequestHidDeviceError,
   requestHidInterface,
   selectBestInterface
 } from '../lib/device/hid'
 import { RAZER_VID } from '../lib/device/devices'
 import { DEVICE_CAPABILITIES } from '../lib/capabilities'
 import { toast } from 'sonner'
+import type { Result } from '@/lib/result'
 
 export class DeviceStore {
   @observable accessor devices: IDevice[] = []
@@ -129,6 +131,10 @@ export class DeviceStore {
       }
     }
 
+    if (device.error) {
+      this.errors.push(device.error)
+    }
+
     return { value: device }
   }
 
@@ -148,6 +154,12 @@ export class DeviceStore {
 
   @flow.bound
   *requestDevice(options?: HIDDeviceRequestOptions) {
-    return requestHidInterface(options ?? { filters: [{ vendorId: RAZER_VID }] })
+    const hidDevice: Result<HIDDevice, RequestHidDeviceError> = yield requestHidInterface(
+      options ?? { filters: [{ vendorId: RAZER_VID }] }
+    )
+    if (hidDevice.error) {
+      this.errors.push(hidDevice.error)
+    }
+    return hidDevice
   }
 }

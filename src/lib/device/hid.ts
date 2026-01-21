@@ -93,7 +93,6 @@ const defaultFilters = (options?: HIDDeviceRequestOptions) => options?.filters ?
 
 export const getHidInterfaces = async (options?: HIDDeviceRequestOptions): Promise<HIDDevice[]> => {
   const filters = defaultFilters(options)
-
   const all = await navigator.hid.getDevices()
   const matching = all.filter((d) => matchesFilters(d, filters))
   return pickBestInterfaces(matching)
@@ -107,7 +106,9 @@ export const requestHidInterface = async (
   try {
     const reqOptions: HIDDeviceRequestOptions = { ...(options ?? {}), filters }
     const [requested] = await navigator.hid.requestDevice(reqOptions)
-    if (!requested) return { error: new RequestHidDeviceError('No device selected') }
+    if (!requested) {
+      return { error: new RequestHidDeviceError('No device selected') }
+    }
     const vid = requested.vendorId
     const pid = requested.productId
     const bestInterface = await navigator.hid.getDevices().then((devices) => {
@@ -120,7 +121,7 @@ export const requestHidInterface = async (
     }
     return { value: bestInterface }
   } catch {
-    return { error: new RequestHidDeviceError('User cancelled or requestDevice failed') }
+    return { error: new RequestHidDeviceError('Failed to request HID device') }
   }
 }
 
