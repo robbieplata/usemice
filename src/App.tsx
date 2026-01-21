@@ -4,6 +4,7 @@ import './App.css'
 import DeviceView from './components/DeviceView'
 import { useStore } from './stores'
 import { noop } from 'lodash'
+import { Button } from './components/ui/button'
 
 const App = observer(() => {
   const {
@@ -34,7 +35,7 @@ const App = observer(() => {
         ))}
       </div>
       <div className='card'>
-        {<button onClick={!selectedDevice ? connect : disconnect}>{selectedDevice ? 'Disconnect' : 'Connect'}</button>}
+        {<Button onClick={!selectedDevice ? connect : disconnect}>{selectedDevice ? 'Disconnect' : 'Connect'}</Button>}
         {selectedDevice !== undefined && <DeviceView device={selectedDevice} />}
       </div>
     </>
