@@ -7,6 +7,10 @@
     "module": "ESNext",
     "types": ["vite/client", "w3c-web-hid"],
     "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
 
     /* Bundler mode */
     "moduleResolution": "bundler",
