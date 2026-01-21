@@ -9,7 +9,7 @@ type RazerReportParams = {
   commandClass: number
   commandId: number
   dataSize: number
-  args: Uint8Array
+  args?: Uint8Array
 }
 
 export class RazerReport {
@@ -22,7 +22,7 @@ export class RazerReport {
     r.commandClass = commandClass
     r.commandId = commandId
     r.dataSize = dataSize
-    r.args = args
+    r.args = args ?? new Uint8Array(0)
     r.crc = RazerReport.computeCrc(r.bytes)
     return r
   }

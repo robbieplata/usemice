@@ -50,3 +50,47 @@ export const getDpiStages = async (device: DeviceWithCapabilities<'dpiStages'>):
 
   return { dpiLevels, activeStage }
 }
+
+export const setDpiStages = async (device: DeviceWithCapabilities<'dpiStages'>, data: DpiStagesData): Promise<void> => {
+  const report = RazerReport.from({ commandClass: 0x04, commandId: 0x06, dataSize: 0x26 })
+  const { dpiLevels, activeStage } = data
+  const args = new Uint8Array(0x26)
+
+  const count = dpiLevels.length
+
+  if (count < 1) {
+    throw new Error('At least one DPI stage must be provided')
+  }
+
+  if (count > device.capabilityInfo.dpiStages.maxStages) {
+    throw new Error(`Too many DPI stages (${count}) provided, maximum is ${device.capabilityInfo.dpiStages.maxStages}`)
+  }
+
+  if (activeStage > count || activeStage < 1) {
+    throw new Error(`Active stage (${activeStage}) out of bounds for ${count} stages`)
+  }
+
+  if (3 + 7 * count > 0x26) {
+    throw new Error(`Too many DPI stages (${count}) for 0x26-byte payload`)
+  }
+
+  const variableStorage = 0x01
+  args[0] = variableStorage & 0xff
+  args[1] = activeStage & 0xff
+  args[2] = count & 0xff
+  let offset = 3
+
+  for (let i = 0; i < count; i++) {
+    const [x, y] = dpiLevels[i]
+    args[offset++] = i & 0xff
+    args[offset++] = (x >> 8) & 0xff
+    args[offset++] = x & 0xff
+    args[offset++] = (y >> 8) & 0xff
+    args[offset++] = y & 0xff
+    args[offset++] = 0x00
+    args[offset++] = 0x00
+  }
+  report.args = args
+
+  await sendReport(device, report)
+}

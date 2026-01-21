@@ -1,6 +1,6 @@
 import type { CapabilityData, DeviceWithCapabilities, SupportedCapabilities } from '../device/device'
 import { getDpi, setDpi } from '../capabilities/dpi'
-import { getDpiStages } from '../capabilities/dpiStages'
+import { getDpiStages, setDpiStages } from '../capabilities/dpiStages'
 import { getPolling2, setPolling2 } from './polling2'
 import { getSerial } from '../capabilities/serial'
 import { getFirmwareVersion } from '../capabilities/firmwareVersion'
@@ -37,7 +37,7 @@ function createCapability<C extends keyof SupportedCapabilities, T extends Capab
 export const chargeLevel = createCapability('chargeLevel', getChargeLevel)
 export const chargeStatus = createCapability('chargeStatus', getChargeStatus)
 export const dpi = createCapability('dpi', getDpi, setDpi)
-export const dpiStages = createCapability('dpiStages', getDpiStages)
+export const dpiStages = createCapability('dpiStages', getDpiStages, setDpiStages)
 export const firmwareVersion = createCapability('firmwareVersion', getFirmwareVersion)
 export const idleTime = createCapability('idleTime', getIdleTime, setIdleTime)
 export const polling = createCapability('polling', getPolling, setPolling)
