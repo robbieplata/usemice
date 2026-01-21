@@ -4,7 +4,7 @@ import { Toaster as Sonner, type ToasterProps } from 'sonner'
 
 const Toaster = ({ ...props }: ToasterProps) => {
   const { theme = 'system' } = useTheme()
-  props.position = props.position || 'top-right'
+  props.position = props.position || 'top-center'
 
   return (
     <Sonner
