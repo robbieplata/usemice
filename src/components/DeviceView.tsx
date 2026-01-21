@@ -1,6 +1,6 @@
 import { observer } from 'mobx-react-lite'
 import { debounce } from 'lodash'
-import { polling, dpiStages, polling2 /*, idleTime */, idleTime } from '../lib/capabilities'
+import { polling, dpiStages, polling2, idleTime } from '../lib/capabilities'
 import { isCapableOf, isStatus, type IDevice } from '../lib/device/device'
 import { Button } from './ui/button'
 import { Slider } from '@/components/ui/slider'
@@ -8,11 +8,16 @@ import { DropdownMenu, DropdownMenuItem, DropdownMenuTrigger } from '@/component
 import { DropdownMenuContent } from './ui/dropdown-menu'
 import { Input } from './ui/input'
 import { useMemo } from 'react'
+import { useStore } from '@/stores'
 
 const DeviceView = observer(({ device }: { device: IDevice }) => {
+  const {
+    deviceStore: { removeDevice }
+  } = useStore()
+
   if (isStatus(device, 'Failed')) {
     return (
-      <div className='rounded-xl border p-4'>
+      <div className='rounded-xl p-4'>
         <h2 className='text-base font-semibold'>{device.hid.productName}</h2>
         <p className='mt-1 text-sm'>Device failed to initialize: {device.error.message}</p>
       </div>
@@ -20,6 +25,11 @@ const DeviceView = observer(({ device }: { device: IDevice }) => {
   }
 
   if (isStatus(device, 'Ready') === false) return null
+
+  const disconnect = () => {
+    if (!device) return
+    removeDevice(device, true)
+  }
 
   const setDpiDebounced = useMemo(
     () =>
@@ -37,16 +47,14 @@ const DeviceView = observer(({ device }: { device: IDevice }) => {
   )
 
   return (
-    <div className='w-full rounded-2xl border p-5 shadow-sm'>
-      {/* Header */}
+    <>
       <div className='flex items-start justify-between gap-4'>
         <div className='min-w-0'>
           <h2 className='truncate text-lg font-semibold'>{device.hid.productName}</h2>
-          {device.error ? (
-            <p className='mt-1 text-sm'>Error: {device.error.message}</p>
-          ) : (
-            <p className='mt-1 text-sm'>Device connected and ready</p>
-          )}
+          {device.error && <p className='mt-1 text-sm'>Error: {device.error.message}</p>}
+        </div>
+        <div className='flex items-center gap-2'>
+          <Button onClick={disconnect}>{'Disconnect'}</Button>
         </div>
       </div>
 
@@ -85,13 +93,13 @@ const DeviceView = observer(({ device }: { device: IDevice }) => {
       <div className='mt-6 space-y-6'>
         {isCapableOf(device, ['idleTime']) && (
           <section className='space-y-2'>
-            <div className='flex items-center justify-between'>
-              <h3 className='text-sm font-semibold'>Idle time</h3>
-              <span className='text-sm tabular-nums'>{device.capabilityData.idleTime.seconds}s</span>
-            </div>
-
             <div className='rounded-xl border p-3'>
+              <div className='flex items-center justify-between'>
+                <h3 className='text-sm font-semibold'>Idle time</h3>
+                <span className='text-sm tabular-nums'>{device.capabilityData.idleTime.seconds}s</span>
+              </div>
               <Slider
+                className='mt-4'
                 step={1}
                 min={device.capabilityInfo.idleTime.minSeconds}
                 max={device.capabilityInfo.idleTime.maxSeconds}
@@ -110,20 +118,20 @@ const DeviceView = observer(({ device }: { device: IDevice }) => {
 
         {isCapableOf(device, ['dpiStages']) && (
           <section className='space-y-3'>
-            <div className='flex items-center justify-between'>
-              <h3 className='text-sm font-semibold'>DPI stages</h3>
-              <span className='text-sm'>
-                Active: <span className='font-medium'>{device.capabilityData.dpiStages.activeStage}</span>
-              </span>
-            </div>
+            <div className='space-y-3 border rounded-xl p-3'>
+              <div className='flex items-center justify-between'>
+                <h3 className='text-sm font-semibold'>DPI stages</h3>
+                <span className='text-sm'>
+                  Active: <span className='font-medium'>{device.capabilityData.dpiStages.activeStage}</span>
+                </span>
+              </div>
 
-            <div className='space-y-3'>
               {device.capabilityData.dpiStages.dpiLevels.map((level, index) => {
                 const isActive = device.capabilityData.dpiStages.activeStage === index + 1
                 const value = level[0]
 
                 return (
-                  <div key={index + 1} className='rounded-xl border p-3'>
+                  <div key={index + 1}>
                     <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
                       <div className='flex items-center gap-2'>
                         <Button
@@ -159,7 +167,7 @@ const DeviceView = observer(({ device }: { device: IDevice }) => {
                         </div>
 
                         <Input
-                          className='w-24 tabular-nums'
+                          className='w-24'
                           type='number'
                           min={device.capabilityInfo.dpiStages.minDpi}
                           max={device.capabilityInfo.dpiStages.maxDpi}
@@ -188,9 +196,10 @@ const DeviceView = observer(({ device }: { device: IDevice }) => {
 
         {isCapableOf(device, ['polling2']) && (
           <section className='space-y-2'>
-            <h3 className='text-sm font-semibold'>Polling rate</h3>
-
             <div className='flex items-center justify-between rounded-xl border p-3'>
+              <div className='flex items-center justify-between'>
+                <h3 className='text-sm font-semibold'>Polling rate</h3>
+              </div>
               <p className='text-sm'>
                 Current: <span className='font-medium tabular-nums'>{device.capabilityData.polling2.interval}</span> Hz
               </p>
@@ -246,7 +255,7 @@ const DeviceView = observer(({ device }: { device: IDevice }) => {
           </section>
         )}
       </div>
-    </div>
+    </>
   )
 })
 
