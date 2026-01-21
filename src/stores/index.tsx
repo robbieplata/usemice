@@ -7,8 +7,11 @@ class RootStore {
     this.deviceStore = new DeviceStore()
   }
 
+  init() {
+    this.deviceStore.init()
+  }
+
   dispose() {
-    console.log('Disposing RootStore and its stores')
     this.deviceStore.dispose()
   }
 }
@@ -17,12 +20,9 @@ export const StoreContext = createContext<RootStore | null>(null)
 export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
   const rootStore = useMemo(() => new RootStore(), [])
   useEffect(() => {
-    return () => {
-      if (!import.meta.env.DEV) {
-        rootStore.dispose()
-      }
-    }
-  }, [])
+    rootStore.init()
+    return () => rootStore.dispose()
+  }, [rootStore])
   return <StoreContext.Provider value={rootStore}>{children}</StoreContext.Provider>
 }
 

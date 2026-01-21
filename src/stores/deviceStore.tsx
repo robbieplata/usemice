@@ -15,25 +15,44 @@ export class DeviceStore {
   @observable accessor devices: IDevice[] = []
   @observable accessor selectedDeviceId: number | undefined
   @observable accessor errors: Error[] = []
+
   private reactions: IReactionDisposer[] = []
 
-  constructor() {
+  init() {
     this.reactions.push(
       reaction(
         () => this.errors.length,
         (length, previousLength) => {
           if (length > previousLength) {
             const newError = this.errors[length - 1]
-            toast.error('Device Store Error: ' + newError.message, {
-              duration: 4000
+            toast.error('Error: ' + newError.message, {
+              duration: 5000
             })
+          }
+        }
+      ),
+      reaction(
+        () => {
+          const firstDeviceId = this.devices.length > 0 ? this.devices[0].id : undefined
+          const count = this.devices.length
+          return { firstDeviceId, count }
+        },
+        (props, prev) => {
+          if (props.firstDeviceId === undefined) return
+          if (prev.count === 0 && props.count > 0) {
+            if (this.devices.some((d) => d.id === props.firstDeviceId)) {
+              this.setSelectedDeviceId(props.firstDeviceId)
+            }
           }
         }
       )
     )
     navigator.hid.addEventListener('connect', this.onConnect)
     navigator.hid.addEventListener('disconnect', this.onDisconnect)
-    getHidInterfaces().then((d) => d.map(this.addDevice))
+    getHidInterfaces().then((d) => {
+      console.log('HID device connected:')
+      d.forEach(this.addDevice)
+    })
   }
 
   onConnect = async (event: HIDConnectionEvent) => {
@@ -70,9 +89,6 @@ export class DeviceStore {
 
   @flow.bound
   *addDevice(hid: HIDDevice) {
-    const loadingToast = toast.loading(`Adding device: ${hid.productName}`, {
-      duration: 2000
-    })
     if (this.devices.find((d) => d.hid.vendorId === hid.vendorId && d.hid.productId === hid.productId)) {
       return { error: new Error('Device already added') }
     }
@@ -89,7 +105,6 @@ export class DeviceStore {
       } catch (e) {
         const error = e instanceof Error ? e : new Error('Unknown error opening HID device')
         this.errors.push(error)
-        toast.dismiss(loadingToast)
         return { error }
       }
     }
@@ -112,19 +127,16 @@ export class DeviceStore {
       } else {
         device.error = new Error('Unknown error during device initialization')
       }
-    } finally {
-      toast.dismiss(loadingToast)
     }
 
     return { value: device }
   }
 
-  @action.bound
-  removeDevice(device: IDevice, forget = false) {
+  @flow.bound
+  *removeDevice(device: IDevice, forget = false) {
     const index = this.devices.indexOf(device)
     if (index < 0) return
-
-    device.hid.close()
+    yield device.hid.close()
     if (forget) device.hid.forget()
     this.devices.splice(index, 1)
   }
