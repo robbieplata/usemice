@@ -10,6 +10,7 @@ import type { ChargeStatusData, ChargeStatusInfo } from '../capabilities/chargeS
 import type { IdleTimeData, IdleTimeInfo } from '../capabilities/idleTime'
 import type { DeviceInfo } from './builder'
 import type { PollingData, PollingInfo } from '../capabilities/polling'
+import type { DongleLedMultiData, DongleLedMultiInfo } from '../capabilities/dongleLedMulti'
 
 type DeviceBase = {
   id: number
@@ -44,6 +45,7 @@ export type SupportedCapabilities = {
   chargeStatus: boolean
   dpi: boolean
   dpiStages: boolean
+  dongleLedMulti: boolean
   firmwareVersion: boolean
   idleTime: boolean
   polling: boolean
@@ -56,6 +58,7 @@ export type CapabilityData = {
   chargeStatus?: ChargeStatusData
   dpi?: DpiData
   dpiStages?: DpiStagesData
+  dongleLedMulti?: DongleLedMultiData
   firmwareVersion?: FirmwareVersionData
   idleTime?: IdleTimeData
   polling?: PollingData
@@ -68,6 +71,7 @@ export type CapabilityInfo = {
   chargeStatus?: ChargeStatusInfo
   dpi?: DpiInfo
   dpiStages?: DpiStagesInfo
+  dongleLedMulti?: DongleLedMultiInfo
   firmwareVersion?: FirmwareVersionInfo
   idleTime?: IdleTimeInfo
   polling?: PollingInfo

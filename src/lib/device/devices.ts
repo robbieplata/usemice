@@ -12,17 +12,19 @@ const DEATHADDER_V4_PRO_WIRED = defineDevice({
   supportedCapabilities: {
     dpi: true,
     dpiStages: true,
+    dongleLedMulti: true,
     polling: false,
     polling2: true,
     serial: true,
     firmwareVersion: true,
     chargeLevel: true,
     chargeStatus: true,
-    idleTime: true
+    idleTime: false
   },
   capabilityInfo: {
     dpi: { minDpi: 100, maxDpi: 45_000 },
     dpiStages: { minDpi: 100, maxDpi: 45_000, maxStages: 5 },
+    dongleLedMulti: undefined as never,
     polling: undefined as never,
     polling2: { supportedIntervals: [125, 250, 500, 1_000, 2_000, 4_000, 8_000], idByte: 0x1f },
     serial: undefined as never,
@@ -42,6 +44,7 @@ const DEATHADDER_V3_PRO_WIRED_ALT = defineDevice({
   supportedCapabilities: {
     dpi: true,
     dpiStages: true,
+    dongleLedMulti: false,
     polling: true,
     polling2: false,
     serial: true,
@@ -53,6 +56,7 @@ const DEATHADDER_V3_PRO_WIRED_ALT = defineDevice({
   capabilityInfo: {
     dpi: { minDpi: 100, maxDpi: 45_000 },
     dpiStages: { minDpi: 100, maxDpi: 45_000, maxStages: 5 },
+    dongleLedMulti: undefined as never,
     polling: { supportedIntervals: [125, 500, 1_000], idByte: 0x1f },
     polling2: undefined as never,
     serial: undefined as never,
