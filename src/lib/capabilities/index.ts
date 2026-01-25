@@ -1,4 +1,4 @@
-import type { CapabilityData, DeviceWithCapabilities, SupportedCapabilities } from '../device/device'
+import type { CapabilityDataMap, CapabilityKey, DeviceWithCapabilities } from '../device/device'
 import { getDpi, setDpi } from '../capabilities/dpi'
 import { getDpiStages, setDpiStages } from '../capabilities/dpiStages'
 import { getPolling2, setPolling2 } from './polling2'
@@ -10,12 +10,12 @@ import { getIdleTime, setIdleTime } from '../capabilities/idleTime'
 import { getPolling, setPolling } from './polling'
 import { getDongleLedMulti, setDongleLedMulti } from './dongleLedMulti'
 
-export type CapabilityCommand<C extends keyof SupportedCapabilities, T> = {
+export type CapabilityCommand<C extends CapabilityKey, T> = {
   get: (device: DeviceWithCapabilities<C>) => Promise<T>
   set: (device: DeviceWithCapabilities<C>, value: T) => Promise<T>
 }
 
-function createCapability<C extends keyof SupportedCapabilities, T extends CapabilityData[C]>(
+function createCapability<C extends keyof CapabilityDataMap, T extends CapabilityDataMap[C]>(
   key: C,
   getter?: (device: DeviceWithCapabilities<C>) => Promise<T>,
   setter?: (device: DeviceWithCapabilities<C>, value: T) => Promise<void>
@@ -48,7 +48,7 @@ export const polling2 = createCapability('polling2', getPolling2, setPolling2)
 export const serial = createCapability('serial', getSerial)
 
 export const DEVICE_CAPABILITIES: {
-  [K in keyof SupportedCapabilities]: CapabilityCommand<K, NonNullable<CapabilityData[K]>>
+  [K in CapabilityKey]: CapabilityCommand<K, CapabilityDataMap[K]>
 } = {
   chargeLevel,
   chargeStatus,

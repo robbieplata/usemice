@@ -34,7 +34,7 @@ export const getPolling = async (device: DeviceWithCapabilities<'polling'>): Pro
     commandId: 0x85,
     dataSize: 0x00,
     args: new Uint8Array([]),
-    idByte: device.capabilityInfo.polling.idByte
+    idByte: device.capabilities.polling.info.idByte
   })
   const response = await sendReport(device, report)
   const value = response.args[0]
@@ -55,7 +55,7 @@ export const setPolling = async (device: DeviceWithCapabilities<'polling'>, data
     commandId: 0x05,
     dataSize: 0x01,
     args: new Uint8Array([value]),
-    idByte: device.capabilityInfo.polling.idByte
+    idByte: device.capabilities.polling.info.idByte
   })
   await sendReport(device, report)
 }

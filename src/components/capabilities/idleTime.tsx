@@ -10,11 +10,11 @@ type IdleTimeProps = {
 }
 
 export const IdleTime = ({ device }: IdleTimeProps) => {
-  const [seconds, setSeconds] = useState(device.capabilityData.idleTime.seconds)
+  const [seconds, setSeconds] = useState(device.capabilities.idleTime.data.seconds)
 
   useEffect(() => {
-    setSeconds(device.capabilityData.idleTime.seconds)
-  }, [device.capabilityData.idleTime.seconds])
+    setSeconds(device.capabilities.idleTime.data.seconds)
+  }, [device.capabilities.idleTime.data.seconds])
 
   const debouncedUpdateIdleTime = useMemo(
     () =>
@@ -46,15 +46,15 @@ export const IdleTime = ({ device }: IdleTimeProps) => {
         <Slider
           className='mt-4'
           step={1}
-          min={device.capabilityInfo.idleTime.minSeconds}
-          max={device.capabilityInfo.idleTime.maxSeconds}
+          min={device.capabilities.idleTime.info.minSeconds}
+          max={device.capabilities.idleTime.info.maxSeconds}
           value={[seconds]}
           onValueChange={onValueChange}
         />
 
         <div className='mt-2 flex justify-between text-xs'>
-          <span>{device.capabilityInfo.idleTime.minSeconds}s</span>
-          <span>{device.capabilityInfo.idleTime.maxSeconds}s</span>
+          <span>{device.capabilities.idleTime.info.minSeconds}s</span>
+          <span>{device.capabilities.idleTime.info.maxSeconds}s</span>
         </div>
       </div>
     </section>

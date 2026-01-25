@@ -62,8 +62,9 @@ export const setDpiStages = async (device: DeviceWithCapabilities<'dpiStages'>, 
     throw new Error('At least one DPI stage must be provided')
   }
 
-  if (count > device.capabilityInfo.dpiStages.maxStages) {
-    throw new Error(`Too many DPI stages (${count}) provided, maximum is ${device.capabilityInfo.dpiStages.maxStages}`)
+  const maxStages = device.capabilities.dpiStages.info.maxStages
+  if (count > maxStages) {
+    throw new Error(`Too many DPI stages (${count}) provided, maximum is ${maxStages}`)
   }
 
   if (activeStage > count || activeStage < 1) {

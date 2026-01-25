@@ -1,27 +1,13 @@
 import { action, computed, flow, observable, reaction, type IReactionDisposer } from 'mobx'
-import {
-  Device,
-  isCapableOf,
-  type FailedDevice,
-  type IDevice,
-  type ReadyDevice,
-  type SupportedCapabilities
-} from '../lib/device/device'
-import {
-  DeviceNotSupportedError,
-  getHidInterfaces,
-  identifyDevice,
-  RequestHidDeviceError,
-  requestHidInterface,
-  selectBestInterface
-} from '../lib/device/hid'
+import { Device, isCapableOf, type CapabilityKey } from '../lib/device/device'
+import { getHidInterfaces, RequestHidDeviceError, requestHidInterface, selectBestInterface } from '../lib/device/hid'
 import { RAZER_VID } from '../lib/device/devices'
 import { DEVICE_CAPABILITIES } from '../lib/capabilities'
 import { toast } from 'sonner'
 import type { Result } from '@/lib/result'
 
 export class DeviceStore {
-  @observable accessor devices: IDevice[] = []
+  @observable accessor devices: Device[] = []
   @observable accessor selectedDeviceId: number | undefined
   @observable accessor errors: Error[] = []
 
@@ -91,8 +77,8 @@ export class DeviceStore {
   }
 
   @computed
-  get selectedDevice(): IDevice | undefined {
-    return this.devices.find((d): d is IDevice => d.id === this.selectedDeviceId)
+  get selectedDevice(): Device | undefined {
+    return this.devices.find((d): d is Device => d.id === this.selectedDeviceId)
   }
 
   @flow.bound
@@ -100,11 +86,7 @@ export class DeviceStore {
     if (this.devices.find((d) => d.hid.vendorId === hid.vendorId && d.hid.productId === hid.productId)) {
       return { error: new Error('Device already added') }
     }
-    const deviceInfo = identifyDevice(hid)
-    if (!deviceInfo) {
-      return { error: new DeviceNotSupportedError(hid.vendorId, hid.productId) }
-    }
-    const device = new Device(deviceInfo, hid) as IDevice
+    const device = new Device(hid)
     this.devices.push(device)
 
     if (!hid.opened) {
@@ -116,14 +98,14 @@ export class DeviceStore {
         return { error }
       }
     }
-    const supportedCapabilities = Object.keys(device.supportedCapabilities) as (keyof SupportedCapabilities)[]
-    const fetchCommands = []
-    for (const cap of supportedCapabilities) {
-      if (isCapableOf(device, [cap])) {
-        const fetchCommand = DEVICE_CAPABILITIES[cap].get(device)
+
+    const fetchCommands: Promise<unknown>[] = []
+    Object.entries(device.capabilities).forEach(([key]) => {
+      if (isCapableOf(device, [key as CapabilityKey])) {
+        const fetchCommand = DEVICE_CAPABILITIES[key as CapabilityKey].get(device)
         fetchCommands.push(fetchCommand)
       }
-    }
+    })
 
     try {
       yield Promise.all(fetchCommands)
@@ -145,7 +127,7 @@ export class DeviceStore {
   }
 
   @flow.bound
-  *removeDevice(device: IDevice, forget = false) {
+  *removeDevice(device: Device, forget = false) {
     const index = this.devices.indexOf(device)
     if (index < 0) return
     yield device.hid.close()

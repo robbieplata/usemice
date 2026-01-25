@@ -12,38 +12,33 @@ type DpiStagesProps = {
 }
 
 export const DpiStages = observer(({ device }: DpiStagesProps) => {
-  const [localDpiLevels, setLocalDpiLevels] = useState(device.capabilityData.dpiStages.dpiLevels)
+  const [localDpiLevels, setLocalDpiLevels] = useState(device.capabilities.dpiStages.data.dpiLevels)
   const [inputText, setInputText] = useState(() =>
-    device.capabilityData.dpiStages.dpiLevels.map((lvl) => String(lvl[0]))
+    device.capabilities.dpiStages.data.dpiLevels.map((lvl) => String(lvl[0]))
   )
 
-  useEffect(() => {
-    setLocalDpiLevels(device.capabilityData.dpiStages.dpiLevels)
-  }, [device.capabilityData.dpiStages.dpiLevels])
+  const { minDpi, maxDpi } = device.capabilities.dpiStages.info
+  const { dpiLevels, activeStage } = device.capabilities.dpiStages.data
+
+  useEffect(() => setLocalDpiLevels(dpiLevels), [dpiLevels])
 
   const debouncedSet = useMemo(() => {
     return debounce((nextLevels: typeof localDpiLevels) => {
       dpiStages.set(device, {
-        ...device.capabilityData.dpiStages,
+        ...device.capabilities.dpiStages.data,
         dpiLevels: nextLevels
       })
     }, 300)
-  }, [device, device.capabilityData.dpiStages])
+  }, [device, device.capabilities.dpiStages.data])
 
-  useEffect(() => {
-    return () => {
-      debouncedSet.cancel()
-    }
-  }, [debouncedSet])
+  useEffect(() => () => debouncedSet.cancel(), [debouncedSet])
 
-  const minDpi = device.capabilityInfo.dpiStages.minDpi
-  const maxDpi = device.capabilityInfo.dpiStages.maxDpi
   const clamp = (n: number) => Math.min(maxDpi, Math.max(minDpi, n))
 
   useEffect(() => {
-    setLocalDpiLevels(device.capabilityData.dpiStages.dpiLevels)
-    setInputText(device.capabilityData.dpiStages.dpiLevels.map((lvl) => String(lvl[0])))
-  }, [device.capabilityData.dpiStages.dpiLevels])
+    setLocalDpiLevels(device.capabilities.dpiStages.data.dpiLevels)
+    setInputText(device.capabilities.dpiStages.data.dpiLevels.map((lvl) => String(lvl[0])))
+  }, [device.capabilities.dpiStages.data.dpiLevels])
 
   const setStageValue = (index: number, next: number) => {
     const nextLevels = [...localDpiLevels]
@@ -78,12 +73,12 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
         <div className='flex items-center justify-between'>
           <h3 className='text-sm font-semibold'>DPI stages</h3>
           <span className='text-sm'>
-            Active: <span className='font-medium'>{device.capabilityData.dpiStages.activeStage}</span>
+            Active: <span className='font-medium'>{activeStage}</span>
           </span>
         </div>
 
         {localDpiLevels.map((level, index) => {
-          const isActive = device.capabilityData.dpiStages.activeStage === index + 1
+          const isActive = activeStage === index + 1
           const value = level[0]
 
           return (
@@ -94,7 +89,7 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
                     disabled={isActive}
                     onClick={() =>
                       dpiStages.set(device, {
-                        ...device.capabilityData.dpiStages,
+                        ...device.capabilities.dpiStages.data,
                         activeStage: index + 1
                       })
                     }
@@ -111,14 +106,14 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
                   <div className='flex-1'>
                     <Slider
                       step={50}
-                      min={device.capabilityInfo.dpiStages.minDpi}
-                      max={device.capabilityInfo.dpiStages.maxDpi}
+                      min={minDpi}
+                      max={maxDpi}
                       value={[value]}
                       onValueChange={([next]) => setStageValue(index, next)}
                     />
                     <div className='mt-2 flex justify-between text-xs'>
-                      <span>{device.capabilityInfo.dpiStages.minDpi}</span>
-                      <span>{device.capabilityInfo.dpiStages.maxDpi}</span>
+                      <span>{minDpi}</span>
+                      <span>{maxDpi}</span>
                     </div>
                   </div>
                   <Input

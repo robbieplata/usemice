@@ -24,7 +24,7 @@ export const getDpi = async (device: Device): Promise<DpiData> => {
 export const setDpi = async (device: DeviceWithCapabilities<'dpi'>, dpi: DpiData): Promise<void> => {
   const buffer = new ArrayBuffer(7)
   const args = new Uint8Array(buffer)
-  let { x, y } = dpi
+  const { x, y } = dpi
 
   args[0] = 0x01
   args[1] = (x >> 8) & 0xff

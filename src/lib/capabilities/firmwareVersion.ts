@@ -7,7 +7,7 @@ export type FirmwareVersionData = {
   minor: number
 }
 
-export type FirmwareVersionInfo = never
+export type FirmwareVersionInfo = object
 
 export const getFirmwareVersion = async (
   device: DeviceWithCapabilities<'firmwareVersion'>

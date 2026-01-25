@@ -1,6 +1,5 @@
 import { Device } from './device'
-import { RAZER_VID, SUPPORTED_DEVICE_INFO } from './devices'
-import type { DeviceInfo } from './builder'
+import { RAZER_VID } from './devices'
 import { RAZER_REPORT_ID, RazerReport } from './report'
 import { find, groupBy, some } from 'lodash'
 import { toast } from 'sonner'
@@ -20,16 +19,6 @@ export class RequestHidDeviceError extends Error {
   readonly name = 'RequestHidDeviceError'
   constructor(message: string) {
     super(message)
-  }
-}
-
-export class DeviceNotSupportedError extends Error {
-  readonly name = 'DeviceNotSupportedError'
-  constructor(
-    readonly vid: number,
-    readonly pid: number
-  ) {
-    super(`Device not supported: VID=${vid.toString(16)}, PID=${pid.toString(16)}`)
   }
 }
 
@@ -122,14 +111,6 @@ export const requestHidInterface = async (
     return { value: bestInterface }
   } catch {
     return { error: new RequestHidDeviceError('Failed to request HID device') }
-  }
-}
-
-export const identifyDevice = (hid: HIDDevice): DeviceInfo | undefined => {
-  for (const info of SUPPORTED_DEVICE_INFO) {
-    if (info.vid === hid.vendorId && info.pid === hid.productId) {
-      return info
-    }
   }
 }
 

@@ -6,7 +6,7 @@ export type SerialData = {
   serialNumber: string
 }
 
-export type SerialInfo = never
+export type SerialInfo = object
 
 export const getSerial = async (device: DeviceWithCapabilities<'serial'>): Promise<SerialData> => {
   const report = RazerReport.from({

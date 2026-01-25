@@ -44,7 +44,7 @@ export const getPolling2 = async (device: DeviceWithCapabilities<'polling2'>): P
     commandId: 0xc0,
     dataSize: 0x01,
     args: new Uint8Array([0x00]),
-    idByte: device.capabilityInfo.polling2.idByte
+    idByte: device.capabilities.polling2.info.idByte
   })
   const response = await sendReport(device, report)
   const value = response.args[1]
