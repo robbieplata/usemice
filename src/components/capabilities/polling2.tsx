@@ -1,4 +1,3 @@
-import { polling2 } from '@/lib/capabilities'
 import type { ReadyDeviceWithCapabilities } from '@/lib/device/device'
 import { Button } from '../ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
@@ -26,7 +25,7 @@ export const Polling2 = observer(({ device }: Polling2Props) => (
           {device.capabilities.polling2.info.supportedIntervals.map((interval) => (
             <DropdownMenuItem
               key={interval}
-              onClick={() => polling2.set(device, { interval })}
+              onClick={() => device.set('polling2', { interval })}
               className='flex items-center justify-between'
             >
               <span className='tabular-nums'>{interval} Hz</span>

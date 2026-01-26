@@ -1,5 +1,5 @@
 import { sendReport } from '../device/hid'
-import type { DeviceWithCapabilities } from '../device/device'
+import type { CapabilityCommand, DeviceWithCapabilities } from '../device/device'
 import { RazerReport } from '../device/report'
 
 export type FirmwareVersionData = {
@@ -16,4 +16,8 @@ export const getFirmwareVersion = async (
   report.idByte = 0x1f
   const response = await sendReport(device, report)
   return { major: response.args[0], minor: response.args[1] }
+}
+
+export const firmwareVersion: CapabilityCommand<'firmwareVersion', FirmwareVersionData> = {
+  get: getFirmwareVersion
 }

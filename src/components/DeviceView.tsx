@@ -1,5 +1,5 @@
 import { observer } from 'mobx-react-lite'
-import { Device, isCapableOf, isStatus } from '../lib/device/device'
+import { isCapableOf, isStatus, type DeviceInStatusVariant } from '../lib/device/device'
 import { Button } from './ui/button'
 import { useStore } from '@/stores'
 import { IdleTime } from './capabilities/idleTime'
@@ -9,7 +9,7 @@ import { Polling } from './capabilities/polling'
 import { SkeletonDevice } from './skeletonDevice'
 
 type DeviceViewProps = {
-  device?: Device
+  device?: DeviceInStatusVariant
 }
 
 const DeviceView = observer(({ device }: DeviceViewProps) => {
@@ -21,7 +21,11 @@ const DeviceView = observer(({ device }: DeviceViewProps) => {
     if (device) removeDevice(device, true)
   }
 
-  if (!device || isStatus(device, 'Initializing')) {
+  if (!device) {
+    return <SkeletonDevice />
+  }
+
+  if (isStatus(device, 'Initializing')) {
     return <SkeletonDevice />
   }
 
@@ -34,61 +38,57 @@ const DeviceView = observer(({ device }: DeviceViewProps) => {
     )
   }
 
-  if (isStatus(device, 'Ready')) {
-    return (
-      <>
-        <div className='flex items-start justify-between gap-4'>
-          <div className='min-w-0'>
-            <h2 className='truncate text-lg font-semibold'>{device.hid.productName}</h2>
+  return (
+    <>
+      <div className='flex items-start justify-between gap-4'>
+        <div className='min-w-0'>
+          <h2 className='truncate text-lg font-semibold'>{device.hid.productName}</h2>
+        </div>
+        <div className='flex items-center gap-2'>
+          <Button onClick={disconnect}>{'Disconnect'}</Button>
+        </div>
+      </div>
+
+      <div className='mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2'>
+        {isCapableOf(device, ['serial']) && (
+          <div className='rounded-xl border p-3'>
+            <p className='text-xs font-medium'>Serial</p>
+            <p className='mt-1 font-mono text-sm'>{device.capabilities.serial.data.serialNumber}</p>
           </div>
-          <div className='flex items-center gap-2'>
-            <Button onClick={disconnect}>{'Disconnect'}</Button>
+        )}
+
+        {isCapableOf(device, ['firmwareVersion']) && (
+          <div className='rounded-xl border p-3'>
+            <p className='text-xs font-medium'>Firmware</p>
+            <p className='mt-1 text-sm'>
+              v{device.capabilities.firmwareVersion.data.major}.{device.capabilities.firmwareVersion.data.minor}
+            </p>
           </div>
-        </div>
+        )}
 
-        <div className='mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2'>
-          {isCapableOf(device, ['serial']) && (
-            <div className='rounded-xl border p-3'>
-              <p className='text-xs font-medium'>Serial</p>
-              <p className='mt-1 font-mono text-sm'>{device.capabilities.serial.data.serialNumber}</p>
-            </div>
-          )}
+        {isCapableOf(device, ['chargeLevel']) && (
+          <div className='rounded-xl border p-3'>
+            <p className='text-xs font-medium'>Battery</p>
+            <p className='mt-1 text-sm'>{device.capabilities.chargeLevel.data.percentage.toFixed(0)}%</p>
+          </div>
+        )}
 
-          {isCapableOf(device, ['firmwareVersion']) && (
-            <div className='rounded-xl border p-3'>
-              <p className='text-xs font-medium'>Firmware</p>
-              <p className='mt-1 text-sm'>
-                v{device.capabilities.firmwareVersion.data.major}.{device.capabilities.firmwareVersion.data.minor}
-              </p>
-            </div>
-          )}
+        {isCapableOf(device, ['chargeStatus']) && (
+          <div className='rounded-xl border p-3'>
+            <p className='text-xs font-medium'>Charge Status</p>
+            <p className='mt-1 text-sm'>{device.capabilities.chargeStatus.data.status ? 'Charging' : 'Not Charging'}</p>
+          </div>
+        )}
+      </div>
 
-          {isCapableOf(device, ['chargeLevel']) && (
-            <div className='rounded-xl border p-3'>
-              <p className='text-xs font-medium'>Battery</p>
-              <p className='mt-1 text-sm'>{device.capabilities.chargeLevel.data.percentage.toFixed(0)}%</p>
-            </div>
-          )}
-
-          {isCapableOf(device, ['chargeStatus']) && (
-            <div className='rounded-xl border p-3'>
-              <p className='text-xs font-medium'>Charge Status</p>
-              <p className='mt-1 text-sm'>
-                {device.capabilities.chargeStatus.data.status ? 'Charging' : 'Not Charging'}
-              </p>
-            </div>
-          )}
-        </div>
-
-        <div className='mt-6 space-y-6'>
-          {isCapableOf(device, ['idleTime']) && <IdleTime device={device} />}
-          {isCapableOf(device, ['dpiStages']) && <DpiStages device={device} />}
-          {isCapableOf(device, ['polling2']) && <Polling2 device={device} />}
-          {isCapableOf(device, ['polling']) && <Polling device={device} />}
-        </div>
-      </>
-    )
-  }
+      <div className='mt-6 space-y-6'>
+        {isCapableOf(device, ['idleTime']) && <IdleTime device={device} />}
+        {isCapableOf(device, ['dpiStages']) && <DpiStages device={device} />}
+        {isCapableOf(device, ['polling2']) && <Polling2 device={device} />}
+        {isCapableOf(device, ['polling']) && <Polling device={device} />}
+      </div>
+    </>
+  )
 })
 
 export default DeviceView

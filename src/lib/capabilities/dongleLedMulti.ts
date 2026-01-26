@@ -1,5 +1,5 @@
 import { sendReport } from '../device/hid'
-import type { DeviceWithCapabilities } from '../device/device'
+import type { CapabilityCommand, DeviceWithCapabilities } from '../device/device'
 import { RazerReport } from '../device/report'
 
 export type DongleLedMultiData = [number, number, number]
@@ -35,4 +35,9 @@ export const setDongleLedMulti = async (
     args
   })
   await sendReport(device, report)
+}
+
+export const dongleLedMulti: CapabilityCommand<'dongleLedMulti', DongleLedMultiData> = {
+  get: getDongleLedMulti,
+  set: setDongleLedMulti
 }

@@ -1,4 +1,3 @@
-import { polling } from '@/lib/capabilities'
 import type { ReadyDeviceWithCapabilities } from '@/lib/device/device'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@radix-ui/react-dropdown-menu'
 import { Button } from '../ui/button'
@@ -26,7 +25,7 @@ export const Polling = observer(({ device }: PollingProps) => (
           {device.capabilities.polling.info.supportedIntervals.map((interval) => (
             <DropdownMenuItem
               key={interval}
-              onClick={() => polling.set(device, { interval })}
+              onClick={() => device.set('polling', { interval })}
               className='flex items-center justify-between'
             >
               <span className='tabular-nums'>{interval} Hz</span>

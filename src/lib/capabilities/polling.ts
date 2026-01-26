@@ -1,5 +1,5 @@
 import { sendReport } from '../device/hid'
-import type { DeviceWithCapabilities } from '../device/device'
+import type { CapabilityCommand, DeviceWithCapabilities } from '../device/device'
 import { RazerReport } from '../device/report'
 
 export type PollingData = {
@@ -58,4 +58,9 @@ export const setPolling = async (device: DeviceWithCapabilities<'polling'>, data
     idByte: device.capabilities.polling.info.idByte
   })
   await sendReport(device, report)
+}
+
+export const polling: CapabilityCommand<'polling', PollingData> = {
+  get: getPolling,
+  set: setPolling
 }

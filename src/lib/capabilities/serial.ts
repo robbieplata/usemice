@@ -1,5 +1,5 @@
 import { sendReport } from '../device/hid'
-import type { DeviceWithCapabilities } from '../device/device'
+import type { CapabilityCommand, DeviceWithCapabilities } from '../device/device'
 import { RazerReport } from '../device/report'
 
 export type SerialData = {
@@ -20,4 +20,8 @@ export const getSerial = async (device: DeviceWithCapabilities<'serial'>): Promi
   const nullIdx = bytes.indexOf(0x00)
   const serialBytes = nullIdx === -1 ? bytes : bytes.slice(0, nullIdx)
   return { serialNumber: new TextDecoder('utf-8').decode(serialBytes) }
+}
+
+export const serial: CapabilityCommand<'serial', SerialData> = {
+  get: getSerial
 }

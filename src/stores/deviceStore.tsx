@@ -1,13 +1,12 @@
 import { action, computed, flow, observable, reaction, type IReactionDisposer } from 'mobx'
-import { Device, isCapableOf, type CapabilityKey } from '../lib/device/device'
+import { assertStatus, Device, type DeviceInStatus, type DeviceInStatusVariant } from '../lib/device/device'
 import { getHidInterfaces, RequestHidDeviceError, requestHidInterface, selectBestInterface } from '../lib/device/hid'
 import { RAZER_VID } from '../lib/device/devices'
-import { DEVICE_CAPABILITIES } from '../lib/capabilities'
 import { toast } from 'sonner'
 import type { Result } from '@/lib/result'
 
 export class DeviceStore {
-  @observable accessor devices: Device[] = []
+  @observable accessor devices: DeviceInStatusVariant[] = []
   @observable accessor selectedDeviceId: number | undefined
   @observable accessor errors: Error[] = []
 
@@ -77,8 +76,8 @@ export class DeviceStore {
   }
 
   @computed
-  get selectedDevice(): Device | undefined {
-    return this.devices.find((d): d is Device => d.id === this.selectedDeviceId)
+  get selectedDevice() {
+    return this.devices.find((d) => d.id === this.selectedDeviceId)
   }
 
   @flow.bound
@@ -87,7 +86,7 @@ export class DeviceStore {
       return { error: new Error('Device already added') }
     }
     const device = new Device(hid)
-    this.devices.push(device)
+    this.devices.push(device as DeviceInStatus<'Initializing'>)
 
     if (!hid.opened) {
       try {
@@ -99,24 +98,19 @@ export class DeviceStore {
       }
     }
 
-    const fetchCommands: Promise<unknown>[] = []
-    Object.entries(device.capabilities).forEach(([key]) => {
-      if (isCapableOf(device, [key as CapabilityKey])) {
-        const fetchCommand = DEVICE_CAPABILITIES[key as CapabilityKey].get(device)
-        fetchCommands.push(fetchCommand)
-      }
-    })
+    const fetches: Promise<unknown>[] = []
+    for (const key of Object.keys(device.profile.capabilities) as (keyof typeof device.profile.capabilities)[]) {
+      fetches.push(device.get(key as any))
+    }
 
     try {
-      yield Promise.all(fetchCommands)
+      yield Promise.all(fetches)
       device.status = 'Ready'
+      assertStatus(device, 'Ready')
     } catch (e) {
       device.status = 'Failed'
-      if (e instanceof Error) {
-        device.error = e
-      } else {
-        device.error = new Error('Unknown error during device initialization')
-      }
+      device.error = e instanceof Error ? e : new Error('Unknown error during device initialization')
+      assertStatus(device, 'Failed')
     }
 
     if (device.error) {
@@ -127,7 +121,7 @@ export class DeviceStore {
   }
 
   @flow.bound
-  *removeDevice(device: Device, forget = false) {
+  *removeDevice(device: DeviceInStatusVariant, forget = false) {
     const index = this.devices.indexOf(device)
     if (index < 0) return
     yield device.hid.close()

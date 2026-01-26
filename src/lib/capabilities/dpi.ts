@@ -1,5 +1,5 @@
 import { sendReport } from '../device/hid'
-import type { Device, DeviceWithCapabilities } from '../device/device'
+import type { CapabilityCommand, DeviceWithCapabilities } from '../device/device'
 import { RazerReport } from '../device/report'
 
 export type DpiData = {
@@ -12,7 +12,7 @@ export type DpiInfo = {
   maxDpi: number
 }
 
-export const getDpi = async (device: Device): Promise<DpiData> => {
+export const getDpi = async (device: DeviceWithCapabilities<'dpi'>): Promise<DpiData> => {
   const report = RazerReport.from({ commandClass: 0x04, commandId: 0x85, dataSize: 0x07, args: new Uint8Array(0) })
   report.idByte = 0x00
   const response = await sendReport(device, report)
@@ -25,7 +25,6 @@ export const setDpi = async (device: DeviceWithCapabilities<'dpi'>, dpi: DpiData
   const buffer = new ArrayBuffer(7)
   const args = new Uint8Array(buffer)
   const { x, y } = dpi
-
   args[0] = 0x01
   args[1] = (x >> 8) & 0xff
   args[2] = x & 0x00ff
@@ -35,4 +34,9 @@ export const setDpi = async (device: DeviceWithCapabilities<'dpi'>, dpi: DpiData
   args[6] = 0x00
   const report = RazerReport.from({ commandClass: 0x04, commandId: 0x05, dataSize: 0x07, args })
   await sendReport(device, report)
+}
+
+export const dpi: CapabilityCommand<'dpi', DpiData> = {
+  get: getDpi,
+  set: setDpi
 }

@@ -1,17 +1,17 @@
+// src/lib/device/device.ts
 import { action, observable } from 'mobx'
 import { Mutex } from '../mutex'
-
+import { getDeviceProfile, type DeviceProfile } from './devices'
+import type { ChargeLevelData, ChargeLevelInfo } from '../capabilities/chargeLevel'
+import type { ChargeStatusData, ChargeStatusInfo } from '../capabilities/chargeStatus'
 import type { DpiData, DpiInfo } from '../capabilities/dpi'
 import type { DpiStagesData, DpiStagesInfo } from '../capabilities/dpiStages'
+import type { DongleLedMultiData, DongleLedMultiInfo } from '../capabilities/dongleLedMulti'
+import type { FirmwareVersionData, FirmwareVersionInfo } from '../capabilities/firmwareVersion'
+import type { IdleTimeData, IdleTimeInfo } from '../capabilities/idleTime'
 import type { PollingData, PollingInfo } from '../capabilities/polling'
 import type { Polling2Data, Polling2Info } from '../capabilities/polling2'
 import type { SerialData, SerialInfo } from '../capabilities/serial'
-import type { FirmwareVersionInfo, FirmwareVersionData } from '../capabilities/firmwareVersion'
-import type { ChargeLevelData, ChargeLevelInfo } from '../capabilities/chargeLevel'
-import type { ChargeStatusData, ChargeStatusInfo } from '../capabilities/chargeStatus'
-import type { IdleTimeData, IdleTimeInfo } from '../capabilities/idleTime'
-import type { DongleLedMultiData, DongleLedMultiInfo } from '../capabilities/dongleLedMulti'
-import { getDeviceProfile } from './devices'
 
 export type DeviceStatus = 'Initializing' | 'Ready' | 'Failed'
 
@@ -43,58 +43,74 @@ export type CapabilityDataMap = {
 
 export type CapabilityKey = keyof CapabilityInfoMap
 
-export type CapabilityState<K extends CapabilityKey, S extends DeviceStatus> =
-  | { enabled: false; info?: never; data?: never }
-  | (S extends 'Ready'
-      ? { enabled: true; info: CapabilityInfoMap[K]; data: CapabilityDataMap[K] }
-      : { enabled: true; info: CapabilityInfoMap[K]; data?: CapabilityDataMap[K] })
+export type CapabilityState<K extends CapabilityKey, S extends DeviceStatus> = S extends 'Ready'
+  ? { info: CapabilityInfoMap[K]; data: CapabilityDataMap[K] }
+  : { info: CapabilityInfoMap[K]; data?: CapabilityDataMap[K] }
 
-export type Capabilities<S extends DeviceStatus> = { [K in CapabilityKey]: CapabilityState<K, S> }
+export type Capabilities<S extends DeviceStatus> = Partial<{
+  [K in CapabilityKey]: CapabilityState<K, S>
+}>
 
 export type EnabledCapabilities<S extends DeviceStatus, K extends CapabilityKey> = Capabilities<S> & {
-  [P in K]-?: CapabilityState<P, S> & { enabled: true }
+  [P in K]-?: CapabilityState<P, S>
 }
 
-export type DeviceProfile = {
-  capabilityInfo: Partial<{ [K in CapabilityKey]: CapabilityInfoMap[K] }>
+export type CapabilityCommand<C extends CapabilityKey, T> = {
+  get?: (device: DeviceWithCapabilities<C>) => Promise<T>
+  set?: (device: DeviceWithCapabilities<C>, value: T) => Promise<void>
 }
 
-const CAP_KEYS = [
-  'chargeLevel',
-  'chargeStatus',
-  'dpi',
-  'dpiStages',
-  'dongleLedMulti',
-  'firmwareVersion',
-  'idleTime',
-  'polling',
-  'polling2',
-  'serial'
-] satisfies CapabilityKey[]
-
-type CapabilityDefaults = {
-  [K in CapabilityKey]: { enabled: false }
+export type CapabilityEntry<K extends CapabilityKey> = {
+  info: CapabilityInfoMap[K]
+  command: CapabilityCommand<K, CapabilityDataMap[K]>
 }
 
-const DISABLED_CAPS: CapabilityDefaults = {
-  chargeLevel: { enabled: false },
-  chargeStatus: { enabled: false },
-  dpi: { enabled: false },
-  dpiStages: { enabled: false },
-  dongleLedMulti: { enabled: false },
-  firmwareVersion: { enabled: false },
-  idleTime: { enabled: false },
-  polling: { enabled: false },
-  polling2: { enabled: false },
-  serial: { enabled: false }
+export type DeviceWithCapabilities<K extends CapabilityKey> = Device & {
+  capabilities: EnabledCapabilities<DeviceStatus, K>
 }
 
-function buildCapabilities<S extends DeviceStatus>(info: DeviceProfile['capabilityInfo']): Capabilities<S> {
-  const out: Record<CapabilityKey, unknown> = { ...DISABLED_CAPS }
-  for (const k of CAP_KEYS) {
-    if (Object.prototype.hasOwnProperty.call(info, k)) out[k] = { enabled: true, info: info[k] }
+export type ReadyDeviceWithCapabilities<K extends CapabilityKey, S extends DeviceStatus = 'Ready'> = Device & {
+  status: S
+  error: null
+  capabilities: EnabledCapabilities<S, K>
+}
+
+export type DeviceInStatus<S extends DeviceStatus> = Device & {
+  status: S
+  error: S extends 'Failed' ? Error : null
+  capabilities: Capabilities<S>
+}
+export type DeviceInStatusVariant = DeviceInStatus<'Initializing'> | DeviceInStatus<'Ready'> | DeviceInStatus<'Failed'>
+
+export function assertStatus<S extends DeviceStatus>(device: Device, status: S): asserts device is DeviceInStatus<S> {
+  device.status === status
+}
+
+export function isStatus<S extends DeviceStatus>(device: Device, status: S): device is DeviceInStatus<S> {
+  return device.status === status
+}
+
+export function isCapableOf<K extends CapabilityKey>(device: Device, keys: K[]): device is DeviceWithCapabilities<K> {
+  for (const key of keys) {
+    if (device.capabilities[key] === undefined) {
+      return false
+    }
   }
-  return out as Capabilities<S>
+  return true
+}
+
+function buildCapabilities<S extends DeviceStatus>(profile: DeviceProfile): Capabilities<S> {
+  const caps: Partial<Record<CapabilityKey, any>> = {}
+  for (const k in profile.capabilities) {
+    const key = k as CapabilityKey
+    const entry = profile.capabilities[key]
+    if (entry) {
+      caps[key] = {
+        info: entry.info
+      }
+    }
+  }
+  return caps as Capabilities<S>
 }
 
 export class DeviceNotSupportedError extends Error {
@@ -106,61 +122,61 @@ export class DeviceNotSupportedError extends Error {
     super(`Device not supported: VID=${vid.toString(16)}, PID=${pid.toString(16)}`)
   }
 }
+
 export class Device {
   @observable accessor id: number
-  @observable accessor status: DeviceStatus = 'Initializing'
-  @observable accessor error: Error | null = null
+  @observable accessor status: DeviceStatus
+  @observable accessor error: Error | null
   @observable accessor capabilities: Capabilities<DeviceStatus>
 
   readonly hid: HIDDevice
   readonly _lock: Mutex
+  readonly profile: DeviceProfile
 
   constructor(hid: HIDDevice) {
     const profile = getDeviceProfile(hid.vendorId, hid.productId)
-    if (!profile) {
-      throw new DeviceNotSupportedError(hid.vendorId, hid.productId)
-    }
-
+    if (!profile) throw new DeviceNotSupportedError(hid.vendorId, hid.productId)
     this.hid = hid
     this.id = (hid.vendorId << 16) + hid.productId
     this._lock = new Mutex()
-    this.capabilities = buildCapabilities<DeviceStatus>(profile.capabilityInfo)
+    this.profile = profile
+    this.capabilities = buildCapabilities<DeviceStatus>(profile)
+    this.status = 'Initializing'
+    this.error = null
+  }
+
+  private entry<K extends CapabilityKey>(key: K) {
+    const entry = this.profile.capabilities[key]
+    if (!entry) throw new Error(`Capability "${String(key)}" is disabled for this device`)
+    return entry
   }
 
   @action
   setCapabilityData<K extends CapabilityKey>(key: K, data: CapabilityDataMap[K]) {
     const cap = this.capabilities[key]
-    if (!cap.enabled) throw new Error(`Capability "${String(key)}" is disabled for this device`)
-    ;(cap as { data?: CapabilityDataMap[K] }).data = data
+    if (!cap) throw new Error(`Capability "${String(key)}" is disabled for this device`)
+    cap.data = data
   }
-}
 
-export type DeviceInStatus<S extends DeviceStatus> = Device & {
-  status: S
-  error: S extends 'Failed' ? Error : null
-  capabilities: Capabilities<S>
-}
+  @action
+  async get<K extends CapabilityKey>(key: K) {
+    const entry = this.entry(key)
+    if (!isCapableOf(this, [key])) throw new Error(`Capability "${String(key)}" is disabled for this device`)
+    if (!entry.command.get) throw new Error(`Cannot get ${String(key)}`)
+    const data = await entry.command.get(this as any)
+    this.setCapabilityData(key, data)
+    return data
+  }
 
-export type DeviceWithCapabilities<K extends CapabilityKey> = Device & {
-  capabilities: EnabledCapabilities<DeviceStatus, K>
-}
-
-export type ReadyDeviceWithCapabilities<K extends CapabilityKey> = DeviceInStatus<'Ready'> & {
-  capabilities: EnabledCapabilities<'Ready', K>
-}
-
-export function isStatus(device: Device, status: 'Ready'): device is DeviceInStatus<'Ready'>
-export function isStatus(device: Device, status: 'Failed'): device is DeviceInStatus<'Failed'>
-export function isStatus(device: Device, status: 'Initializing'): device is DeviceInStatus<'Initializing'>
-export function isStatus(device: Device, status: DeviceStatus): boolean {
-  return device.status === status
-}
-
-export function isCapableOf<K extends CapabilityKey>(
-  device: DeviceInStatus<'Ready'>,
-  caps: K[]
-): device is ReadyDeviceWithCapabilities<K>
-export function isCapableOf<K extends CapabilityKey>(device: Device, caps: K[]): device is DeviceWithCapabilities<K>
-export function isCapableOf<K extends CapabilityKey>(device: Device, caps: K[]): boolean {
-  return caps.every((k) => device.capabilities[k].enabled === true)
+  @action
+  async set<K extends CapabilityKey>(key: K, value: CapabilityDataMap[K]) {
+    const entry = this.entry(key)
+    if (!isCapableOf(this, [key])) throw new Error(`Capability "${String(key)}" is disabled for this device`)
+    if (!entry.command.set) throw new Error(`Cannot set ${String(key)}`)
+    await entry.command.set(this as any, value)
+    if (entry.command.get) {
+      const data = await entry.command.get(this as any)
+      this.setCapabilityData(key, data)
+    }
+  }
 }

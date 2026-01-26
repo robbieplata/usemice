@@ -1,5 +1,5 @@
 import { sendReport } from '../device/hid'
-import type { DeviceWithCapabilities } from '../device/device'
+import type { CapabilityCommand, DeviceWithCapabilities } from '../device/device'
 import { RazerReport } from '../device/report'
 
 export type DpiStagesData = {
@@ -94,4 +94,9 @@ export const setDpiStages = async (device: DeviceWithCapabilities<'dpiStages'>, 
   report.args = args
 
   await sendReport(device, report)
+}
+
+export const dpiStages: CapabilityCommand<'dpiStages', DpiStagesData> = {
+  get: getDpiStages,
+  set: setDpiStages
 }

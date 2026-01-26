@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
 import debounce from 'lodash/debounce'
-import { dpiStages } from '@/lib/capabilities'
 import { type ReadyDeviceWithCapabilities } from '@/lib/device/device'
 import { Button } from '../ui/button'
 import { Slider } from '../ui/slider'
@@ -24,7 +23,7 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
 
   const debouncedSet = useMemo(() => {
     return debounce((nextLevels: typeof localDpiLevels) => {
-      dpiStages.set(device, {
+      device.set('dpiStages', {
         ...device.capabilities.dpiStages.data,
         dpiLevels: nextLevels
       })
@@ -88,7 +87,7 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
                   <Button
                     disabled={isActive}
                     onClick={() =>
-                      dpiStages.set(device, {
+                      device.set('dpiStages', {
                         ...device.capabilities.dpiStages.data,
                         activeStage: index + 1
                       })

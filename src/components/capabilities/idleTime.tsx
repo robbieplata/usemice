@@ -1,7 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
 import debounce from 'lodash/debounce'
-
-import { idleTime } from '@/lib/capabilities'
 import type { ReadyDeviceWithCapabilities } from '@/lib/device/device'
 import { Slider } from '../ui/slider'
 
@@ -19,7 +17,7 @@ export const IdleTime = ({ device }: IdleTimeProps) => {
   const debouncedUpdateIdleTime = useMemo(
     () =>
       debounce((value: number) => {
-        idleTime.set(device, { seconds: value })
+        device.set('idleTime', { seconds: value })
       }, 300),
     [device]
   )
