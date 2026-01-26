@@ -1,6 +1,5 @@
-import { sendReport } from '../device/hid'
-import type { CapabilityCommand, DeviceWithCapabilities } from '../device/device'
-import { RazerReport } from '../device/report'
+import type { CapabilityCommand, DeviceWithCapabilities } from '../../device/device'
+import { RazerReport } from '../../device/razerReport'
 
 export type IdleTimeData = {
   seconds: number
@@ -13,7 +12,7 @@ export type IdleTimeInfo = {
 
 export const getIdleTime = async (device: DeviceWithCapabilities<'idleTime'>): Promise<IdleTimeData> => {
   const report = RazerReport.from({ commandClass: 0x07, commandId: 0x83, dataSize: 0x02, args: new Uint8Array(0) })
-  const response = await sendReport(device, report)
+  const response = await report.sendReport(device)
   return { seconds: (response.args[0] << 8) | (response.args[1] & 0xff) }
 }
 
@@ -26,8 +25,7 @@ export const setIdleTime = async (device: DeviceWithCapabilities<'idleTime'>, da
   args[0] = (data.seconds >> 8) & 0xff
   args[1] = data.seconds & 0xff
   const report = RazerReport.from({ commandClass: 0x07, commandId: 0x03, dataSize: 0x02, args })
-  console.log('Setting idle time to', data.seconds)
-  await sendReport(device, report)
+  await report.sendReport(device)
 }
 
 export const idleTime: CapabilityCommand<'idleTime', IdleTimeData> = {

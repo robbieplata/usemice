@@ -6,7 +6,7 @@ import { IdleTime } from './capabilities/idleTime'
 import { DpiStages } from './capabilities/dpiStages'
 import { Polling2 } from './capabilities/polling2'
 import { Polling } from './capabilities/polling'
-import { SkeletonDevice } from './skeletonDevice'
+import { SkeletonDevice } from './SkeletonDevice'
 
 type DeviceViewProps = {
   device?: DeviceInStatusVariant

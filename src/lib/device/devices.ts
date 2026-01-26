@@ -1,13 +1,13 @@
-import { chargeLevel } from '../capabilities/chargeLevel'
-import { chargeStatus } from '../capabilities/chargeStatus'
-import { dongleLedMulti } from '../capabilities/dongleLedMulti'
-import { dpi } from '../capabilities/dpi'
-import { dpiStages } from '../capabilities/dpiStages'
-import { firmwareVersion } from '../capabilities/firmwareVersion'
-import { idleTime } from '../capabilities/idleTime'
-import { polling } from '../capabilities/polling'
-import { polling2 } from '../capabilities/polling2'
-import { serial } from '../capabilities/serial'
+import { chargeLevel } from '../capabilities/razer/chargeLevel'
+import { chargeStatus } from '../capabilities/razer/chargeStatus'
+import { dongleLedMulti } from '../capabilities/razer/dongleLedMulti'
+import { dpi } from '../capabilities/razer/dpi'
+import { dpiStages } from '../capabilities/razer/dpiStages'
+import { firmwareVersion } from '../capabilities/razer/firmwareVersion'
+import { idleTime } from '../capabilities/razer/idleTime'
+import { polling } from '../capabilities/razer/polling'
+import { polling2 } from '../capabilities/razer/polling2'
+import { serial } from '../capabilities/razer/serial'
 import { type CapabilityEntry, type CapabilityKey } from './device'
 
 export type DeviceProfile = {
@@ -66,7 +66,6 @@ export function getDeviceProfile(vid: number, pid: number): DeviceProfile | null
                 command: polling
               },
               idleTime: { info: { minSeconds: 60, maxSeconds: 900 }, command: idleTime },
-
               chargeLevel: { command: chargeLevel, info: {} },
               chargeStatus: { command: chargeStatus, info: {} },
               firmwareVersion: { command: firmwareVersion, info: {} },

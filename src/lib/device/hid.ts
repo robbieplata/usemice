@@ -1,8 +1,8 @@
 import type { Mutex } from '../mutex'
-import { RAZER_REPORT_ID, RazerReport } from './report'
 import { find, groupBy, some } from 'lodash'
-import { toast } from 'sonner'
 import { RAZER_VID } from './devices'
+
+const DEFAULT_FILTER = [{ vendorId: RAZER_VID }]
 
 type Result<T, E> = { value: T; error?: never } | { error: E }
 
@@ -27,12 +27,14 @@ export type HidSession = {
   _lock: Mutex
 }
 
-const _sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
-
-const _send = async (hidDevice: HIDDevice, report: RazerReport): Promise<Result<undefined, OpenHidDeviceError>> => {
+export const sendBuffer = async (
+  hidDevice: HIDDevice,
+  reportId: number,
+  buffer: ArrayBuffer
+): Promise<Result<undefined, OpenHidDeviceError>> => {
   try {
     if (!hidDevice.opened) return { error: new OpenHidDeviceError('Device is not opened') }
-    await hidDevice.sendFeatureReport(RAZER_REPORT_ID, report.buffer)
+    await hidDevice.sendFeatureReport(reportId, buffer)
   } catch (e) {
     if (e instanceof Error) return { error: new OpenHidDeviceError(`Failed to send report: ${e.message}`) }
     return { error: new OpenHidDeviceError('Failed to send report: unknown error') }
@@ -40,70 +42,20 @@ const _send = async (hidDevice: HIDDevice, report: RazerReport): Promise<Result<
   return { value: undefined }
 }
 
-const _receive = async (hidDevice: HIDDevice): Promise<Result<Uint8Array, OpenHidDeviceError>> => {
+export const receiveBuffer = async (
+  hidDevice: HIDDevice,
+  reportId: number
+): Promise<Result<Uint8Array, OpenHidDeviceError>> => {
   if (!hidDevice.opened) return { error: new OpenHidDeviceError('Device is not opened') }
-  const view = await hidDevice.receiveFeatureReport(RAZER_REPORT_ID)
+  const view = await hidDevice.receiveFeatureReport(reportId)
   return { value: new Uint8Array(view.buffer, view.byteOffset, view.byteLength) }
 }
 
-enum RAZER_STATUS {
-  NEW = 0x00,
-  BUSY = 0x01,
-  SUCCESS = 0x02,
-  FAILURE = 0x03,
-  TIMEOUT = 0x04,
-  NOT_SUPPORTED = 0x05
-}
-
-class TransactionError extends Error {
+export class TransactionError extends Error {
   readonly name = 'TransactionError'
   constructor(message: string) {
     super(message)
   }
-}
-
-export const sendReport = async (device: HidSession, report: RazerReport, maxRetries = 10): Promise<RazerReport> => {
-  return device._lock.withLock(async () => {
-    const expectedCommandClass = report.commandClass
-    const expectedCommandId = report.commandId
-
-    const send = await _send(device.hid, report)
-    if (send.error) throw send.error
-
-    await _sleep(20)
-
-    for (let attempt = 0; attempt < maxRetries; attempt++) {
-      const recv = await _receive(device.hid)
-      if (recv.error) throw recv.error
-
-      const response = RazerReport.fromBytes(recv.value)
-      if (response.commandClass !== expectedCommandClass || response.commandId !== expectedCommandId) {
-        await _sleep(10)
-        continue
-      }
-
-      switch (response.status) {
-        case RAZER_STATUS.SUCCESS:
-          return response
-        case RAZER_STATUS.BUSY:
-          await _sleep(20)
-          continue
-        case RAZER_STATUS.FAILURE:
-          toast('Device returned failure status')
-          throw new TransactionError('Device returned failure status')
-        case RAZER_STATUS.TIMEOUT:
-          throw new TransactionError('Device returned timeout status')
-        case RAZER_STATUS.NOT_SUPPORTED:
-          toast('Command not supported by device')
-          throw new TransactionError('Command not supported by device')
-        default:
-          await _sleep(20)
-          continue
-      }
-    }
-
-    throw new TransactionError('Max retries exceeded waiting for device response')
-  })
 }
 
 type HidProductKey = `${number}:${number}`
@@ -128,7 +80,7 @@ const pickBestInterfaces = (devices: HIDDevice[]): HIDDevice[] => {
     .filter((d): d is HIDDevice => d !== undefined)
 }
 
-const defaultFilters = (options?: HIDDeviceRequestOptions) => options?.filters ?? [{ vendorId: RAZER_VID }]
+const defaultFilters = (options?: HIDDeviceRequestOptions) => options?.filters ?? DEFAULT_FILTER
 
 export const getHidInterfaces = async (options?: HIDDeviceRequestOptions): Promise<HIDDevice[]> => {
   const filters = defaultFilters(options)

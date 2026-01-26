@@ -1,6 +1,5 @@
-import { sendReport } from '../device/hid'
-import type { CapabilityCommand, DeviceWithCapabilities } from '../device/device'
-import { RazerReport } from '../device/report'
+import type { CapabilityCommand, DeviceWithCapabilities } from '../../device/device'
+import { RazerReport } from '../../device/razerReport'
 
 export type DpiStagesData = {
   dpiLevels: [number, number][]
@@ -30,7 +29,7 @@ export type DpiStagesInfo = {
  */
 export const getDpiStages = async (device: DeviceWithCapabilities<'dpiStages'>): Promise<DpiStagesData> => {
   const report = RazerReport.from({ commandClass: 0x04, commandId: 0x86, dataSize: 0x26, args: new Uint8Array([0x01]) })
-  const response = await sendReport(device, report)
+  const response = await report.sendReport(device)
 
   const args = response.args
   const dataSize = Math.min(response.dataSize)
@@ -93,7 +92,7 @@ export const setDpiStages = async (device: DeviceWithCapabilities<'dpiStages'>, 
   }
   report.args = args
 
-  await sendReport(device, report)
+  await report.sendReport(device)
 }
 
 export const dpiStages: CapabilityCommand<'dpiStages', DpiStagesData> = {

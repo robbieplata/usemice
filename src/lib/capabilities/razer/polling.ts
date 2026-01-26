@@ -1,6 +1,5 @@
-import { sendReport } from '../device/hid'
-import type { CapabilityCommand, DeviceWithCapabilities } from '../device/device'
-import { RazerReport } from '../device/report'
+import type { CapabilityCommand, DeviceWithCapabilities } from '../../device/device'
+import { RazerReport } from '../../device/razerReport'
 
 export type PollingData = {
   interval: number
@@ -36,7 +35,7 @@ export const getPolling = async (device: DeviceWithCapabilities<'polling'>): Pro
     args: new Uint8Array([]),
     idByte: device.capabilities.polling.info.idByte
   })
-  const response = await sendReport(device, report)
+  const response = await report.sendReport(device)
   const value = response.args[0]
   const interval = MAPPING[value]
   if (interval === undefined) {
@@ -57,7 +56,7 @@ export const setPolling = async (device: DeviceWithCapabilities<'polling'>, data
     args: new Uint8Array([value]),
     idByte: device.capabilities.polling.info.idByte
   })
-  await sendReport(device, report)
+  await report.sendReport(device)
 }
 
 export const polling: CapabilityCommand<'polling', PollingData> = {
