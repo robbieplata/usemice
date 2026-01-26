@@ -27,7 +27,7 @@ class UnsupportedDeviceError extends Error {
   }
 }
 
-export function getDeviceProfile(vid: number, pid: number): DeviceProfile | null {
+export function getDeviceDescriptor(vid: number, pid: number): DeviceProfile | null {
   switch (vid) {
     case RAZER_VID:
       switch (pid) {
@@ -35,41 +35,41 @@ export function getDeviceProfile(vid: number, pid: number): DeviceProfile | null
         case PID_DEATHADDER_V4_PRO_WIRELESS:
           return {
             capabilities: {
-              dpi: { info: { minDpi: 100, maxDpi: 45_000 }, command: dpi },
+              dpi: { info: { minDpi: 100, maxDpi: 45_000, idByte: 0x1f }, command: dpi },
               dpiStages: {
-                info: { minDpi: 100, maxDpi: 45_000, maxStages: 5 },
+                info: { minDpi: 100, maxDpi: 45_000, maxStages: 5, idByte: 0x1f },
                 command: dpiStages
               },
               polling2: {
                 info: { supportedIntervals: [125, 250, 500, 1_000, 2_000, 4_000, 8_000], idByte: 0x1f },
                 command: polling2
               },
-              idleTime: { info: { minSeconds: 60, maxSeconds: 900 }, command: idleTime },
-              chargeLevel: { command: chargeLevel, info: {} },
-              chargeStatus: { command: chargeStatus, info: {} },
-              firmwareVersion: { command: firmwareVersion, info: {} },
-              serial: { command: serial, info: {} },
-              dongleLedMulti: { command: dongleLedMulti, info: {} }
+              idleTime: { info: { minSeconds: 60, maxSeconds: 900, idByte: 0x1f }, command: idleTime },
+              chargeLevel: { command: chargeLevel, info: { idByte: 0x1f } },
+              chargeStatus: { command: chargeStatus, info: { idByte: 0x1f } },
+              firmwareVersion: { command: firmwareVersion, info: { idByte: 0x1f } },
+              serial: { command: serial, info: { idByte: 0x1f } },
+              dongleLedMulti: { command: dongleLedMulti, info: { idByte: 0x1f } }
             }
           }
         case PID_DEATHADDER_V3_PRO_WIRED_ALT:
         case PID_DEATHADDER_V3_PRO_WIRELESS_ALT:
           return {
             capabilities: {
-              dpi: { info: { minDpi: 100, maxDpi: 45_000 }, command: dpi },
+              dpi: { info: { minDpi: 100, maxDpi: 45_000, idByte: 0x1f }, command: dpi },
               dpiStages: {
-                info: { minDpi: 100, maxDpi: 45_000, maxStages: 5 },
+                info: { minDpi: 100, maxDpi: 45_000, maxStages: 5, idByte: 0x1f },
                 command: dpiStages
               },
               polling: {
                 info: { supportedIntervals: [125, 500, 1_000], idByte: 0x1f },
                 command: polling
               },
-              idleTime: { info: { minSeconds: 60, maxSeconds: 900 }, command: idleTime },
-              chargeLevel: { command: chargeLevel, info: {} },
-              chargeStatus: { command: chargeStatus, info: {} },
-              firmwareVersion: { command: firmwareVersion, info: {} },
-              serial: { command: serial, info: {} }
+              idleTime: { info: { minSeconds: 60, maxSeconds: 900, idByte: 0x1f }, command: idleTime },
+              chargeLevel: { command: chargeLevel, info: { idByte: 0x1f } },
+              chargeStatus: { command: chargeStatus, info: { idByte: 0x1f } },
+              firmwareVersion: { command: firmwareVersion, info: { idByte: 0x1f } },
+              serial: { command: serial, info: { idByte: 0x1f } }
             }
           }
       }

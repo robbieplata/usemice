@@ -1,7 +1,6 @@
 import { action, computed, flow, observable, reaction, type IReactionDisposer } from 'mobx'
 import { assertStatus, Device, type DeviceInStatus, type DeviceInStatusVariant } from '../lib/device/device'
 import { getHidInterfaces, RequestHidDeviceError, requestHidInterface, selectBestInterface } from '../lib/device/hid'
-import { RAZER_VID } from '../lib/device/devices'
 import { toast } from 'sonner'
 import type { Result } from '@/lib/result'
 
@@ -136,9 +135,7 @@ export class DeviceStore {
 
   @flow.bound
   *requestDevice(options?: HIDDeviceRequestOptions) {
-    const hidDevice: Result<HIDDevice, RequestHidDeviceError> = yield requestHidInterface(
-      options ?? { filters: [{ vendorId: RAZER_VID }] }
-    )
+    const hidDevice: Result<HIDDevice, RequestHidDeviceError> = yield requestHidInterface(options)
     if (hidDevice.error) {
       this.errors.push(hidDevice.error)
     }

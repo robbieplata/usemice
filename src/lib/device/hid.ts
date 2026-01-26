@@ -1,6 +1,6 @@
 import type { Mutex } from '../mutex'
 import { find, groupBy, some } from 'lodash'
-import { RAZER_VID } from './devices'
+import { RAZER_VID } from './razer/constants'
 
 const DEFAULT_FILTER = [{ vendorId: RAZER_VID }]
 

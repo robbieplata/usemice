@@ -1,13 +1,13 @@
 import type { CapabilityCommand, DeviceWithCapabilities } from '../../device/device'
-import { RazerReport } from '../../device/razerReport'
+import { RazerReport } from '../../device/razer/razerReport'
 
 export type Polling2Data = {
   interval: number
 }
 
 export type Polling2Info = {
-  idByte: number
   supportedIntervals: number[]
+  idByte: number
 }
 
 export class Polling2Error extends Error {
@@ -36,39 +36,34 @@ const MAPPING: Record<number, number> = {
   4000: 0x02,
   8000: 0x01
 }
-
-export const getPolling2 = async (device: DeviceWithCapabilities<'polling2'>): Promise<Polling2Data> => {
-  const report = RazerReport.from({
-    commandClass: 0x00,
-    commandId: 0xc0,
-    dataSize: 0x01,
-    args: new Uint8Array([0x00]),
-    idByte: device.capabilities.polling2.info.idByte
-  })
-  const response = await report.sendReport(device)
-  const value = response.args[1]
-  const interval = MAPPING[value]
-  if (interval === undefined) {
-    throw new Polling2Error(`Unsupported polling2 interval received: 0x${value.toString(16)}`)
-  }
-  return { interval }
-}
-
-export const setPolling2 = async (device: DeviceWithCapabilities<'polling2'>, data: Polling2Data): Promise<void> => {
-  const value = MAPPING[data.interval]
-  if (value === undefined) {
-    throw new Polling2Error('Unsupported polling2 interval set')
-  }
-  const report = RazerReport.from({
-    commandClass: 0x00,
-    commandId: 0x40,
-    dataSize: 0x02,
-    args: new Uint8Array([0x01, value])
-  })
-  await report.sendReport(device)
-}
-
 export const polling2: CapabilityCommand<'polling2', Polling2Data> = {
-  get: getPolling2,
-  set: setPolling2
+  get: async (device: DeviceWithCapabilities<'polling2'>): Promise<Polling2Data> => {
+    const report = RazerReport.from({
+      commandClass: 0x00,
+      commandId: 0xc0,
+      dataSize: 0x01,
+      args: new Uint8Array([0x00]),
+      idByte: device.capabilities.polling2.info.idByte
+    })
+    const response = await report.sendReport(device)
+    const value = response.args[1]
+    const interval = MAPPING[value]
+    if (interval === undefined) {
+      throw new Polling2Error(`Unsupported polling2 interval received: 0x${value.toString(16)}`)
+    }
+    return { interval }
+  },
+  set: async (device: DeviceWithCapabilities<'polling2'>, data: Polling2Data): Promise<void> => {
+    const value = MAPPING[data.interval]
+    if (value === undefined) {
+      throw new Polling2Error('Unsupported polling2 interval set')
+    }
+    const report = RazerReport.from({
+      commandClass: 0x00,
+      commandId: 0x40,
+      dataSize: 0x02,
+      args: new Uint8Array([0x01, value])
+    })
+    await report.sendReport(device)
+  }
 }
