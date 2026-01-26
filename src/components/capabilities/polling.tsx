@@ -1,5 +1,5 @@
 import type { ReadyDeviceWithCapabilities } from '@/lib/device/device'
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@radix-ui/react-dropdown-menu'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
 import { Button } from '../ui/button'
 import { observer } from 'mobx-react-lite'
 

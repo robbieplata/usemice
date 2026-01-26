@@ -17,6 +17,7 @@ export const serial: CapabilityCommand<'serial', SerialData> = {
     const bytes = response.args.slice(0, 22)
     const nullIdx = bytes.indexOf(0x00)
     const serialBytes = nullIdx === -1 ? bytes : bytes.slice(0, nullIdx)
+
     return { serialNumber: new TextDecoder('utf-8').decode(serialBytes) }
   }
 }

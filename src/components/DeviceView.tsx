@@ -33,7 +33,7 @@ const DeviceView = observer(({ device }: DeviceViewProps) => {
     return (
       <div className='rounded-xl p-4'>
         <h2 className='text-base font-semibold'>{device.hid.productName}</h2>
-        <p className='mt-1 text-sm'>Device failed to initialize: {device.error.message}</p>
+        <p className='mt-1 text-sm'>Device failed to initialize: {device.failureReason.message}</p>
       </div>
     )
   }

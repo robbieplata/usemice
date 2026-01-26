@@ -108,12 +108,12 @@ export class DeviceStore {
       assertStatus(device, 'Ready')
     } catch (e) {
       device.status = 'Failed'
-      device.error = e instanceof Error ? e : new Error('Unknown error during device initialization')
+      device.failureReason = e instanceof Error ? e : new Error('Unknown error during device initialization')
       assertStatus(device, 'Failed')
     }
 
-    if (device.error) {
-      this.errors.push(device.error)
+    if (device.failureReason) {
+      this.errors.push(device.failureReason)
     }
 
     return { value: device }

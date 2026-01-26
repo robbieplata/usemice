@@ -1,5 +1,5 @@
 // src/lib/device/device.ts
-import { action, observable } from 'mobx'
+import { action, observable, reaction, Reaction, type IReactionDisposer } from 'mobx'
 import { Mutex } from '../mutex'
 import { getDeviceDescriptor, type DeviceProfile } from './devices'
 import type { ChargeLevelData, ChargeLevelInfo } from '../capabilities/razer/chargeLevel'
@@ -12,6 +12,7 @@ import type { IdleTimeData, IdleTimeInfo } from '../capabilities/razer/idleTime'
 import type { PollingData, PollingInfo } from '../capabilities/razer/polling'
 import type { Polling2Data, Polling2Info } from '../capabilities/razer/polling2'
 import type { SerialData, SerialInfo } from '../capabilities/razer/serial'
+import { toast } from 'sonner'
 
 export type DeviceStatus = 'Initializing' | 'Ready' | 'Failed'
 
@@ -100,7 +101,7 @@ export function isCapableOf<K extends CapabilityKey>(device: Device, keys: K[]):
 }
 
 function buildCapabilities<S extends DeviceStatus>(profile: DeviceProfile): Capabilities<S> {
-  const caps: Partial<Record<CapabilityKey, any>> = {}
+  const caps: Partial<Record<CapabilityKey, unknown>> = {}
   for (const k in profile.capabilities) {
     const key = k as CapabilityKey
     const entry = profile.capabilities[key]
@@ -126,12 +127,14 @@ export class DeviceNotSupportedError extends Error {
 export class Device {
   @observable accessor id: number
   @observable accessor status: DeviceStatus
-  @observable accessor error: Error | null
+  @observable accessor failureReason: Error | null
   @observable accessor capabilities: Capabilities<DeviceStatus>
+  @observable accessor errors: Error[] = []
 
   readonly hid: HIDDevice
   readonly _lock: Mutex
   readonly profile: DeviceProfile
+  toastErrorsDisposer: IReactionDisposer
 
   constructor(hid: HIDDevice) {
     const profile = getDeviceDescriptor(hid.vendorId, hid.productId)
@@ -142,7 +145,19 @@ export class Device {
     this.profile = profile
     this.capabilities = buildCapabilities<DeviceStatus>(profile)
     this.status = 'Initializing'
-    this.error = null
+    this.failureReason = null
+    this.errors = []
+    this.toastErrorsDisposer = reaction(
+      () => this.errors.length,
+      (length, previousLength) => {
+        if (length > previousLength) {
+          const newError = this.errors[length - 1]
+          toast.error('Error: ' + newError.message, {
+            duration: 5000
+          })
+        }
+      }
+    )
   }
 
   private entry<K extends CapabilityKey>(key: K) {
@@ -159,24 +174,36 @@ export class Device {
   }
 
   @action
-  async get<K extends CapabilityKey>(key: K) {
+  async get<K extends CapabilityKey>(key: K): Promise<CapabilityDataMap[K] | void> {
     const entry = this.entry(key)
     if (!isCapableOf(this, [key])) throw new Error(`Capability "${String(key)}" is disabled for this device`)
     if (!entry.command.get) throw new Error(`Cannot get ${String(key)}`)
-    const data = await entry.command.get(this as any)
-    this.setCapabilityData(key, data)
-    return data
+    return await entry.command
+      .get(this)
+      .then((data) => {
+        this.setCapabilityData(key, data)
+        return data
+      })
+      .catch((err) => {
+        this.errors.push(new Error(err.message))
+      })
   }
 
   @action
-  async set<K extends CapabilityKey>(key: K, value: CapabilityDataMap[K]) {
+  async set<K extends CapabilityKey>(key: K, value: CapabilityDataMap[K]): Promise<void> {
     const entry = this.entry(key)
     if (!isCapableOf(this, [key])) throw new Error(`Capability "${String(key)}" is disabled for this device`)
     if (!entry.command.set) throw new Error(`Cannot set ${String(key)}`)
-    await entry.command.set(this as any, value)
-    if (entry.command.get) {
-      const data = await entry.command.get(this as any)
-      this.setCapabilityData(key, data)
-    }
+    await entry.command
+      .set(this, value)
+      .then(async () => {
+        if (entry.command.get) {
+          const data = await entry.command.get(this)
+          this.setCapabilityData(key, data)
+        }
+      })
+      .catch((err) => {
+        this.errors.push(new Error(err.message))
+      })
   }
 }
