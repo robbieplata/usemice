@@ -19,7 +19,7 @@ enum RAZER_STATUS {
 export const _sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 type RazerReportParams = {
-  idByte?: number
+  txId?: number
   commandClass: number
   commandId: number
   dataSize: number
@@ -29,10 +29,10 @@ type RazerReportParams = {
 export class RazerReport {
   private readonly bytes = new Uint8Array(RAZER_REPORT_SIZE)
 
-  static from({ idByte, commandClass, commandId, dataSize, args }: RazerReportParams): RazerReport {
+  static from({ txId, commandClass, commandId, dataSize, args }: RazerReportParams): RazerReport {
     const r = new RazerReport()
     r.status = 0x00
-    r.idByte = idByte ?? 0x00
+    r.txId = txId ?? 0x00
     r.commandClass = commandClass
     r.commandId = commandId
     r.dataSize = dataSize
@@ -127,11 +127,11 @@ export class RazerReport {
     this.setByte(0, v)
   }
 
-  // aka the transaction id, but for razer idByte is device specific
-  get idByte() {
+  // aka the transaction id, but for razer txId is device specific
+  get txId() {
     return this.getByte(1)
   }
-  set idByte(v: number) {
+  set txId(v: number) {
     this.setByte(1, v)
   }
 

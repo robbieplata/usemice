@@ -1,13 +1,8 @@
 import type { CapabilityCommand, DeviceWithCapabilities } from '../../device/device'
 import { RazerReport } from '../../device/razer/razerReport'
 
-export type SerialData = {
-  serialNumber: string
-}
-
-export type SerialInfo = {
-  idByte: number
-}
+export type SerialData = { serialNumber: string }
+export type SerialInfo = { txId: number }
 
 export const serial: CapabilityCommand<'serial', SerialData> = {
   get: async (device: DeviceWithCapabilities<'serial'>): Promise<SerialData> => {
@@ -15,7 +10,8 @@ export const serial: CapabilityCommand<'serial', SerialData> = {
       commandClass: 0x00,
       commandId: 0x82,
       dataSize: 0x16,
-      args: new Uint8Array([0])
+      args: new Uint8Array([0x00]),
+      txId: device.capabilities.serial.info.txId
     })
     const response = await report.sendReport(device)
     const bytes = response.args.slice(0, 22)

@@ -10,7 +10,7 @@ export type DpiStagesInfo = {
   minDpi: number
   maxDpi: number
   maxStages: number
-  idByte: number
+  txId: number
 }
 /**
  * Response format (hex):
@@ -35,10 +35,11 @@ export const dpiStages: CapabilityCommand<'dpiStages', DpiStagesData> = {
       commandClass: 0x04,
       commandId: 0x86,
       dataSize: 0x26,
-      args: new Uint8Array([0x01])
+      args: new Uint8Array([0x01]),
+      txId: device.capabilities.dpiStages.info.txId
     })
-    const response = await report.sendReport(device)
 
+    const response = await report.sendReport(device)
     const args = response.args
     const dataSize = Math.min(response.dataSize)
 
@@ -57,36 +58,28 @@ export const dpiStages: CapabilityCommand<'dpiStages', DpiStagesData> = {
 
     return { dpiLevels, activeStage }
   },
+
   set: async (device: DeviceWithCapabilities<'dpiStages'>, data: DpiStagesData): Promise<void> => {
-    const report = RazerReport.from({ commandClass: 0x04, commandId: 0x06, dataSize: 0x26 })
     const { dpiLevels, activeStage } = data
     const args = new Uint8Array(0x26)
-
     const count = dpiLevels.length
 
-    if (count < 1) {
-      throw new Error('At least one DPI stage must be provided')
-    }
+    if (count < 1) throw new Error('At least one DPI stage must be provided')
 
     const maxStages = device.capabilities.dpiStages.info.maxStages
-    if (count > maxStages) {
-      throw new Error(`Too many DPI stages (${count}) provided, maximum is ${maxStages}`)
-    }
+    if (count > maxStages) throw new Error(`Too many DPI stages (${count}) provided, maximum is ${maxStages}`)
 
     if (activeStage > count || activeStage < 1) {
       throw new Error(`Active stage (${activeStage}) out of bounds for ${count} stages`)
     }
 
-    if (3 + 7 * count > 0x26) {
-      throw new Error(`Too many DPI stages (${count}) for 0x26-byte payload`)
-    }
+    if (3 + 7 * count > 0x26) throw new Error(`Too many DPI stages (${count}) for 0x26-byte payload`)
 
-    const variableStorage = 0x01
-    args[0] = variableStorage & 0xff
+    args[0] = 0x01 // varstore
     args[1] = activeStage & 0xff
     args[2] = count & 0xff
-    let offset = 3
 
+    let offset = 3
     for (let i = 0; i < count; i++) {
       const [x, y] = dpiLevels[i]
       args[offset++] = i & 0xff
@@ -97,7 +90,14 @@ export const dpiStages: CapabilityCommand<'dpiStages', DpiStagesData> = {
       args[offset++] = 0x00
       args[offset++] = 0x00
     }
-    report.args = args
+
+    const report = RazerReport.from({
+      commandClass: 0x04,
+      commandId: 0x06,
+      dataSize: 0x26,
+      args,
+      txId: device.capabilities.dpiStages.info.txId
+    })
 
     await report.sendReport(device)
   }

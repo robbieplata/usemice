@@ -7,7 +7,7 @@ export type Polling2Data = {
 
 export type Polling2Info = {
   supportedIntervals: number[]
-  idByte: number
+  txId: number
 }
 
 export class Polling2Error extends Error {
@@ -36,6 +36,7 @@ const MAPPING: Record<number, number> = {
   4000: 0x02,
   8000: 0x01
 }
+
 export const polling2: CapabilityCommand<'polling2', Polling2Data> = {
   get: async (device: DeviceWithCapabilities<'polling2'>): Promise<Polling2Data> => {
     const report = RazerReport.from({
@@ -43,7 +44,7 @@ export const polling2: CapabilityCommand<'polling2', Polling2Data> = {
       commandId: 0xc0,
       dataSize: 0x01,
       args: new Uint8Array([0x00]),
-      idByte: device.capabilities.polling2.info.idByte
+      txId: device.capabilities.polling2.info.txId
     })
     const response = await report.sendReport(device)
     const value = response.args[1]
@@ -58,12 +59,17 @@ export const polling2: CapabilityCommand<'polling2', Polling2Data> = {
     if (value === undefined) {
       throw new Polling2Error('Unsupported polling2 interval set')
     }
-    const report = RazerReport.from({
-      commandClass: 0x00,
-      commandId: 0x40,
-      dataSize: 0x02,
-      args: new Uint8Array([0x01, value])
-    })
-    await report.sendReport(device)
+    // Some devices expect the same write twice: argument 0x00 then 0x01 (openrazer driver comment)
+    // Doing both is usually safe, and avoids per-device branching
+    for (const argument of [0x00, 0x01] as const) {
+      const report = RazerReport.from({
+        commandClass: 0x00,
+        commandId: 0x40,
+        dataSize: 0x02,
+        args: new Uint8Array([argument, value]),
+        txId: device.capabilities.polling2.info.txId
+      })
+      await report.sendReport(device)
+    }
   }
 }

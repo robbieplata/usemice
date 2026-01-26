@@ -7,7 +7,7 @@ export type PollingData = {
 
 export type PollingInfo = {
   supportedIntervals: number[]
-  idByte: number
+  txId: number
 }
 
 export class PollingError extends Error {
@@ -34,7 +34,7 @@ export const polling: CapabilityCommand<'polling', PollingData> = {
       commandId: 0x85,
       dataSize: 0x00,
       args: new Uint8Array([]),
-      idByte: device.capabilities.polling.info.idByte
+      txId: device.capabilities.polling.info.txId
     })
     const response = await report.sendReport(device)
     const value = response.args[0]
@@ -54,7 +54,7 @@ export const polling: CapabilityCommand<'polling', PollingData> = {
       commandId: 0x05,
       dataSize: 0x01,
       args: new Uint8Array([value]),
-      idByte: device.capabilities.polling.info.idByte
+      txId: device.capabilities.polling.info.txId
     })
     await report.sendReport(device)
   }

@@ -2,10 +2,7 @@ import type { CapabilityCommand, DeviceWithCapabilities } from '../../device/dev
 import { RazerReport } from '../../device/razer/razerReport'
 
 export type DongleLedMultiData = [number, number, number]
-
-export type DongleLedMultiInfo = {
-  idByte: number
-}
+export type DongleLedMultiInfo = { txId: number }
 
 export const DongleLedMultiMode = {
   OFF: 0x00,
@@ -20,16 +17,15 @@ export const dongleLedMulti: CapabilityCommand<'dongleLedMulti', DongleLedMultiD
     console.error('Getting dongle LED multi mode is not supported. Returning garbage values')
     return [0x00, 0x00, 0x00]
   },
+
   set: async (device: DeviceWithCapabilities<'dongleLedMulti'>, modes: DongleLedMultiData): Promise<void> => {
-    const args = new Uint8Array(3)
-    args[0] = modes[0]
-    args[1] = modes[1]
-    args[2] = modes[2]
+    const args = new Uint8Array([modes[0], modes[1], modes[2]])
     const report = RazerReport.from({
       commandClass: 0x07,
       commandId: 0x15,
       dataSize: 0x03,
-      args
+      args,
+      txId: device.capabilities.dongleLedMulti.info.txId
     })
     await report.sendReport(device)
   }
