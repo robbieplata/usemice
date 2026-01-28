@@ -1,4 +1,4 @@
-import type { CapabilityCommand, DeviceWithCapabilities } from '../../device/device'
+import { type CapabilityCommand, type DeviceWithCapabilities } from '../../device/device'
 import { RazerReport } from '../../device/razer/razerReport'
 
 export type DpiStagesData = {

@@ -1,5 +1,5 @@
 // src/lib/device/device.ts
-import { action, observable, reaction, Reaction, type IReactionDisposer } from 'mobx'
+import { action, observable, reaction, type IReactionDisposer } from 'mobx'
 import { Mutex } from '../mutex'
 import { getDeviceDescriptor, type DeviceProfile } from './devices'
 import type { ChargeLevelData, ChargeLevelInfo } from '../capabilities/razer/chargeLevel'
@@ -72,13 +72,15 @@ export type DeviceWithCapabilities<K extends CapabilityKey> = Device & {
 
 export type ReadyDeviceWithCapabilities<K extends CapabilityKey, S extends DeviceStatus = 'Ready'> = Device & {
   status: S
-  error: null
+  failureReason: null
+  commandErrors: CommandError[]
   capabilities: EnabledCapabilities<S, K>
 }
 
 export type DeviceInStatus<S extends DeviceStatus> = Device & {
   status: S
-  error: S extends 'Failed' ? Error : null
+  failureReason: S extends 'Failed' ? Error : null
+  commandErrors: CommandError[]
   capabilities: Capabilities<S>
 }
 export type DeviceInStatusVariant = DeviceInStatus<'Initializing'> | DeviceInStatus<'Ready'> | DeviceInStatus<'Failed'>
@@ -124,12 +126,27 @@ export class DeviceNotSupportedError extends Error {
   }
 }
 
+export class CommandError extends Error {
+  readonly _timestamp = new Date()
+  name = 'CommandError'
+  readonly message: string
+  constructor(error: Error | string) {
+    super()
+    if (typeof error === 'string') {
+      this.message = error
+    } else {
+      this.name = error.name
+      this.message = error.message
+    }
+  }
+}
+
 export class Device {
   @observable accessor id: number
   @observable accessor status: DeviceStatus
   @observable accessor failureReason: Error | null
   @observable accessor capabilities: Capabilities<DeviceStatus>
-  @observable accessor errors: Error[] = []
+  @observable accessor commandErrors: CommandError[] = []
 
   readonly hid: HIDDevice
   readonly _lock: Mutex
@@ -146,13 +163,13 @@ export class Device {
     this.capabilities = buildCapabilities<DeviceStatus>(profile)
     this.status = 'Initializing'
     this.failureReason = null
-    this.errors = []
+    this.commandErrors = [new CommandError('Testing an example Error')]
     this.toastErrorsDisposer = reaction(
-      () => this.errors.length,
+      () => this.commandErrors.length,
       (length, previousLength) => {
         if (length > previousLength) {
-          const newError = this.errors[length - 1]
-          toast.error('Error: ' + newError.message, {
+          const newError = this.commandErrors[length - 1]
+          toast.warning(newError.message, {
             duration: 5000
           })
         }
@@ -185,7 +202,11 @@ export class Device {
         return data
       })
       .catch((err) => {
-        this.errors.push(new Error(err.message))
+        if (err instanceof Error) {
+          this.commandErrors.push(new CommandError(err))
+        } else {
+          this.commandErrors.push(new CommandError(String(err)))
+        }
       })
   }
 
@@ -203,7 +224,11 @@ export class Device {
         }
       })
       .catch((err) => {
-        this.errors.push(new Error(err.message))
+        if (err instanceof Error) {
+          this.commandErrors.push(new CommandError(err))
+        } else {
+          this.commandErrors.push(new CommandError(String(err)))
+        }
       })
   }
 }

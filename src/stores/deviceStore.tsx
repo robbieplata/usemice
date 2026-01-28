@@ -18,7 +18,7 @@ export class DeviceStore {
         (length, previousLength) => {
           if (length > previousLength) {
             const newError = this.errors[length - 1]
-            toast.error('Error: ' + newError.message, {
+            toast.warning('Error: ' + newError.message, {
               duration: 5000
             })
           }
