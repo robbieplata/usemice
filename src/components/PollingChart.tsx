@@ -167,7 +167,7 @@ export function PollingChart() {
             </Badge>
           </div>
           {isRunning && (
-            <Badge variant='default' className='ml-auto animate-pulse'>
+            <Badge variant='default' className='ml-auto animate-pulse text-primary-foreground'>
               Recording
             </Badge>
           )}
