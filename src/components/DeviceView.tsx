@@ -52,7 +52,7 @@ const DeviceView = observer(({ device }: DeviceViewProps) => {
         </div>
       </div>
 
-      <div className='mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4'>
+      <div className='animate-stagger-children mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4'>
         {isCapableOf(device, ['serial']) && (
           <Card size='sm' className='p-4'>
             <div className='flex items-center gap-3'>
@@ -118,7 +118,7 @@ const DeviceView = observer(({ device }: DeviceViewProps) => {
         )}
       </div>
 
-      <div className='mt-6 space-y-6'>
+      <div className='animate-stagger-children mt-6 space-y-6'>
         {isCapableOf(device, ['idleTime']) && <IdleTime device={device} />}
         {isCapableOf(device, ['dpiStages']) && <DpiStages device={device} />}
         {isCapableOf(device, ['polling2']) && <Polling2 device={device} />}

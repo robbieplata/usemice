@@ -47,7 +47,7 @@ export const DongleLedMulti = observer(({ device }: DongleLedMultiProps) => {
         <div className='space-y-3'>
           {modes.map((mode, index) => (
             <div key={index} className='flex items-center justify-between'>
-              <span className='text-sm text-muted-foreground'>{ledLabels[index]}</span>
+              <span className='text-sm'>{ledLabels[index]}</span>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant='outline' className='w-44 justify-between'>
