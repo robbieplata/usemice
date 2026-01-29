@@ -7,6 +7,7 @@ import { IdleTime } from './capabilities/idleTime'
 import { DpiStages } from './capabilities/dpiStages'
 import { Polling2 } from './capabilities/polling2'
 import { Polling } from './capabilities/polling'
+import { DongleLedMulti } from './capabilities/dongleLedMulti'
 import { SkeletonDevice } from './SkeletonDevice'
 import { Hash, Cpu, Battery, Zap } from 'lucide-react'
 
@@ -122,6 +123,7 @@ const DeviceView = observer(({ device }: DeviceViewProps) => {
         {isCapableOf(device, ['dpiStages']) && <DpiStages device={device} />}
         {isCapableOf(device, ['polling2']) && <Polling2 device={device} />}
         {isCapableOf(device, ['polling']) && <Polling device={device} />}
+        {isCapableOf(device, ['dongleLedMulti']) && <DongleLedMulti device={device} />}
       </div>
     </>
   )
