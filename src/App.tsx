@@ -2,6 +2,7 @@ import { observer } from 'mobx-react-lite'
 import { flowResult } from 'mobx'
 import { useState, useEffect } from 'react'
 import DeviceView from './components/DeviceView'
+import { MouseTools } from './components/MouseTools'
 import { useStore } from './stores'
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card'
 import { Skeleton } from './components/ui/skeleton'
@@ -10,13 +11,14 @@ import { ScrollArea } from './components/ui/scroll-area'
 import { ThemeToggle } from './components/ThemeToggle'
 import { Button } from './components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from './components/ui/sheet'
-import { Menu, Trash } from 'lucide-react'
+import { Menu, Trash, AlertCircle, CheckCircle2 } from 'lucide-react'
 
 const App = observer(() => {
   const {
     deviceStore: { addDevice, requestDevice, selectedDevice, devices, setSelectedDeviceId, removeDevice, initialized }
   } = useStore()
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [errorsDrawerOpen, setErrorsDrawerOpen] = useState(false)
 
   useEffect(() => {
     if (initialized && devices.length === 0) {
@@ -144,6 +146,49 @@ const App = observer(() => {
           <div className='font-medium text-lg'>use mice</div>
         </div>
         <div className='flex items-center gap-4'>
+          <Sheet open={errorsDrawerOpen} onOpenChange={setErrorsDrawerOpen}>
+            <SheetTrigger asChild>
+              <Button
+                variant='ghost'
+                size='icon'
+                className={`size-8 relative ${errors.length > 0 ? 'text-destructive' : ''}`}
+              >
+                <AlertCircle className='size-5' />
+                {errors.length > 0 && (
+                  <span className='absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground'>
+                    {errors.length}
+                  </span>
+                )}
+              </Button>
+            </SheetTrigger>
+            <SheetContent side='right' className='w-96 p-0' aria-describedby={undefined}>
+              <SheetHeader className='px-4'>
+                <SheetTitle className='text-base'>Errors</SheetTitle>
+              </SheetHeader>
+              <ScrollArea className='h-[calc(100vh-4rem)]'>
+                <div className='space-y-3 p-4 pr-6'>
+                  {errors.length > 0 ? (
+                    errors.map((error, index) => (
+                      <div key={index} className='rounded-xl border border-destructive/30 bg-destructive/5 p-4'>
+                        <div className='flex items-center justify-between'>
+                          <div className='text-xs font-medium text-destructive'>{error.name}</div>
+                          <div className='text-xs text-muted-foreground'>
+                            {new Date(error._timestamp).toLocaleTimeString()}
+                          </div>
+                        </div>
+                        <div className='text-sm mt-2'>{error.message}</div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className='flex flex-col items-center justify-center py-16 text-center'>
+                      <p className='mt-3 text-sm font-medium'>All Clear</p>
+                      <p className='mt-1 text-xs text-muted-foreground'>No errors to report</p>
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
+            </SheetContent>
+          </Sheet>
           <Button variant='ghost' size='icon' className='size-8' asChild>
             <a
               href='https://github.com/robbieplata/usemice'
@@ -160,8 +205,8 @@ const App = observer(() => {
         </div>
       </header>
 
-      <div className='grid grid-cols-1 gap-4 lg:grid-cols-12'>
-        <Card className='lg:col-span-8 h-[90vh] overflow-hidden flex flex-col'>
+      <div className='grid grid-cols-1 gap-4 xl:grid-cols-12'>
+        <Card className='xl:col-span-7 h-[90vh] overflow-hidden flex flex-col'>
           <CardContent className='flex-1 min-h-0 pr-0'>
             <ScrollArea className='h-full'>
               <div className='pr-3'>
@@ -171,32 +216,13 @@ const App = observer(() => {
           </CardContent>
         </Card>
 
-        <Card className='lg:col-span-4 h-[90vh] overflow-hidden flex flex-col'>
-          <CardHeader className='pb-2 shrink-0'>
-            <CardTitle className='text-base'>Errors</CardTitle>
+        <Card className='xl:col-span-5 h-[90vh] overflow-hidden flex flex-col'>
+          <CardHeader className='shrink-0'>
+            <CardTitle className='text-base'>Tools</CardTitle>
           </CardHeader>
-
           <CardContent className='flex-1 min-h-0 p-0'>
             <ScrollArea className='h-full'>
-              <div className='space-y-3 p-6 pr-8'>
-                {errors.length > 0 ? (
-                  errors.map((error, index) => (
-                    <div key={index} className='rounded-xl border border-destructive/30 bg-destructive/5 p-4'>
-                      <div className='flex items-center justify-between'>
-                        <div className='text-xs font-medium text-destructive'>{error.name}</div>
-                        <div className='text-xs text-muted-foreground'>
-                          {new Date(error._timestamp).toLocaleTimeString()}
-                        </div>
-                      </div>
-                      <div className='text-sm mt-2'>{error.message}</div>
-                    </div>
-                  ))
-                ) : (
-                  <div className='rounded-xl border-2 border-dashed border-primary/30 p-8 text-center'>
-                    <p className='text-sm text-primary/60'>No errors</p>
-                  </div>
-                )}
-              </div>
+              <MouseTools />
             </ScrollArea>
           </CardContent>
         </Card>
