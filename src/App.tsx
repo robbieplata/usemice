@@ -141,12 +141,12 @@ const App = observer(() => {
               </ScrollArea>
             </SheetContent>
           </Sheet>
-          <div className='font-medium text-lg'>use mouse</div>
+          <div className='font-medium text-lg'>use mice</div>
         </div>
         <div className='flex items-center gap-4'>
           <Button variant='ghost' size='icon' className='size-8' asChild>
             <a
-              href='https://github.com/robbieplata/use-mouse'
+              href='https://github.com/robbieplata/usemice'
               target='_blank'
               rel='noopener noreferrer'
               aria-label='GitHub repository'
