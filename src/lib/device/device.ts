@@ -163,7 +163,7 @@ export class Device {
     this.capabilities = buildCapabilities<DeviceStatus>(profile)
     this.status = 'Initializing'
     this.failureReason = null
-    this.commandErrors = [new CommandError('Testing an example Error')]
+    this.commandErrors = []
     this.toastErrorsDisposer = reaction(
       () => this.commandErrors.length,
       (length, previousLength) => {

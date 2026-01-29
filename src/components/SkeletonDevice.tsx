@@ -8,16 +8,16 @@ export const SkeletonDevice = () => {
       </div>
 
       <div className='mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2'>
-        <Skeleton className='h-[72px] w-full rounded-xl border' />
-        <Skeleton className='h-[72px] w-full rounded-xl border' />
-        <Skeleton className='h-[72px] w-full rounded-xl border' />
-        <Skeleton className='h-[72px] w-full rounded-xl border' />
+        <Skeleton className='h-[80px] w-full rounded-xl ' />
+        <Skeleton className='h-[80px] w-full rounded-xl ' />
+        <Skeleton className='h-[80px] w-full rounded-xl ' />
+        <Skeleton className='h-[80px] w-full rounded-xl ' />
       </div>
 
       <div className='mt-6 space-y-6'>
-        {[1, 2, 3, 4].map((section) => (
+        {[1, 2, 3, 4, 5, 6].map((section) => (
           <section key={section} className='space-y-3'>
-            <div className='rounded-xl border p-3 space-y-3'>
+            <div className='rounded-xl p-3 space-y-3'>
               <Skeleton className='h-4 w-32' />
               <Skeleton className='h-4 w-full' />
               <Skeleton className='h-4 w-5/6' />

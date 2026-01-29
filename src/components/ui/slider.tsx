@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Slider as SliderPrimitive } from 'radix-ui'
+import { Slider as SliderPrimitive, Tooltip as TooltipPrimitive } from 'radix-ui'
 
 import { cn } from '@/lib/utils'
 
@@ -11,6 +11,8 @@ function Slider({
   max = 100,
   ...props
 }: React.ComponentProps<typeof SliderPrimitive.Root>) {
+  const [isDragging, setIsDragging] = React.useState(false)
+
   const _values = React.useMemo(
     () => (Array.isArray(value) ? value : Array.isArray(defaultValue) ? defaultValue : [min, max]),
     [value, defaultValue, min, max]
@@ -27,6 +29,9 @@ function Slider({
         'data-vertical:min-h-40 relative flex w-full touch-none items-center select-none data-disabled:opacity-50 data-vertical:h-full data-vertical:w-auto data-vertical:flex-col',
         className
       )}
+      onPointerDown={() => setIsDragging(true)}
+      onPointerUp={() => setIsDragging(false)}
+      onPointerLeave={() => setIsDragging(false)}
       {...props}
     >
       <SliderPrimitive.Track
@@ -39,11 +44,26 @@ function Slider({
         />
       </SliderPrimitive.Track>
       {Array.from({ length: _values.length }, (_, index) => (
-        <SliderPrimitive.Thumb
-          data-slot='slider-thumb'
-          key={index}
-          className='border-primary ring-ring/50 size-4 rounded-full border bg-white shadow-sm transition-[color,box-shadow] hover:ring-4 focus-visible:ring-4 focus-visible:outline-hidden block shrink-0 select-none disabled:pointer-events-none disabled:opacity-50'
-        />
+        <TooltipPrimitive.Provider key={index} delayDuration={0}>
+          <TooltipPrimitive.Root open={isDragging}>
+            <TooltipPrimitive.Trigger asChild>
+              <SliderPrimitive.Thumb
+                data-slot='slider-thumb'
+                className='border-primary ring-ring/50 size-4 rounded-full border bg-white shadow-sm transition-[color,box-shadow] hover:ring-4 focus-visible:ring-4 focus-visible:outline-hidden block shrink-0 select-none disabled:pointer-events-none disabled:opacity-50'
+              />
+            </TooltipPrimitive.Trigger>
+            <TooltipPrimitive.Portal>
+              <TooltipPrimitive.Content
+                side='top'
+                sideOffset={8}
+                className='rounded-md px-2 py-1 text-xs bg-foreground text-background z-50'
+              >
+                {_values[index]}
+                <TooltipPrimitive.Arrow className='fill-foreground' />
+              </TooltipPrimitive.Content>
+            </TooltipPrimitive.Portal>
+          </TooltipPrimitive.Root>
+        </TooltipPrimitive.Provider>
       ))}
     </SliderPrimitive.Root>
   )

@@ -5,6 +5,7 @@ import { Button } from '../ui/button'
 import { Slider } from '../ui/slider'
 import { Input } from '../ui/input'
 import { observer } from 'mobx-react-lite'
+import { Trash, Plus } from 'lucide-react'
 
 type DpiStagesProps = {
   device: ReadyDeviceWithCapabilities<'dpiStages'>
@@ -16,7 +17,7 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
     device.capabilities.dpiStages.data.dpiLevels.map((lvl) => String(lvl[0]))
   )
 
-  const { minDpi, maxDpi } = device.capabilities.dpiStages.info
+  const { minDpi, maxDpi, maxStages } = device.capabilities.dpiStages.info
   const { dpiLevels, activeStage } = device.capabilities.dpiStages.data
 
   useEffect(() => setLocalDpiLevels(dpiLevels), [dpiLevels])
@@ -66,6 +67,42 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
     setStageValue(index, clamp(parsed))
   }
 
+  const removeStage = (index: number) => {
+    if (localDpiLevels.length <= 1) return
+
+    const nextLevels = localDpiLevels.filter((_, i) => i !== index)
+    const newActiveStage =
+      activeStage > index + 1
+        ? activeStage - 1
+        : activeStage === index + 1
+          ? Math.min(activeStage, nextLevels.length)
+          : activeStage
+
+    setLocalDpiLevels(nextLevels)
+    setInputText((t) => t.filter((_, i) => i !== index))
+
+    device.set('dpiStages', {
+      ...device.capabilities.dpiStages.data,
+      dpiLevels: nextLevels,
+      activeStage: newActiveStage
+    })
+  }
+
+  const addStage = () => {
+    if (localDpiLevels.length >= maxStages) return
+
+    const defaultDpi = Math.round((minDpi + maxDpi) / 2)
+    const nextLevels: [number, number][] = [...localDpiLevels, [defaultDpi, defaultDpi]]
+
+    setLocalDpiLevels(nextLevels)
+    setInputText((t) => [...t, String(defaultDpi)])
+
+    device.set('dpiStages', {
+      ...device.capabilities.dpiStages.data,
+      dpiLevels: nextLevels
+    })
+  }
+
   return (
     <section className='space-y-3'>
       <div className='space-y-3 border rounded-xl p-3'>
@@ -85,6 +122,7 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
               <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
                 <div className='flex items-center gap-2'>
                   <Button
+                    className='min-w-20 justify-center'
                     disabled={isActive}
                     onClick={() =>
                       device.set('dpiStages', {
@@ -96,8 +134,8 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
                     Stage {index + 1}
                   </Button>
 
-                  <div className='text-sm'>
-                    <span className='font-medium tabular-nums '>{value}</span> Dpi
+                  <div className='text-sm w-20 text-center'>
+                    <span className='font-medium tabular-nums'>{value}</span> Dpi
                   </div>
                 </div>
 
@@ -144,10 +182,31 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
                     }}
                   />
                 </div>
+                <Button
+                  variant='ghost'
+                  size='icon'
+                  className='size-8'
+                  disabled={localDpiLevels.length <= 1}
+                  onClick={() => removeStage(index)}
+                  aria-label={`Remove stage ${index + 1}`}
+                >
+                  <Trash className='size-4' />
+                </Button>
               </div>
             </div>
           )
         })}
+        {device.capabilities.dpiStages.info.maxStages > localDpiLevels.length && (
+          <div className='flex'>
+            <Button
+              className='min-w-20 justify-center'
+              disabled={localDpiLevels.length >= maxStages}
+              onClick={addStage}
+            >
+              <Plus className='size-4' />
+            </Button>
+          </div>
+        )}
       </div>
     </section>
   )
