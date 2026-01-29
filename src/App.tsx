@@ -65,12 +65,12 @@ const App = observer(() => {
                         tabIndex={0}
                         onClick={() => {
                           setSelectedDeviceId(device.id)
-                          setDrawerOpen(false)
+                          if (devices.length <= 1) setDrawerOpen(false)
                         }}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' || e.key === ' ') {
                             setSelectedDeviceId(device.id)
-                            setDrawerOpen(false)
+                            if (devices.length <= 1) setDrawerOpen(false)
                           }
                         }}
                         className={[
