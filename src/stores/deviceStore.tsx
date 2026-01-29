@@ -15,6 +15,14 @@ export class DeviceStore {
   init() {
     this.reactions.push(
       reaction(
+        () => this.selectedDeviceId,
+        (selectedDeviceId, prevSelectedDeviceId) => {
+          if (selectedDeviceId === undefined && prevSelectedDeviceId !== undefined && this.devices.length > 0) {
+            this.setSelectedDeviceId(this.devices[0].id)
+          }
+        }
+      ),
+      reaction(
         () => this.errors.length,
         (length, previousLength) => {
           if (length > previousLength) {
@@ -101,6 +109,9 @@ export class DeviceStore {
     if (index < 0) return
     yield device.hid.close()
     if (forget) device.hid.forget()
+    if (this.selectedDeviceId === device.id) {
+      this.setSelectedDeviceId(undefined)
+    }
     this.devices.splice(index, 1)
   }
 
@@ -150,7 +161,7 @@ export class DeviceStore {
   }
 
   @action.bound
-  setSelectedDeviceId(id: number) {
+  setSelectedDeviceId(id: number | undefined) {
     this.selectedDeviceId = id
   }
 
