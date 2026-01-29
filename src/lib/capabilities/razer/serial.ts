@@ -1,5 +1,8 @@
 import type { CapabilityCommand, DeviceWithCapabilities } from '../../device/device'
 import { RazerReport } from '../../device/razer/razerReport'
+import { createErrorClass } from '../../errors'
+
+export const SerialError = createErrorClass('SerialError')
 
 export type SerialData = { serialNumber: string }
 export type SerialInfo = { txId: number }

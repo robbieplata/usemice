@@ -1,5 +1,5 @@
 // src/lib/device/device.ts
-import { action, observable, reaction, type IReactionDisposer } from 'mobx'
+import { action, observable, reaction, runInAction, type IReactionDisposer } from 'mobx'
 import { Mutex } from '../mutex'
 import { getDeviceDescriptor, type DeviceProfile } from './devices'
 import type { ChargeLevelData, ChargeLevelInfo } from '../capabilities/razer/chargeLevel'
@@ -169,12 +169,19 @@ export class Device {
       (length, previousLength) => {
         if (length > previousLength) {
           const newError = this.commandErrors[length - 1]
-          toast.warning(newError.message, {
+          toast.warning(`${newError.name}: ${newError.message}`, {
             duration: 5000
           })
         }
       }
     )
+  }
+
+  @action.bound
+  reset() {
+    this.status = 'Initializing'
+    this.failureReason = null
+    this.commandErrors = []
   }
 
   private entry<K extends CapabilityKey>(key: K) {
@@ -191,7 +198,7 @@ export class Device {
   }
 
   @action
-  async get<K extends CapabilityKey>(key: K): Promise<CapabilityDataMap[K] | void> {
+  async get<K extends CapabilityKey>(key: K): Promise<CapabilityDataMap[K]> {
     const entry = this.entry(key)
     if (!isCapableOf(this, [key])) throw new Error(`Capability "${String(key)}" is disabled for this device`)
     if (!entry.command.get) throw new Error(`Cannot get ${String(key)}`)
@@ -202,11 +209,14 @@ export class Device {
         return data
       })
       .catch((err) => {
-        if (err instanceof Error) {
-          this.commandErrors.push(new CommandError(err))
-        } else {
-          this.commandErrors.push(new CommandError(String(err)))
-        }
+        runInAction(() => {
+          if (err instanceof Error) {
+            this.commandErrors.push(new CommandError(err))
+          } else {
+            this.commandErrors.push(new CommandError(String(err)))
+          }
+        })
+        throw err
       })
   }
 
@@ -224,11 +234,13 @@ export class Device {
         }
       })
       .catch((err) => {
-        if (err instanceof Error) {
-          this.commandErrors.push(new CommandError(err))
-        } else {
-          this.commandErrors.push(new CommandError(String(err)))
-        }
+        runInAction(() => {
+          if (err instanceof Error) {
+            this.commandErrors.push(new CommandError(err))
+          } else {
+            this.commandErrors.push(new CommandError(String(err)))
+          }
+        })
       })
   }
 }

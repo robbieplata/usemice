@@ -1,5 +1,8 @@
 import type { CapabilityCommand, DeviceWithCapabilities } from '../../device/device'
 import { RazerReport } from '../../device/razer/razerReport'
+import { createErrorClass } from '../../errors'
+
+export const ChargeStatusError = createErrorClass('ChargeStatusError')
 
 export type ChargeStatusData = { status: boolean }
 export type ChargeStatusInfo = { txId: number }

@@ -14,8 +14,8 @@ export const Polling = observer(({ device }: PollingProps) => (
     <Card size='sm' className='p-4'>
       <div className='flex items-center justify-between'>
         <div className='flex items-center gap-3'>
-          <div className='rounded-lg bg-muted p-2'>
-            <Gauge className='size-4 text-muted-foreground' />
+          <div className='rounded-lg bg-primary/10 p-2'>
+            <Gauge className='size-4 text-primary' />
           </div>
           <h3 className='text-sm font-medium'>Polling Rate</h3>
         </div>

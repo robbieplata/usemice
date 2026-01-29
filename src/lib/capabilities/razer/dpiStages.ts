@@ -1,6 +1,13 @@
 import { type CapabilityCommand, type DeviceWithCapabilities } from '../../device/device'
 import { RazerReport } from '../../device/razer/razerReport'
 
+export class DpiStagesError extends Error {
+  readonly name = 'DpiStagesError'
+  constructor(message: string) {
+    super(message)
+  }
+}
+
 export type DpiStagesData = {
   dpiLevels: [number, number][]
   activeStage: number
@@ -55,7 +62,6 @@ export const dpiStages: CapabilityCommand<'dpiStages', DpiStagesData> = {
       dpiLevels.push([dpiX, dpiY])
       argsOffset += 7
     }
-
     return { dpiLevels, activeStage }
   },
 
@@ -64,16 +70,16 @@ export const dpiStages: CapabilityCommand<'dpiStages', DpiStagesData> = {
     const args = new Uint8Array(0x26)
     const count = dpiLevels.length
 
-    if (count < 1) throw new Error('At least one DPI stage must be provided')
+    if (count < 1) throw new DpiStagesError('At least one DPI stage must be provided')
 
     const maxStages = device.capabilities.dpiStages.info.maxStages
-    if (count > maxStages) throw new Error(`Too many DPI stages (${count}) provided, maximum is ${maxStages}`)
+    if (count > maxStages) throw new DpiStagesError(`Too many DPI stages (${count}) provided, maximum is ${maxStages}`)
 
     if (activeStage > count || activeStage < 1) {
-      throw new Error(`Active stage (${activeStage}) out of bounds for ${count} stages`)
+      throw new DpiStagesError(`Active stage (${activeStage}) out of bounds for ${count} stages`)
     }
 
-    if (3 + 7 * count > 0x26) throw new Error(`Too many DPI stages (${count}) for 0x26-byte payload`)
+    if (3 + 7 * count > 0x26) throw new DpiStagesError(`Too many DPI stages (${count}) for 0x26-byte payload`)
 
     args[0] = 0x01 // varstore
     args[1] = activeStage & 0xff

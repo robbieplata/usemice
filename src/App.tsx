@@ -28,7 +28,7 @@ const App = observer(() => {
     const requestResult = await flowResult(requestDevice())
     if (!requestResult.error) {
       const deviceResult = await flowResult(addDevice(requestResult.value))
-      if (!deviceResult.error) {
+      if (!deviceResult.error && selectedDevice === undefined) {
         setSelectedDeviceId(deviceResult.value.id)
         setDrawerOpen(false)
       }
@@ -74,10 +74,10 @@ const App = observer(() => {
                           }
                         }}
                         className={[
-                          'w-full rounded-xl border p-4 text-left transition',
-                          'focus:outline-primary',
-                          'cursor-pointer',
-                          isSelected ? 'border-primary' : ''
+                          'w-full rounded-xl border bg-card p-4 text-left transition-colors',
+                          'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                          'cursor-pointer hover:bg-accent',
+                          isSelected ? 'border-primary bg-primary/5' : 'border-border'
                         ].join(' ')}
                       >
                         <div className='flex items-start justify-between gap-3 min-w-0'>
@@ -89,7 +89,9 @@ const App = observer(() => {
                           </div>
 
                           <div className='shrink-0 flex flex-col items-end gap-2'>
-                            <Badge variant='outline'>{device.status}</Badge>
+                            <Badge variant={device.status === 'Failed' ? 'destructive' : 'outline'}>
+                              {device.status}
+                            </Badge>
                             <Button
                               variant='ghost'
                               size='icon-xs'
@@ -179,14 +181,20 @@ const App = observer(() => {
               <div className='space-y-3 p-6 pr-8'>
                 {errors.length > 0 ? (
                   errors.map((error, index) => (
-                    <div key={index} className='rounded-lg border  p-4'>
-                      <div className='text-xs mb-1'>{new Date(error._timestamp).toLocaleTimeString()}</div>
-                      <div className='font-medium text-sm'>{error.name}</div>
-                      <div className='text-sm mt-1'>{error.message}</div>
+                    <div key={index} className='rounded-xl border border-destructive/30 bg-destructive/5 p-4'>
+                      <div className='flex items-center justify-between'>
+                        <div className='text-xs font-medium text-destructive'>{error.name}</div>
+                        <div className='text-xs text-muted-foreground'>
+                          {new Date(error._timestamp).toLocaleTimeString()}
+                        </div>
+                      </div>
+                      <div className='text-sm mt-2'>{error.message}</div>
                     </div>
                   ))
                 ) : (
-                  <div className='rounded-lg border-2 border-dashed p-6 text-center text-sm'>No errors</div>
+                  <div className='rounded-xl border-2 border-dashed border-primary/30 p-8 text-center'>
+                    <p className='text-sm text-primary/60'>No errors</p>
+                  </div>
                 )}
               </div>
             </ScrollArea>

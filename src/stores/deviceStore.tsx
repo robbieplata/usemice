@@ -91,11 +91,37 @@ export class DeviceStore {
     const device = new Device(hid)
     this.devices.push(device as DeviceInStatus<'Initializing'>)
 
-    if (!hid.opened) {
+    const result: Result<DeviceInStatusVariant, Error> = yield this.initializeDevice(device)
+    return result
+  }
+
+  @flow.bound
+  *removeDevice(device: DeviceInStatusVariant, forget = false) {
+    const index = this.devices.indexOf(device)
+    if (index < 0) return
+    yield device.hid.close()
+    if (forget) device.hid.forget()
+    this.devices.splice(index, 1)
+  }
+
+  @flow.bound
+  *retryDevice(device: DeviceInStatusVariant) {
+    const index = this.devices.indexOf(device)
+    if (index < 0) return
+
+    device.reset()
+    yield this.initializeDevice(device)
+  }
+
+  @flow.bound
+  private *initializeDevice(device: Device) {
+    if (!device.hid.opened) {
       try {
-        yield hid.open()
+        yield device.hid.open()
       } catch (e) {
         const error = e instanceof Error ? e : new Error('Unknown error opening HID device')
+        device.status = 'Failed'
+        device.failureReason = error
         this.errors.push(error)
         return { error }
       }
@@ -121,15 +147,6 @@ export class DeviceStore {
     }
 
     return { value: device }
-  }
-
-  @flow.bound
-  *removeDevice(device: DeviceInStatusVariant, forget = false) {
-    const index = this.devices.indexOf(device)
-    if (index < 0) return
-    yield device.hid.close()
-    if (forget) device.hid.forget()
-    this.devices.splice(index, 1)
   }
 
   @action.bound

@@ -109,8 +109,8 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
       <Card size='sm' className='space-y-4 p-4'>
         <div className='flex items-center justify-between'>
           <div className='flex items-center gap-3'>
-            <div className='rounded-lg bg-muted p-2'>
-              <Target className='size-4 text-muted-foreground' />
+            <div className='rounded-lg bg-primary/10 p-2'>
+              <Target className='size-4 text-primary' />
             </div>
             <h3 className='text-sm font-medium'>DPI Stages</h3>
           </div>

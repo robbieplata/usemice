@@ -1,5 +1,8 @@
 import type { CapabilityCommand, DeviceWithCapabilities } from '../../device/device'
 import { RazerReport } from '../../device/razer/razerReport'
+import { createErrorClass } from '../../errors'
+
+export const FirmwareVersionError = createErrorClass('FirmwareVersionError')
 
 export type FirmwareVersionData = { major: number; minor: number }
 export type FirmwareVersionInfo = { txId: number }

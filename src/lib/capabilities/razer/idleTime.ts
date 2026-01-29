@@ -1,5 +1,8 @@
 import type { CapabilityCommand, DeviceWithCapabilities } from '../../device/device'
 import { RazerReport } from '../../device/razer/razerReport'
+import { createErrorClass } from '../../errors'
+
+export const IdleTimeError = createErrorClass('IdleTimeError')
 
 export type IdleTimeData = { seconds: number }
 export type IdleTimeInfo = { minSeconds: number; maxSeconds: number; txId: number }
@@ -20,7 +23,7 @@ export const idleTime: CapabilityCommand<'idleTime', IdleTimeData> = {
   set: async (device: DeviceWithCapabilities<'idleTime'>, data: IdleTimeData): Promise<void> => {
     const { minSeconds, maxSeconds, txId } = device.capabilities.idleTime.info
     if (data.seconds < minSeconds || data.seconds > maxSeconds) {
-      throw new Error(`Idle time seconds must be between ${minSeconds} and ${maxSeconds}`)
+      throw new IdleTimeError(`Idle time seconds must be between ${minSeconds} and ${maxSeconds}`)
     }
 
     const args = new Uint8Array(2)

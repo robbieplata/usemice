@@ -9,7 +9,7 @@ import { Polling2 } from './capabilities/polling2'
 import { Polling } from './capabilities/polling'
 import { DongleLedMulti } from './capabilities/dongleLedMulti'
 import { SkeletonDevice } from './SkeletonDevice'
-import { Hash, Cpu, Battery, Zap } from 'lucide-react'
+import { Hash, Cpu, Battery, Zap, AlertCircle, RotateCcw } from 'lucide-react'
 
 type DeviceViewProps = {
   device?: DeviceInStatusVariant
@@ -17,7 +17,7 @@ type DeviceViewProps = {
 
 const DeviceView = observer(({ device }: DeviceViewProps) => {
   const {
-    deviceStore: { removeDevice }
+    deviceStore: { removeDevice, retryDevice }
   } = useStore()
 
   const disconnect = () => {
@@ -34,10 +34,29 @@ const DeviceView = observer(({ device }: DeviceViewProps) => {
 
   if (isStatus(device, 'Failed')) {
     return (
-      <div className='rounded-xl p-4'>
-        <h2 className='text-base font-semibold'>{device.hid.productName}</h2>
-        <p className='mt-1 text-sm'>Device failed to initialize: {device.failureReason.message}</p>
-      </div>
+      <Card className='border-destructive/50 bg-destructive/5 p-6'>
+        <div className='flex items-start gap-4'>
+          <div className='rounded-lg bg-destructive/10 p-2.5'>
+            <AlertCircle className='size-5 text-destructive' />
+          </div>
+          <div className='min-w-0 flex-1'>
+            <h2 className='text-base font-semibold'>{device.hid.productName}</h2>
+            <p className='mt-1 text-sm text-muted-foreground'>Failed to initialize device</p>
+            <code className='mt-3 block rounded-md bg-destructive/10 px-3 py-2 font-mono text-xs text-destructive'>
+              {device.failureReason.name}: {device.failureReason.message}
+            </code>
+            <div className='mt-4 flex gap-2'>
+              <Button size='sm' variant='outline' onClick={() => retryDevice(device)}>
+                <RotateCcw className='mr-2 size-3.5' />
+                Retry
+              </Button>
+              <Button size='sm' variant='ghost' onClick={() => removeDevice(device, true)}>
+                Remove
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Card>
     )
   }
 
@@ -56,8 +75,8 @@ const DeviceView = observer(({ device }: DeviceViewProps) => {
         {isCapableOf(device, ['serial']) && (
           <Card size='sm' className='p-4'>
             <div className='flex items-center gap-3'>
-              <div className='rounded-lg bg-muted p-2'>
-                <Hash className='size-4 text-muted-foreground' />
+              <div className='rounded-lg bg-primary/10 p-2'>
+                <Hash className='size-4 text-primary' />
               </div>
               <div>
                 <p className='text-xs text-muted-foreground'>Serial</p>
@@ -70,8 +89,8 @@ const DeviceView = observer(({ device }: DeviceViewProps) => {
         {isCapableOf(device, ['firmwareVersion']) && (
           <Card size='sm' className='p-4'>
             <div className='flex items-center gap-3'>
-              <div className='rounded-lg bg-muted p-2'>
-                <Cpu className='size-4 text-muted-foreground' />
+              <div className='rounded-lg bg-primary/10 p-2'>
+                <Cpu className='size-4 text-primary' />
               </div>
               <div>
                 <p className='text-xs text-muted-foreground'>Firmware</p>
@@ -86,8 +105,8 @@ const DeviceView = observer(({ device }: DeviceViewProps) => {
         {isCapableOf(device, ['chargeLevel']) && (
           <Card size='sm' className='p-4'>
             <div className='flex items-center gap-3'>
-              <div className='rounded-lg bg-muted p-2'>
-                <Battery className='size-4 text-muted-foreground' />
+              <div className='rounded-lg bg-primary/10 p-2'>
+                <Battery className='size-4 text-primary' />
               </div>
               <div>
                 <p className='text-xs text-muted-foreground'>Battery</p>
@@ -101,10 +120,10 @@ const DeviceView = observer(({ device }: DeviceViewProps) => {
           <Card size='sm' className='p-4'>
             <div className='flex items-center gap-3'>
               <div
-                className={`rounded-lg p-2 ${device.capabilities.chargeStatus.data.status ? 'bg-green-500/10' : 'bg-muted'}`}
+                className={`rounded-lg p-2 ${device.capabilities.chargeStatus.data.status ? 'bg-green-500/10' : 'bg-primary/10'}`}
               >
                 <Zap
-                  className={`size-4 ${device.capabilities.chargeStatus.data.status ? 'text-green-500' : 'text-muted-foreground'}`}
+                  className={`size-4 ${device.capabilities.chargeStatus.data.status ? 'text-green-500' : 'text-primary'}`}
                 />
               </div>
               <div>

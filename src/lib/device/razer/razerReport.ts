@@ -1,5 +1,12 @@
-import { receiveBuffer, sendBuffer, TransactionError, type HidSession } from '@/lib/device/hid'
+import { receiveBuffer, sendBuffer, type HidSession } from '@/lib/device/hid'
 import { toast } from 'sonner'
+
+export class TransactionError extends Error {
+  readonly name = 'TransactionError'
+  constructor(message: string) {
+    super(message)
+  }
+}
 
 const RAZER_REPORT_SIZE = 90
 const RAZER_REPORT_ID = 0x00

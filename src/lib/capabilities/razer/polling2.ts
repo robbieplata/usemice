@@ -1,5 +1,6 @@
 import type { CapabilityCommand, DeviceWithCapabilities } from '../../device/device'
 import { RazerReport } from '../../device/razer/razerReport'
+import { createErrorClass } from '../../errors'
 
 export type Polling2Data = {
   interval: number
@@ -10,14 +11,7 @@ export type Polling2Info = {
   txId: number
 }
 
-export class Polling2Error extends Error {
-  constructor(
-    message: string,
-    readonly cause?: unknown
-  ) {
-    super(message)
-  }
-}
+export const Polling2Error = createErrorClass('Polling2Error')
 
 const MAPPING: Record<number, number> = {
   0x40: 125,
