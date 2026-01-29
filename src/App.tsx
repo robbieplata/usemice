@@ -1,5 +1,6 @@
 import { observer } from 'mobx-react-lite'
 import { flowResult } from 'mobx'
+import { useState } from 'react'
 import DeviceView from './components/DeviceView'
 import { useStore } from './stores'
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card'
@@ -8,11 +9,14 @@ import { Badge } from './components/ui/badge'
 import { ScrollArea } from './components/ui/scroll-area'
 import { ThemeToggle } from './components/ThemeToggle'
 import { Button } from './components/ui/button'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from './components/ui/sheet'
+import { Menu, Trash } from 'lucide-react'
 
 const App = observer(() => {
   const {
-    deviceStore: { addDevice, requestDevice, selectedDevice, devices, setSelectedDeviceId }
+    deviceStore: { addDevice, requestDevice, selectedDevice, devices, setSelectedDeviceId, removeDevice }
   } = useStore()
+  const [drawerOpen, setDrawerOpen] = useState(false)
 
   const connect = async () => {
     const requestResult = await flowResult(requestDevice())
@@ -31,7 +35,98 @@ const App = observer(() => {
   return (
     <div className='mx-auto w-full space-y-4 p-4'>
       <header className='flex items-center justify-between px-2'>
-        <div className='font-medium text-lg'>use mouse</div>
+        <div className='flex items-center gap-4'>
+          <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
+            <SheetTrigger asChild>
+              <Button variant='ghost' size='icon' className='size-8'>
+                <Menu className='size-5' />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side='left' className='w-80 p-0'>
+              <SheetHeader className='border-b'>
+                <SheetTitle>Devices</SheetTitle>
+              </SheetHeader>
+              <ScrollArea className='h-[calc(100vh-4rem)]'>
+                <div className='space-y-4 p-4 pr-6'>
+                  {devices.map((device) => {
+                    const isSelected = selectedDevice?.id === device.id
+
+                    return (
+                      <button
+                        key={device.id}
+                        type='button'
+                        onClick={() => {
+                          setSelectedDeviceId(device.id)
+                          setDrawerOpen(false)
+                        }}
+                        className={[
+                          'w-full rounded-xl border p-4 text-left transition',
+                          'focus:outline-primary',
+                          'cursor-pointer',
+                          isSelected ? 'border-primary' : ''
+                        ].join(' ')}
+                      >
+                        <div className='flex items-start justify-between gap-3 min-w-0'>
+                          <div className='flex-1 min-w-0 w-0'>
+                            <div className='truncate text-sm font-semibold'>{device.hid.productName}</div>
+                            <div className='truncate mt-1 text-xs'>
+                              ID: <span className='font-mono'>{device.id}</span>
+                            </div>
+                          </div>
+
+                          <div className='shrink-0 flex flex-col items-end gap-2'>
+                            <Badge variant='outline'>{device.status}</Badge>
+                            <Button
+                              variant='ghost'
+                              size='icon-xs'
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                flowResult(removeDevice(device, true))
+                              }}
+                              aria-label='Disconnect device'
+                            >
+                              <Trash className='size-4' />
+                            </Button>
+                          </div>
+                        </div>
+                      </button>
+                    )
+                  })}
+
+                  <div
+                    className='rounded-xl border border-dashed p-4 text-sm cursor-pointer hover:border-neutral-600 transition'
+                    onClick={connect}
+                    role='button'
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') connect()
+                    }}
+                  >
+                    <div className='flex items-center gap-4'>
+                      <div className='shrink-0'>
+                        <div className='w-10 h-10 rounded-full border-2 border-dashed flex items-center justify-center'>
+                          <svg
+                            className='w-5 h-5 text-neutral-400'
+                            fill='none'
+                            viewBox='0 0 24 24'
+                            stroke='currentColor'
+                          >
+                            <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M12 4v16m8-8H4' />
+                          </svg>
+                        </div>
+                      </div>
+                      <div className='space-y-2 w-full'>
+                        <Skeleton className='h-4 w-full max-w-[200px]' />
+                        <Skeleton className='h-4 w-full max-w-[150px]' />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </ScrollArea>
+            </SheetContent>
+          </Sheet>
+          <div className='font-medium text-lg'>use mouse</div>
+        </div>
         <div className='flex items-center gap-4'>
           <Button variant='ghost' size='icon' className='size-8' asChild>
             <a
@@ -49,78 +144,13 @@ const App = observer(() => {
         </div>
       </header>
 
-      <div className='grid grid-cols-1 gap-4 lg:grid-cols-16'>
-        <Card className='lg:col-span-4 h-[90vh] overflow-hidden flex flex-col'>
-          <CardHeader className='pb-2 shrink-0'>
-            <CardTitle className='text-base'>Devices</CardTitle>
-          </CardHeader>
-
-          <CardContent className='flex-1 min-h-0 p-0'>
-            <ScrollArea className='h-full'>
-              <div className='space-y-4 p-6'>
-                {devices.map((device) => {
-                  const isSelected = selectedDevice?.id === device.id
-
-                  return (
-                    <button
-                      key={device.id}
-                      type='button'
-                      onClick={() => setSelectedDeviceId(device.id)}
-                      className={[
-                        'w-full rounded-xl border p-4 text-left transition',
-                        'focus:outline-primary',
-                        'cursor-pointer',
-                        isSelected ? 'border-primary' : ''
-                      ].join(' ')}
-                    >
-                      <div className='flex items-start justify-between gap-3 min-w-0'>
-                        <div className='flex-1 min-w-0 w-0'>
-                          <div className='truncate text-sm font-semibold'>{device.hid.productName}</div>
-                          <div className='truncate mt-1 text-xs'>
-                            ID: <span className='font-mono'>{device.id}</span>
-                          </div>
-                        </div>
-
-                        <div className='shrink-0 flex flex-col items-end'>
-                          <Badge variant='outline'>{device.status}</Badge>
-                        </div>
-                      </div>
-                    </button>
-                  )
-                })}
-
-                <div
-                  className='rounded-xl border border-dashed p-4 text-sm cursor-pointer hover:border-neutral-600 transition'
-                  onClick={connect}
-                  role='button'
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') connect()
-                  }}
-                >
-                  <div className='flex items-center gap-4'>
-                    <div className='shrink-0'>
-                      <div className='w-10 h-10 rounded-full border-2 border-dashed flex items-center justify-center'>
-                        <svg className='w-5 h-5 text-neutral-400' fill='none' viewBox='0 0 24 24' stroke='currentColor'>
-                          <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M12 4v16m8-8H4' />
-                        </svg>
-                      </div>
-                    </div>
-                    <div className='space-y-2 w-full'>
-                      <Skeleton className='h-4 w-full max-w-[200px]' />
-                      <Skeleton className='h-4 w-full max-w-[150px]' />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
-
+      <div className='grid grid-cols-1 gap-4 lg:grid-cols-12'>
         <Card className='lg:col-span-8 h-[90vh] overflow-hidden flex flex-col'>
-          <CardContent className='flex-1 min-h-0'>
+          <CardContent className='flex-1 min-h-0 pr-0'>
             <ScrollArea className='h-full'>
-              <DeviceView device={selectedDevice} />
+              <div className='pr-3'>
+                <DeviceView device={selectedDevice} />
+              </div>
             </ScrollArea>
           </CardContent>
         </Card>
@@ -132,7 +162,7 @@ const App = observer(() => {
 
           <CardContent className='flex-1 min-h-0 p-0'>
             <ScrollArea className='h-full'>
-              <div className='space-y-3 p-6'>
+              <div className='space-y-3 p-6 pr-8'>
                 {errors.length > 0 ? (
                   errors.map((error, index) => (
                     <div key={index} className='rounded-lg border  p-4'>

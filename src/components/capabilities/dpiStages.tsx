@@ -2,10 +2,11 @@ import { useEffect, useMemo, useState } from 'react'
 import debounce from 'lodash/debounce'
 import { type ReadyDeviceWithCapabilities } from '@/lib/device/device'
 import { Button } from '../ui/button'
+import { Card } from '../ui/card'
 import { Slider } from '../ui/slider'
 import { Input } from '../ui/input'
 import { observer } from 'mobx-react-lite'
-import { Trash, Plus } from 'lucide-react'
+import { Trash, Plus, Target } from 'lucide-react'
 
 type DpiStagesProps = {
   device: ReadyDeviceWithCapabilities<'dpiStages'>
@@ -105,11 +106,16 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
 
   return (
     <section className='space-y-3'>
-      <div className='space-y-3 border rounded-xl p-3'>
+      <Card size='sm' className='space-y-4 p-4'>
         <div className='flex items-center justify-between'>
-          <h3 className='text-sm font-semibold'>DPI stages</h3>
-          <span className='text-sm'>
-            Active: <span className='font-medium'>{activeStage}</span>
+          <div className='flex items-center gap-3'>
+            <div className='rounded-lg bg-muted p-2'>
+              <Target className='size-4 text-muted-foreground' />
+            </div>
+            <h3 className='text-sm font-medium'>DPI Stages</h3>
+          </div>
+          <span className='text-sm text-muted-foreground'>
+            Active: <span className='font-semibold text-foreground'>{activeStage}</span>
           </span>
         </div>
 
@@ -148,7 +154,7 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
                       value={[value]}
                       onValueChange={([next]) => setStageValue(index, next)}
                     />
-                    <div className='mt-2 flex justify-between text-xs'>
+                    <div className='mt-2 flex justify-between text-xs text-muted-foreground'>
                       <span>{minDpi}</span>
                       <span>{maxDpi}</span>
                     </div>
@@ -207,7 +213,7 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
             </Button>
           </div>
         )}
-      </div>
+      </Card>
     </section>
   )
 })
