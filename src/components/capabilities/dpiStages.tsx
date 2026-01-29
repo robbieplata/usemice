@@ -122,8 +122,8 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
               <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
                 <div className='flex items-center gap-2'>
                   <Button
-                    className='min-w-20 justify-center'
-                    disabled={isActive}
+                    className={`min-w-20 justify-center ${isActive ? 'text-primary-foreground' : ''}`}
+                    variant={isActive ? 'default' : 'outline'}
                     onClick={() =>
                       device.set('dpiStages', {
                         ...device.capabilities.dpiStages.data,
