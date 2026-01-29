@@ -11,7 +11,7 @@ import { ScrollArea } from './components/ui/scroll-area'
 import { ThemeToggle } from './components/ThemeToggle'
 import { Button } from './components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from './components/ui/sheet'
-import { Menu, AlertCircle, Unplug } from 'lucide-react'
+import { Menu, AlertCircle, Unplug, Trash2 } from 'lucide-react'
 
 const App = observer(() => {
   const {
@@ -33,7 +33,7 @@ const App = observer(() => {
     }
   }
 
-  const errors = selectedDevice?.commandErrors || []
+  const commandErrors = selectedDevice?.commandErrors || []
 
   return (
     <div className='mx-auto w-full space-y-4 p-4'>
@@ -149,24 +149,24 @@ const App = observer(() => {
               <Button
                 variant='ghost'
                 size='icon'
-                className={`size-9 relative ${errors.length > 0 ? 'text-destructive' : ''}`}
+                className={`size-9 relative ${commandErrors.length > 0 ? 'text-destructive' : ''}`}
               >
                 <AlertCircle className='size-5' />
-                {errors.length > 0 && (
-                  <span className='absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground'>
-                    {errors.length}
+                {commandErrors.length > 0 && (
+                  <span className='absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-white'>
+                    {commandErrors.length}
                   </span>
                 )}
               </Button>
             </SheetTrigger>
-            <SheetContent side='right' className='w-96 p-0' aria-describedby={undefined}>
+            <SheetContent side='right' className='w-96 p-0 flex flex-col' aria-describedby={undefined}>
               <SheetHeader className='px-4'>
                 <SheetTitle className='text-base'>Errors</SheetTitle>
               </SheetHeader>
-              <ScrollArea className='h-[calc(100vh-4rem)]'>
+              <ScrollArea className='flex-1'>
                 <div className='space-y-3 p-4 pr-6'>
-                  {errors.length > 0 ? (
-                    errors.map((error, index) => (
+                  {commandErrors.length > 0 ? (
+                    commandErrors.map((error, index) => (
                       <div key={index} className='rounded-xl border border-destructive/30 bg-destructive/5 p-4'>
                         <div className='flex items-center justify-between'>
                           <div className='text-xs font-medium text-destructive'>{error.name}</div>
@@ -179,12 +179,27 @@ const App = observer(() => {
                     ))
                   ) : (
                     <div className='flex flex-col items-center justify-center py-16 text-center'>
-                      <p className='mt-3 text-sm font-medium'>All Clear</p>
-                      <p className='mt-1 text-xs text-muted-foreground'>No errors to report</p>
+                      <p className='mt-3 text-sm font-medium'>No Command Errors</p>
+                      <p className='mt-1 text-xs text-muted-foreground'>
+                        Errors resulting from malformed data or device communication will appear here.
+                      </p>
                     </div>
                   )}
                 </div>
               </ScrollArea>
+              {commandErrors.length > 0 && (
+                <div className='shrink-0 border-t p-4'>
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    onClick={() => selectedDevice?.clearCommandErrors()}
+                    className='w-full text-destructive hover:text-destructive hover:bg-destructive/10'
+                  >
+                    <Trash2 className='mr-2 size-4' />
+                    Clear Errors
+                  </Button>
+                </div>
+              )}
             </SheetContent>
           </Sheet>
           <Button variant='ghost' size='icon' className='size-9' asChild>

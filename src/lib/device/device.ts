@@ -184,6 +184,11 @@ export class Device {
     this.commandErrors = []
   }
 
+  @action.bound
+  clearCommandErrors() {
+    this.commandErrors = []
+  }
+
   private entry<K extends CapabilityKey>(key: K) {
     const entry = this.profile.capabilities[key]
     if (!entry) throw new Error(`Capability "${String(key)}" is disabled for this device`)
