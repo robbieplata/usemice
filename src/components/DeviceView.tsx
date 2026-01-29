@@ -8,14 +8,16 @@ import { DpiStages } from './capabilities/dpiStages'
 import { Polling2 } from './capabilities/polling2'
 import { Polling } from './capabilities/polling'
 import { DongleLedMulti } from './capabilities/dongleLedMulti'
+import { NoDeviceDetected } from './NoDeviceDetected'
 import { SkeletonDevice } from './SkeletonDevice'
 import { Hash, Cpu, Battery, Zap, AlertCircle, RotateCcw } from 'lucide-react'
 
 type DeviceViewProps = {
   device?: DeviceInStatusVariant
+  onOpenSidebar?: () => void
 }
 
-const DeviceView = observer(({ device }: DeviceViewProps) => {
+const DeviceView = observer(({ device, onOpenSidebar }: DeviceViewProps) => {
   const {
     deviceStore: { removeDevice, retryDevice }
   } = useStore()
@@ -25,7 +27,7 @@ const DeviceView = observer(({ device }: DeviceViewProps) => {
   }
 
   if (!device) {
-    return <SkeletonDevice />
+    return <NoDeviceDetected onOpenSidebar={onOpenSidebar} />
   }
 
   if (isStatus(device, 'Initializing')) {
