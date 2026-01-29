@@ -4,6 +4,8 @@ import { getHidInterfaces, RequestHidDeviceError, requestHidInterface, selectBes
 import { toast } from 'sonner'
 import type { Result } from '@/lib/result'
 
+const SELECTED_DEVICE_KEY = 'usemice:selectedDeviceId'
+
 export class DeviceStore {
   @observable accessor devices: DeviceInStatusVariant[] = []
   @observable accessor selectedDeviceId: number | undefined
@@ -15,12 +17,26 @@ export class DeviceStore {
   init() {
     this.reactions.push(
       reaction(
-        () => this.selectedDeviceId,
-        (selectedDeviceId, prevSelectedDeviceId) => {
-          if (selectedDeviceId === undefined && prevSelectedDeviceId !== undefined && this.devices.length > 0) {
-            this.setSelectedDeviceId(this.devices[0].id)
+        () => ({
+          initialized: this.initialized,
+          deviceCount: this.devices.length,
+          selectedDeviceId: this.selectedDeviceId
+        }),
+        (state) => {
+          if (!state.initialized) return
+          if (state.selectedDeviceId !== undefined) return
+          if (state.deviceCount === 0) return
+          const storedDeviceId = localStorage.getItem(SELECTED_DEVICE_KEY)
+          if (storedDeviceId) {
+            const deviceId = parseInt(storedDeviceId, 10)
+            if (this.devices.some((d) => d.id === deviceId)) {
+              this.setSelectedDeviceId(deviceId)
+              return
+            }
           }
-        }
+          this.setSelectedDeviceId(this.devices[0].id)
+        },
+        { fireImmediately: true }
       ),
       reaction(
         () => this.errors.length,
@@ -30,21 +46,6 @@ export class DeviceStore {
             toast.warning('Error: ' + newError.message, {
               duration: 5000
             })
-          }
-        }
-      ),
-      reaction(
-        () => {
-          const firstDeviceId = this.devices.length > 0 ? this.devices[0].id : undefined
-          const count = this.devices.length
-          return { firstDeviceId, count }
-        },
-        (props, prev) => {
-          if (props.firstDeviceId === undefined) return
-          if (prev.count === 0 && props.count > 0) {
-            if (this.devices.some((d) => d.id === props.firstDeviceId)) {
-              this.setSelectedDeviceId(props.firstDeviceId)
-            }
           }
         }
       )
@@ -162,6 +163,7 @@ export class DeviceStore {
 
   @action.bound
   setSelectedDeviceId(id: number | undefined) {
+    localStorage.setItem(SELECTED_DEVICE_KEY, id !== undefined ? id.toString() : '')
     this.selectedDeviceId = id
   }
 

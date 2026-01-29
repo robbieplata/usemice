@@ -25,7 +25,6 @@ const App = observer(() => {
     if (!requestResult.error) {
       const deviceResult = await flowResult(addDevice(requestResult.value))
       if (!deviceResult.error && selectedDevice === undefined) {
-        setSelectedDeviceId(deviceResult.value.id)
         setDrawerOpen(false)
       }
     } else {
