@@ -1,6 +1,6 @@
 import { observer } from 'mobx-react-lite'
 import { flowResult } from 'mobx'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import DeviceView from './components/DeviceView'
 import { useStore } from './stores'
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card'
@@ -14,9 +14,15 @@ import { Menu, Trash } from 'lucide-react'
 
 const App = observer(() => {
   const {
-    deviceStore: { addDevice, requestDevice, selectedDevice, devices, setSelectedDeviceId, removeDevice }
+    deviceStore: { addDevice, requestDevice, selectedDevice, devices, setSelectedDeviceId, removeDevice, initialized }
   } = useStore()
   const [drawerOpen, setDrawerOpen] = useState(false)
+
+  useEffect(() => {
+    if (initialized && devices.length === 0) {
+      setDrawerOpen(true)
+    }
+  }, [initialized, devices.length])
 
   const connect = async () => {
     const requestResult = await flowResult(requestDevice())
@@ -24,6 +30,7 @@ const App = observer(() => {
       const deviceResult = await flowResult(addDevice(requestResult.value))
       if (!deviceResult.error) {
         setSelectedDeviceId(deviceResult.value.id)
+        setDrawerOpen(false)
       }
     } else {
       console.error('Failed to request device:', requestResult.error)
@@ -42,9 +49,9 @@ const App = observer(() => {
                 <Menu className='size-5' />
               </Button>
             </SheetTrigger>
-            <SheetContent side='left' className='w-80 p-0'>
-              <SheetHeader className='border-b'>
-                <SheetTitle>Devices</SheetTitle>
+            <SheetContent side='left' className='w-80 p-0' aria-describedby={undefined}>
+              <SheetHeader className='px-4'>
+                <SheetTitle className='text-base'>Devices</SheetTitle>
               </SheetHeader>
               <ScrollArea className='h-[calc(100vh-4rem)]'>
                 <div className='space-y-4 p-4 pr-6'>
@@ -52,12 +59,19 @@ const App = observer(() => {
                     const isSelected = selectedDevice?.id === device.id
 
                     return (
-                      <button
+                      <div
                         key={device.id}
-                        type='button'
+                        role='button'
+                        tabIndex={0}
                         onClick={() => {
                           setSelectedDeviceId(device.id)
                           setDrawerOpen(false)
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            setSelectedDeviceId(device.id)
+                            setDrawerOpen(false)
+                          }
                         }}
                         className={[
                           'w-full rounded-xl border p-4 text-left transition',
@@ -89,12 +103,12 @@ const App = observer(() => {
                             </Button>
                           </div>
                         </div>
-                      </button>
+                      </div>
                     )
                   })}
 
                   <div
-                    className='rounded-xl border border-dashed p-4 text-sm cursor-pointer hover:border-neutral-600 transition'
+                    className='rounded-xl border border-dashed border-primary/30 p-4 text-sm cursor-pointer hover:border-primary/60 hover:bg-primary/5 transition'
                     onClick={connect}
                     role='button'
                     tabIndex={0}
@@ -104,9 +118,9 @@ const App = observer(() => {
                   >
                     <div className='flex items-center gap-4'>
                       <div className='shrink-0'>
-                        <div className='w-10 h-10 rounded-full border-2 border-dashed flex items-center justify-center'>
+                        <div className='w-10 h-10 rounded-full border-2 border-dashed border-primary/40 flex items-center justify-center'>
                           <svg
-                            className='w-5 h-5 text-neutral-400'
+                            className='w-5 h-5 text-primary/60'
                             fill='none'
                             viewBox='0 0 24 24'
                             stroke='currentColor'
@@ -116,8 +130,8 @@ const App = observer(() => {
                         </div>
                       </div>
                       <div className='space-y-2 w-full'>
-                        <Skeleton className='h-4 w-full max-w-[200px]' />
-                        <Skeleton className='h-4 w-full max-w-[150px]' />
+                        <p className='text-sm font-medium text-primary/80'>Add Device</p>
+                        <Skeleton className='h-3 w-full max-w-[150px]' />
                       </div>
                     </div>
                   </div>

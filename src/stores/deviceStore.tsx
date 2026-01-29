@@ -1,4 +1,4 @@
-import { action, computed, flow, observable, reaction, type IReactionDisposer } from 'mobx'
+import { action, computed, flow, observable, reaction, runInAction, type IReactionDisposer } from 'mobx'
 import { assertStatus, Device, type DeviceInStatus, type DeviceInStatusVariant } from '../lib/device/device'
 import { getHidInterfaces, RequestHidDeviceError, requestHidInterface, selectBestInterface } from '../lib/device/hid'
 import { toast } from 'sonner'
@@ -8,6 +8,7 @@ export class DeviceStore {
   @observable accessor devices: DeviceInStatusVariant[] = []
   @observable accessor selectedDeviceId: number | undefined
   @observable accessor errors: Error[] = []
+  @observable accessor initialized: boolean = false
 
   private reactions: IReactionDisposer[] = []
 
@@ -44,6 +45,9 @@ export class DeviceStore {
     navigator.hid.addEventListener('disconnect', this.onDisconnect)
     getHidInterfaces().then((d) => {
       d.forEach(this.addDevice)
+      runInAction(() => {
+        this.initialized = true
+      })
     })
   }
 
