@@ -30,7 +30,7 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
         dpiLevels: nextLevels
       })
     }, 300)
-  }, [device, device.capabilities.dpiStages.data])
+  }, [device])
 
   useEffect(() => () => debouncedSet.cancel(), [debouncedSet])
 

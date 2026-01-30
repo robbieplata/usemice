@@ -21,5 +21,11 @@ export default defineConfig([
       globals: globals.browser
     }
   },
+  {
+    files: ['**/components/ui/**/*.tsx', '**/ThemeProvider.tsx', '**/stores/**/*.tsx'],
+    rules: {
+      'react-refresh/only-export-components': 'off'
+    }
+  },
   eslintConfigPrettier
 ])

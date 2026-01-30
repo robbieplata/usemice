@@ -4,17 +4,19 @@ import type { ReadyDeviceWithCapabilities } from '@/lib/device/device'
 import { Slider } from '../ui/slider'
 import { Card } from '../ui/card'
 import { Clock } from 'lucide-react'
+import { observer } from 'mobx-react-lite'
 
 type IdleTimeProps = {
   device: ReadyDeviceWithCapabilities<'idleTime'>
 }
 
-export const IdleTime = ({ device }: IdleTimeProps) => {
-  const [seconds, setSeconds] = useState(device.capabilities.idleTime.data.seconds)
+type IdleTimeInnerProps = {
+  device: ReadyDeviceWithCapabilities<'idleTime'>
+  initialSeconds: number
+}
 
-  useEffect(() => {
-    setSeconds(device.capabilities.idleTime.data.seconds)
-  }, [device.capabilities.idleTime.data.seconds])
+const IdleTimeInner = observer(({ device, initialSeconds }: IdleTimeInnerProps) => {
+  const [seconds, setSeconds] = useState(initialSeconds)
 
   const debouncedUpdateIdleTime = useMemo(
     () =>
@@ -64,4 +66,10 @@ export const IdleTime = ({ device }: IdleTimeProps) => {
       </Card>
     </section>
   )
+})
+
+// Use key to reset internal state when device seconds change externally
+export const IdleTime = ({ device }: IdleTimeProps) => {
+  const deviceSeconds = device.capabilities.idleTime.data.seconds
+  return <IdleTimeInner key={deviceSeconds} device={device} initialSeconds={deviceSeconds} />
 }

@@ -86,7 +86,9 @@ export type DeviceInStatus<S extends DeviceStatus> = Device & {
 export type DeviceInStatusVariant = DeviceInStatus<'Initializing'> | DeviceInStatus<'Ready'> | DeviceInStatus<'Failed'>
 
 export function assertStatus<S extends DeviceStatus>(device: Device, status: S): asserts device is DeviceInStatus<S> {
-  device.status === status
+  if (device.status !== status) {
+    throw new Error(`Expected device status to be '${status}', but was '${device.status}'`)
+  }
 }
 
 export function isStatus<S extends DeviceStatus>(device: Device, status: S): device is DeviceInStatus<S> {

@@ -1,5 +1,11 @@
 import { action, computed, flow, observable, reaction, runInAction, type IReactionDisposer } from 'mobx'
-import { assertStatus, Device, type DeviceInStatus, type DeviceInStatusVariant } from '../lib/device/device'
+import {
+  assertStatus,
+  Device,
+  type CapabilityKey,
+  type DeviceInStatus,
+  type DeviceInStatusVariant
+} from '../lib/device/device'
 import { getHidInterfaces, RequestHidDeviceError, requestHidInterface, selectBestInterface } from '../lib/device/hid'
 import { toast } from 'sonner'
 import type { Result } from '@/lib/result'
@@ -139,9 +145,10 @@ export class DeviceStore {
       }
     }
 
+    const capabilityKeys = Object.keys(device.profile.capabilities) as CapabilityKey[]
     const fetches: Promise<unknown>[] = []
-    for (const key of Object.keys(device.profile.capabilities) as (keyof typeof device.profile.capabilities)[]) {
-      fetches.push(device.get(key as any))
+    for (const key of capabilityKeys) {
+      fetches.push(device.get(key))
     }
 
     try {

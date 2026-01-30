@@ -56,7 +56,7 @@ export const DongleLedMulti = observer(({ device }: DongleLedMultiProps) => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align='end' className='w-44'>
-                  {modeOptions.map(([_, value]) => (
+                  {modeOptions.map(([, value]) => (
                     <DropdownMenuItem
                       key={value}
                       onClick={() => updateMode(index as 0 | 1 | 2, value)}
