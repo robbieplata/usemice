@@ -1,7 +1,7 @@
 // src/lib/device/device.ts
 import { action, observable, reaction, runInAction, type IReactionDisposer } from 'mobx'
 import { Mutex } from '../mutex'
-import { getDeviceDescriptor, type DeviceProfile } from './devices'
+import { getDeviceDefinition, type DeviceProfile } from './definitions'
 import type { ChargeLevelData, ChargeLevelInfo } from '../capabilities/razer/chargeLevel'
 import type { ChargeStatusData, ChargeStatusInfo } from '../capabilities/razer/chargeStatus'
 import type { DpiData, DpiInfo } from '../capabilities/razer/dpi'
@@ -156,7 +156,7 @@ export class Device {
   toastErrorsDisposer: IReactionDisposer
 
   constructor(hid: HIDDevice) {
-    const profile = getDeviceDescriptor(hid.vendorId, hid.productId)
+    const profile = getDeviceDefinition(hid.vendorId, hid.productId)
     if (!profile) throw new DeviceNotSupportedError(hid.vendorId, hid.productId)
     this.hid = hid
     this.id = (hid.vendorId << 16) + hid.productId

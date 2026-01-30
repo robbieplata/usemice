@@ -1,8 +1,8 @@
+import { VID_RAZER } from './constants'
 import type { Mutex } from '../mutex'
 import { find, groupBy, some } from 'lodash'
-import { RAZER_VID } from './razer/constants'
 
-const DEFAULT_FILTER = [{ vendorId: RAZER_VID }]
+const DEFAULT_FILTER = [{ vendorId: VID_RAZER }]
 
 type Result<T, E> = { value: T; error?: never } | { error: E }
 
