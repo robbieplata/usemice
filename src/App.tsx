@@ -1,6 +1,6 @@
 import { observer } from 'mobx-react-lite'
 import { flowResult } from 'mobx'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import DeviceView from './components/DeviceView'
 import { MouseTools } from './components/MouseTools'
 import { useStore } from './stores'
@@ -33,6 +33,13 @@ const App = observer(() => {
   }
 
   const commandErrors = selectedDevice?.commandErrors || []
+
+  const pageTitle =
+    selectedDevice !== undefined ? `${selectedDevice.hid.productName} - usemice` : 'Mouse Configuration Tool - usemice'
+
+  useEffect(() => {
+    document.title = pageTitle
+  }, [pageTitle])
 
   return (
     <div className='mx-auto w-full space-y-4 p-4'>
