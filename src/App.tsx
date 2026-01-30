@@ -1,38 +1,21 @@
 import { observer } from 'mobx-react-lite'
-import { flowResult } from 'mobx'
 import { useEffect, useState } from 'react'
 import DeviceView from './components/DeviceView'
 import { MouseTools } from './components/MouseTools'
+import { DevicesSidebar } from './components/DevicesSidebar'
+import { ErrorsSidebar } from './components/ErrorsSidebar'
 import { useStore } from './stores'
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card'
-import { Skeleton } from './components/ui/skeleton'
-import { Badge } from './components/ui/badge'
 import { ScrollArea } from './components/ui/scroll-area'
 import { ThemeToggle } from './components/ThemeToggle'
 import { Button } from './components/ui/button'
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from './components/ui/sheet'
-import { Menu, AlertCircle, Unplug, Trash2 } from 'lucide-react'
 
 const App = observer(() => {
   const {
-    deviceStore: { addDevice, requestDevice, selectedDevice, devices, setSelectedDeviceId, removeDevice }
+    deviceStore: { selectedDevice }
   } = useStore()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [errorsDrawerOpen, setErrorsDrawerOpen] = useState(false)
-
-  const connect = async () => {
-    const requestResult = await flowResult(requestDevice())
-    if (!requestResult.error) {
-      const deviceResult = await flowResult(addDevice(requestResult.value))
-      if (!deviceResult.error && selectedDevice === undefined) {
-        setDrawerOpen(false)
-      }
-    } else {
-      console.error('Failed to request device:', requestResult.error)
-    }
-  }
-
-  const commandErrors = selectedDevice?.commandErrors || []
 
   const pageTitle =
     selectedDevice !== undefined ? `${selectedDevice.hid.productName} - usemice` : 'Mouse Configuration Tool - usemice'
@@ -45,169 +28,12 @@ const App = observer(() => {
     <div className='mx-auto w-full space-y-4 p-4'>
       <header className='flex items-center justify-between rounded-xl border bg-card px-4 py-3 shadow-sm'>
         <div className='flex items-center gap-3'>
-          <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
-            <SheetTrigger asChild>
-              <Button variant='ghost' size='icon' className='size-9'>
-                <Menu className='size-5' />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side='left' className='w-80 p-0' aria-describedby={undefined}>
-              <SheetHeader className='px-4'>
-                <SheetTitle className='text-base'>Devices</SheetTitle>
-              </SheetHeader>
-              <ScrollArea className='h-[calc(100vh-4rem)]'>
-                <div className='space-y-4 p-4 pr-6'>
-                  {devices.map((device) => {
-                    const isSelected = selectedDevice?.id === device.id
-
-                    return (
-                      <div
-                        key={device.id}
-                        role='button'
-                        tabIndex={0}
-                        onClick={() => {
-                          setSelectedDeviceId(device.id)
-                          if (devices.length <= 1) setDrawerOpen(false)
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            setSelectedDeviceId(device.id)
-                            if (devices.length <= 1) setDrawerOpen(false)
-                          }
-                        }}
-                        className={[
-                          'w-full rounded-xl border p-4 text-left transition-all',
-                          'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary',
-                          isSelected
-                            ? 'border-primary bg-primary/10 shadow-md'
-                            : 'bg-card border-border hover:bg-accent cursor-pointer'
-                        ].join(' ')}
-                      >
-                        <div className='flex items-start justify-between gap-3 min-w-0'>
-                          <div className='flex-1 min-w-0 w-0'>
-                            <div className={`truncate text-sm font-semibold ${isSelected ? 'text-primary' : ''}`}>
-                              {device.hid.productName}
-                            </div>
-                            <div className='truncate mt-1 text-xs text-muted-foreground'>
-                              ID: <span className='font-mono'>{device.id}</span>
-                            </div>
-                          </div>
-
-                          <div className='shrink-0 flex flex-col items-end gap-2'>
-                            <Badge variant={device.status === 'Failed' ? 'destructive' : 'outline'}>
-                              {device.status}
-                            </Badge>
-                            <Button
-                              variant='ghost'
-                              size='icon-xs'
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                flowResult(removeDevice(device, true))
-                              }}
-                              aria-label='Disconnect device'
-                            >
-                              <Unplug className='size-4' />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
-
-                  <div
-                    className='rounded-xl border border-dashed border-primary/30 p-4 text-sm cursor-pointer hover:border-primary/60 hover:bg-primary/5 transition'
-                    onClick={connect}
-                    role='button'
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') connect()
-                    }}
-                  >
-                    <div className='flex items-center gap-4'>
-                      <div className='shrink-0'>
-                        <div className='w-10 h-10 rounded-full border-2 border-dashed border-primary/40 flex items-center justify-center'>
-                          <svg
-                            className='w-5 h-5 text-primary/60'
-                            fill='none'
-                            viewBox='0 0 24 24'
-                            stroke='currentColor'
-                          >
-                            <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M12 4v16m8-8H4' />
-                          </svg>
-                        </div>
-                      </div>
-                      <div className='space-y-2 w-full'>
-                        <p className='text-sm font-medium text-primary/80'>Add Device</p>
-                        <Skeleton className='h-3 w-full max-w-[150px]' />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </ScrollArea>
-            </SheetContent>
-          </Sheet>
+          <DevicesSidebar open={drawerOpen} onOpenChange={setDrawerOpen} />
           <div className='h-6 w-px bg-border' />
           <span className='font-semibold text-lg tracking-tight'>usemice</span>
         </div>
         <div className='flex items-center gap-1'>
-          <Sheet open={errorsDrawerOpen} onOpenChange={setErrorsDrawerOpen}>
-            <SheetTrigger asChild>
-              <Button
-                variant='ghost'
-                size='icon'
-                className={`size-9 relative ${commandErrors.length > 0 ? 'text-destructive' : ''}`}
-              >
-                <AlertCircle className='size-5' />
-                {commandErrors.length > 0 && (
-                  <span className='absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-white'>
-                    {commandErrors.length}
-                  </span>
-                )}
-              </Button>
-            </SheetTrigger>
-            <SheetContent side='right' className='w-96 p-0 flex flex-col' aria-describedby={undefined}>
-              <SheetHeader className='px-4'>
-                <SheetTitle className='text-base'>Errors</SheetTitle>
-              </SheetHeader>
-              <ScrollArea className='flex-1'>
-                <div className='space-y-3 p-4 pr-6'>
-                  {commandErrors.length > 0 ? (
-                    commandErrors.map((error, index) => (
-                      <div key={index} className='rounded-xl border border-destructive/30 bg-destructive/5 p-4'>
-                        <div className='flex items-center justify-between'>
-                          <div className='text-xs font-medium text-destructive'>{error.name}</div>
-                          <div className='text-xs text-muted-foreground'>
-                            {new Date(error._timestamp).toLocaleTimeString()}
-                          </div>
-                        </div>
-                        <div className='text-sm mt-2'>{error.message}</div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className='flex flex-col items-center justify-center py-16 text-center'>
-                      <p className='mt-3 text-sm font-medium'>No Command Errors</p>
-                      <p className='mt-1 text-xs text-muted-foreground'>
-                        Errors resulting from malformed data or device communication will appear here.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </ScrollArea>
-              {commandErrors.length > 0 && (
-                <div className='shrink-0 border-t p-4'>
-                  <Button
-                    variant='outline'
-                    size='sm'
-                    onClick={() => selectedDevice?.clearCommandErrors()}
-                    className='w-full text-destructive hover:text-destructive hover:bg-destructive/10'
-                  >
-                    <Trash2 className='mr-2 size-4' />
-                    Clear Errors
-                  </Button>
-                </div>
-              )}
-            </SheetContent>
-          </Sheet>
+          <ErrorsSidebar open={errorsDrawerOpen} onOpenChange={setErrorsDrawerOpen} />
           <Button variant='ghost' size='icon' className='size-9' asChild>
             <a
               href='https://github.com/robbieplata/usemice'
