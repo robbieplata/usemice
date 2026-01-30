@@ -2,6 +2,8 @@
 
 A web-based configuration tool for mice using the WebHID API.
 
+[![usemice screenshot](.github/screenshots/webpage.png)](https://usemice.com)
+
 ## Development
 
 ```bash
