@@ -69,9 +69,51 @@ const matchesFilters = (d: HIDDevice, filters: HIDDeviceFilter[]) =>
       (f.productId === undefined || f.productId === d.productId)
   )
 
-export const selectBestInterface = (sameProduct: HIDDevice[]): HIDDevice | undefined =>
-  find(sameProduct, (dev) => dev.collections.some((c) => (c.featureReports?.length ?? 0) > 0)) ??
-  find(sameProduct, (dev) => dev.collections.some((c) => c.usagePage === 0xff00))
+const HID_USAGE_PAGE_GENERIC_DESKTOP = 0x01
+const HID_USAGE_MOUSE = 0x02
+
+export const selectBestInterface = (sameProduct: HIDDevice[]): HIDDevice | undefined => {
+  const withFeatureReports = find(sameProduct, (dev) =>
+    dev.collections.some((c) => (c.featureReports?.length ?? 0) > 0)
+  )
+  if (withFeatureReports) {
+    console.log(`[HID] Selected interface with feature reports for device ${sameProduct[0].productName}`)
+    return withFeatureReports
+  }
+  const mouseInterface = find(sameProduct, (dev) =>
+    dev.collections.some((c) => c.usagePage === HID_USAGE_PAGE_GENERIC_DESKTOP && c.usage === HID_USAGE_MOUSE)
+  )
+  if (mouseInterface) {
+    console.log(`[HID] Selected mouse interface for device ${sameProduct[0].productName}`)
+    return mouseInterface
+  }
+
+  console.warn(`[HID] No optimal interface found for device ${sameProduct[0].productName}, using first available`)
+  return sameProduct[0]
+}
+
+/** @TODO remove temporary */
+export const debugInterfaces = (sameProduct: HIDDevice[]): void => {
+  console.group(`[HID Debug] ${sameProduct.length} interface(s) for product`)
+  sameProduct.forEach((dev, i) => {
+    console.group(`Interface ${i}`)
+    console.log('Product:', dev.productName)
+    console.log('Collections:', dev.collections.length)
+    dev.collections.forEach((c, j) => {
+      const hasFeatureReports = (c.featureReports?.length ?? 0) > 0
+      console.log(
+        `  Collection ${j}: usagePage=0x${c.usagePage?.toString(16) ?? 'undefined'}, ` +
+          `usage=0x${c.usage?.toString(16) ?? 'undefined'}, ` +
+          `featureReports=${c.featureReports?.length ?? 0}, ` +
+          `inputReports=${c.inputReports?.length ?? 0}, ` +
+          `outputReports=${c.outputReports?.length ?? 0}`,
+        hasFeatureReports ? '--HAS FEATURE REPORTS--' : ''
+      )
+    })
+    console.groupEnd()
+  })
+  console.groupEnd()
+}
 
 const pickBestInterfaces = (devices: HIDDevice[]): HIDDevice[] => {
   const groups = groupBy(devices, productKey)
@@ -101,12 +143,17 @@ export const requestHidInterface = async (
     const { vendorId: vid, productId: pid } = requested
     const bestInterface = await navigator.hid.getDevices().then((devices) => {
       const sameProduct = devices.filter((d) => d.vendorId === vid && d.productId === pid)
+      debugInterfaces(sameProduct)
       return selectBestInterface(sameProduct)
     })
 
-    if (!bestInterface) return { error: new RequestHidDeviceError('No compatible HID interface found') }
+    if (!bestInterface) {
+      console.error(`[HID] No compatible interface found for VID:0x${vid.toString(16)} PID:0x${pid.toString(16)}`)
+      return { error: new RequestHidDeviceError('No compatible HID interface found') }
+    }
     return { value: bestInterface }
-  } catch {
+  } catch (e) {
+    console.error('[HID] Failed to request device:', e)
     return { error: new RequestHidDeviceError('Failed to request HID device') }
   }
 }
