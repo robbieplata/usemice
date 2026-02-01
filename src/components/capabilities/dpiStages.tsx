@@ -1,12 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
-import debounce from 'lodash/debounce'
+import { useEffect, useState } from 'react'
 import { type ReadyDeviceWithCapabilities } from '@/lib/device/device'
 import { Button } from '../ui/button'
 import { Card } from '../ui/card'
 import { Slider } from '../ui/slider'
 import { Input } from '../ui/input'
 import { observer } from 'mobx-react-lite'
-import { Trash, Plus, Target } from 'lucide-react'
+import { Trash, Plus, Target, Link, Unlink } from 'lucide-react'
 
 type DpiStagesProps = {
   device: ReadyDeviceWithCapabilities<'dpiStages'>
@@ -14,8 +13,14 @@ type DpiStagesProps = {
 
 export const DpiStages = observer(({ device }: DpiStagesProps) => {
   const [localDpiLevels, setLocalDpiLevels] = useState(device.capabilities.dpiStages.data.dpiLevels)
-  const [inputText, setInputText] = useState(() =>
+  const [inputTextX, setInputTextX] = useState(() =>
     device.capabilities.dpiStages.data.dpiLevels.map((lvl) => String(lvl[0]))
+  )
+  const [inputTextY, setInputTextY] = useState(() =>
+    device.capabilities.dpiStages.data.dpiLevels.map((lvl) => String(lvl[1]))
+  )
+  const [independentXY, setIndependentXY] = useState(() =>
+    device.capabilities.dpiStages.data.dpiLevels.some((lvl) => lvl[0] !== lvl[1])
   )
 
   const { minDpi, maxDpi, maxStages } = device.capabilities.dpiStages.info
@@ -23,40 +28,67 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
 
   useEffect(() => setLocalDpiLevels(dpiLevels), [dpiLevels])
 
-  const debouncedSet = useMemo(() => {
-    return debounce((nextLevels: typeof localDpiLevels) => {
-      device.set('dpiStages', {
-        ...device.capabilities.dpiStages.data,
-        dpiLevels: nextLevels
-      })
-    }, 300)
-  }, [device])
-
-  useEffect(() => () => debouncedSet.cancel(), [debouncedSet])
+  const commitLevels = (nextLevels: typeof localDpiLevels) => {
+    device.set('dpiStages', {
+      ...device.capabilities.dpiStages.data,
+      dpiLevels: nextLevels
+    })
+  }
 
   const clamp = (n: number) => Math.min(maxDpi, Math.max(minDpi, n))
 
   useEffect(() => {
     setLocalDpiLevels(device.capabilities.dpiStages.data.dpiLevels)
-    setInputText(device.capabilities.dpiStages.data.dpiLevels.map((lvl) => String(lvl[0])))
+    setInputTextX(device.capabilities.dpiStages.data.dpiLevels.map((lvl) => String(lvl[0])))
+    setInputTextY(device.capabilities.dpiStages.data.dpiLevels.map((lvl) => String(lvl[1])))
   }, [device.capabilities.dpiStages.data.dpiLevels])
 
-  const setStageValue = (index: number, next: number) => {
-    const nextLevels = [...localDpiLevels]
-    nextLevels[index] = [next, next]
+  const setStageValueXY = (index: number, nextX: number, nextY: number) => {
+    const nextLevels = [...localDpiLevels] as [number, number][]
+    nextLevels[index] = [nextX, nextY]
     setLocalDpiLevels(nextLevels)
-    setInputText((t) => {
+    setInputTextX((t) => {
       const copy = [...t]
-      copy[index] = String(next)
+      copy[index] = String(nextX)
       return copy
     })
-    debouncedSet(nextLevels)
+    setInputTextY((t) => {
+      const copy = [...t]
+      copy[index] = String(nextY)
+      return copy
+    })
   }
 
-  const commitInput = (index: number) => {
-    const raw = inputText[index]
+  const setStageValue = (index: number, next: number) => {
+    setStageValueXY(index, next, next)
+  }
+
+  const setStageValueX = (index: number, nextX: number) => {
+    const nextLevels = [...localDpiLevels] as [number, number][]
+    nextLevels[index] = [nextX, nextLevels[index][1]]
+    setLocalDpiLevels(nextLevels)
+    setInputTextX((t) => {
+      const copy = [...t]
+      copy[index] = String(nextX)
+      return copy
+    })
+  }
+
+  const setStageValueY = (index: number, nextY: number) => {
+    const nextLevels = [...localDpiLevels] as [number, number][]
+    nextLevels[index] = [nextLevels[index][0], nextY]
+    setLocalDpiLevels(nextLevels)
+    setInputTextY((t) => {
+      const copy = [...t]
+      copy[index] = String(nextY)
+      return copy
+    })
+  }
+
+  const commitInputX = (index: number) => {
+    const raw = inputTextX[index]
     if (raw.trim() === '') {
-      setInputText((t) => {
+      setInputTextX((t) => {
         const copy = [...t]
         copy[index] = String(localDpiLevels[index][0])
         return copy
@@ -65,7 +97,32 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
     }
     const parsed = Number(raw)
     if (Number.isNaN(parsed)) return
-    setStageValue(index, clamp(parsed))
+    if (independentXY) {
+      setStageValueX(index, clamp(parsed))
+    } else {
+      setStageValue(index, clamp(parsed))
+    }
+    commitLevels(
+      localDpiLevels.map((lvl, i) =>
+        i === index ? (independentXY ? [clamp(parsed), lvl[1]] : [clamp(parsed), clamp(parsed)]) : lvl
+      ) as [number, number][]
+    )
+  }
+
+  const commitInputY = (index: number) => {
+    const raw = inputTextY[index]
+    if (raw.trim() === '') {
+      setInputTextY((t) => {
+        const copy = [...t]
+        copy[index] = String(localDpiLevels[index][1])
+        return copy
+      })
+      return
+    }
+    const parsed = Number(raw)
+    if (Number.isNaN(parsed)) return
+    setStageValueY(index, clamp(parsed))
+    commitLevels(localDpiLevels.map((lvl, i) => (i === index ? [lvl[0], clamp(parsed)] : lvl)) as [number, number][])
   }
 
   const removeStage = (index: number) => {
@@ -80,7 +137,8 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
           : activeStage
 
     setLocalDpiLevels(nextLevels)
-    setInputText((t) => t.filter((_, i) => i !== index))
+    setInputTextX((t) => t.filter((_, i) => i !== index))
+    setInputTextY((t) => t.filter((_, i) => i !== index))
 
     device.set('dpiStages', {
       ...device.capabilities.dpiStages.data,
@@ -96,12 +154,27 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
     const nextLevels: [number, number][] = [...localDpiLevels, [defaultDpi, defaultDpi]]
 
     setLocalDpiLevels(nextLevels)
-    setInputText((t) => [...t, String(defaultDpi)])
+    setInputTextX((t) => [...t, String(defaultDpi)])
+    setInputTextY((t) => [...t, String(defaultDpi)])
 
     device.set('dpiStages', {
       ...device.capabilities.dpiStages.data,
       dpiLevels: nextLevels
     })
+  }
+
+  const toggleIndependentXY = () => {
+    if (independentXY) {
+      // Y and X were independent, they're going to be linked now
+      const nextLevels = localDpiLevels.map(([x]) => [x, x] as [number, number])
+      setLocalDpiLevels(nextLevels)
+      setInputTextY(nextLevels.map((lvl) => String(lvl[1])))
+      device.set('dpiStages', {
+        ...device.capabilities.dpiStages.data,
+        dpiLevels: nextLevels
+      })
+    }
+    setIndependentXY(!independentXY)
   }
 
   return (
@@ -114,14 +187,27 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
             </div>
             <h3 className='text-sm font-medium'>DPI Stages</h3>
           </div>
-          <span className='text-sm text-muted-foreground'>
-            Active: <span className='font-semibold text-foreground'>{activeStage}</span>
-          </span>
+          <div className='flex items-center gap-3'>
+            <Button
+              variant='ghost'
+              size='sm'
+              onClick={toggleIndependentXY}
+              className='gap-2 text-xs'
+              title={independentXY ? 'Link X and Y DPI' : 'Separate X and Y DPI'}
+            >
+              {independentXY ? <Unlink className='size-3' /> : <Link className='size-3' />}
+              X/Y
+            </Button>
+            <span className='text-sm text-muted-foreground'>
+              Active: <span className='font-semibold text-foreground'>{activeStage}</span>
+            </span>
+          </div>
         </div>
 
         {localDpiLevels.map((level, index) => {
           const isActive = activeStage === index + 1
-          const value = level[0]
+          const valueX = level[0]
+          const valueY = level[1]
 
           return (
             <div key={index + 1}>
@@ -141,7 +227,7 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
                   </Button>
 
                   <div className='text-sm w-20 text-center'>
-                    <span className='font-medium tabular-nums'>{value}</span> Dpi
+                    <span className='font-medium tabular-nums'>{valueX}</span> DPI
                   </div>
                 </div>
 
@@ -151,42 +237,88 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
                       step={50}
                       min={minDpi}
                       max={maxDpi}
-                      value={[value]}
-                      onValueChange={([next]) => setStageValue(index, next)}
+                      value={independentXY ? [valueX, valueY] : [valueX]}
+                      onValueChange={(values) => {
+                        if (independentXY) {
+                          setStageValueXY(index, values[0], values[1])
+                        } else {
+                          setStageValue(index, values[0])
+                        }
+                      }}
+                      onValueCommit={(values) => {
+                        const nextLevels = [...localDpiLevels] as [number, number][]
+                        nextLevels[index] = independentXY ? [values[0], values[1]] : [values[0], values[0]]
+                        commitLevels(nextLevels)
+                      }}
                     />
                     <div className='mt-2 flex justify-between text-xs text-muted-foreground'>
                       <span>{minDpi}</span>
                       <span>{maxDpi}</span>
                     </div>
                   </div>
-                  <Input
-                    className='w-24'
-                    type='text'
-                    inputMode='numeric'
-                    value={inputText[index] ?? String(value)}
-                    onChange={(e) => {
-                      const v = e.target.value
-                      if (v === '' || /^\d+$/.test(v)) {
-                        setInputText((t) => {
-                          const copy = [...t]
-                          copy[index] = v
-                          return copy
-                        })
-                      }
-                    }}
-                    onBlur={() => commitInput(index)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') e.currentTarget.blur()
-                      if (e.key === 'Escape') {
-                        setInputText((t) => {
-                          const copy = [...t]
-                          copy[index] = String(localDpiLevels[index][0])
-                          return copy
-                        })
-                        e.currentTarget.blur()
-                      }
-                    }}
-                  />
+                  <div className='flex items-center gap-1'>
+                    <Input
+                      className='w-16'
+                      type='text'
+                      inputMode='numeric'
+                      value={inputTextX[index] ?? String(valueX)}
+                      onChange={(e) => {
+                        const v = e.target.value
+                        if (v === '' || /^\d+$/.test(v)) {
+                          setInputTextX((t) => {
+                            const copy = [...t]
+                            copy[index] = v
+                            return copy
+                          })
+                        }
+                      }}
+                      onBlur={() => commitInputX(index)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') e.currentTarget.blur()
+                        if (e.key === 'Escape') {
+                          setInputTextX((t) => {
+                            const copy = [...t]
+                            copy[index] = String(localDpiLevels[index][0])
+                            return copy
+                          })
+                          e.currentTarget.blur()
+                        }
+                      }}
+                    />
+                    {independentXY && (
+                      <>
+                        <span className='text-muted-foreground text-xs'>/</span>
+                        <Input
+                          className='w-16'
+                          type='text'
+                          inputMode='numeric'
+                          value={inputTextY[index] ?? String(valueY)}
+                          onChange={(e) => {
+                            const v = e.target.value
+                            if (v === '' || /^\d+$/.test(v)) {
+                              setInputTextY((t) => {
+                                const copy = [...t]
+                                copy[index] = v
+                                return copy
+                              })
+                            }
+                          }}
+                          onBlur={() => commitInputY(index)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') e.currentTarget.blur()
+                            if (e.key === 'Escape') {
+                              setInputTextY((t) => {
+                                const copy = [...t]
+                                copy[index] = String(localDpiLevels[index][1])
+                                return copy
+                              })
+                              e.currentTarget.blur()
+                            }
+                          }}
+                        />
+                      </>
+                    )}
+                  </div>
                 </div>
                 <Button
                   variant='ghost'
