@@ -1,11 +1,16 @@
 import { VID_RAZER } from './constants'
 import type { Mutex } from '../mutex'
-import { find, groupBy, some } from 'lodash'
+import { groupBy, some } from 'lodash'
 
-const HID_USAGE_PAGE_GENERIC_DESKTOP = 0x01
-const HID_USAGE_MOUSE = 0x02
+const RAZER_FILTER: HIDDeviceFilter = {
+  vendorId: VID_RAZER
+}
 
-const DEFAULT_FILTER: HIDDeviceFilter[] = [{ vendorId: VID_RAZER }]
+const DEFAULT_FILTER: HIDDeviceFilter[] = [RAZER_FILTER]
+
+const PROBE_TIMEOUT_MS = 100
+const PROBE_REPORT_ID = 0x00
+const PROBE_REPORT_SIZE = 90
 
 type Result<T, E> = { value: T; error?: never } | { error: E }
 
@@ -75,16 +80,43 @@ const matchesFilters = (d: HIDDevice, filters: HIDDeviceFilter[]) =>
 export const hasFeatureReports = (dev: HIDDevice): boolean =>
   dev.collections.some((c) => (c.featureReports?.length ?? 0) > 0)
 
-export const isMouseInterface = (dev: HIDDevice): boolean =>
-  dev.collections.some((c) => c.usagePage === HID_USAGE_PAGE_GENERIC_DESKTOP && c.usage === HID_USAGE_MOUSE)
+export const probeDevice = async (dev: HIDDevice): Promise<boolean> => {
+  const wasOpen = dev.opened
+  try {
+    if (!wasOpen) await dev.open()
+    const probeBuffer = new ArrayBuffer(PROBE_REPORT_SIZE)
 
-/** mouse interface with feature reports > any feature reports > mouse interface */
-export const selectBestInterface = (sameProduct: HIDDevice[]): HIDDevice | undefined => {
-  const mouseWithFeatureReports = find(sameProduct, (dev) => isMouseInterface(dev) && hasFeatureReports(dev))
-  if (mouseWithFeatureReports) return mouseWithFeatureReports
-  const anyFeatureReports = find(sameProduct, hasFeatureReports)
-  if (anyFeatureReports) return anyFeatureReports
-  return find(sameProduct, isMouseInterface)
+    await dev.sendFeatureReport(PROBE_REPORT_ID, probeBuffer)
+    const response = await Promise.race([
+      dev
+        .receiveFeatureReport(PROBE_REPORT_ID)
+        .then(() => true)
+        .catch(() => false),
+      new Promise<false>((resolve) => setTimeout(() => resolve(false), PROBE_TIMEOUT_MS))
+    ])
+
+    return response
+  } catch {
+    return false
+  } finally {
+    // opened in the function
+    if (!wasOpen && dev.opened) {
+      await dev.close().catch()
+    }
+  }
+}
+
+export const findResponsiveInterface = async (sameProduct: HIDDevice[]): Promise<HIDDevice | undefined> => {
+  for (const dev of sameProduct) {
+    if (await probeDevice(dev)) {
+      return dev
+    }
+  }
+  return undefined
+}
+
+export const interfaceWithFeatureReports = (sameProduct: HIDDevice[]): HIDDevice | undefined => {
+  return sameProduct.find((dev) => hasFeatureReports(dev))
 }
 
 /** @TODO remove temporary */
@@ -110,11 +142,10 @@ export const debugInterfaces = (sameProduct: HIDDevice[]): void => {
   console.groupEnd()
 }
 
-const pickBestInterfaces = (devices: HIDDevice[]): HIDDevice[] => {
+const pickBestInterfaces = async (devices: HIDDevice[]): Promise<HIDDevice[]> => {
   const groups = groupBy(devices, productKey)
-  return Object.values(groups)
-    .map(selectBestInterface)
-    .filter((d): d is HIDDevice => d !== undefined)
+  const results = await Promise.all(Object.values(groups).map(findResponsiveInterface))
+  return results.filter((d): d is HIDDevice => d !== undefined)
 }
 
 const defaultFilters = (options?: HIDDeviceRequestOptions) => options?.filters ?? DEFAULT_FILTER
@@ -136,10 +167,10 @@ export const requestHidInterface = async (
     if (!requested) return { error: new RequestHidDeviceError('No device selected') }
 
     const { vendorId: vid, productId: pid } = requested
-    const bestInterface = await navigator.hid.getDevices().then((devices) => {
+    const bestInterface = await navigator.hid.getDevices().then(async (devices) => {
       const sameProduct = devices.filter((d) => d.vendorId === vid && d.productId === pid)
       debugInterfaces(sameProduct)
-      return selectBestInterface(sameProduct)
+      return findResponsiveInterface(sameProduct)
     })
 
     if (!bestInterface) {

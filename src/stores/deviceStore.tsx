@@ -6,13 +6,11 @@ import {
   type DeviceInStatus,
   type DeviceInStatusVariant
 } from '../lib/device/device'
-import { getHidInterfaces, RequestHidDeviceError, requestHidInterface, selectBestInterface } from '../lib/device/hid'
+import { getHidInterfaces, probeDevice, RequestHidDeviceError, requestHidInterface } from '../lib/device/hid'
 import { toast } from 'sonner'
 import type { Result } from '@/lib/result'
 
 const SELECTED_DEVICE_KEY = 'usemice:selectedDeviceId'
-
-const deviceGroupKey = (d: HIDDevice) => `${d.vendorId}:${d.productId}`
 
 export class DeviceStore {
   @observable accessor devices: DeviceInStatusVariant[] = []
@@ -21,7 +19,8 @@ export class DeviceStore {
   @observable accessor initialized: boolean = false
 
   private reactions: IReactionDisposer[] = []
-  private reconcileTimers = new Map<string, number>()
+  private connectQueue: Map<string, HIDDevice[]> = new Map()
+  private processingConnect = false
 
   init() {
     this.reactions.push(
@@ -70,84 +69,52 @@ export class DeviceStore {
   }
 
   onConnect = (event: HIDConnectionEvent) => {
-    this.scheduleReconcilation(event.device)
+    const key = `${event.device.vendorId}:${event.device.productId}`
+    const interfaces = this.connectQueue.get(key) ?? []
+    interfaces.push(event.device)
+    this.connectQueue.set(key, interfaces)
+    this.processConnectQueue()
+  }
+
+  private processConnectQueue = async () => {
+    if (this.processingConnect) return
+    this.processingConnect = true
+
+    while (this.connectQueue.size > 0) {
+      const entries = [...this.connectQueue.entries()]
+      this.connectQueue.clear()
+
+      for (const [key, interfaces] of entries) {
+        const [vid, pid] = key.split(':').map(Number)
+        if (this.devices.some((d) => d.hid.vendorId === vid && d.hid.productId === pid)) {
+          continue
+        }
+
+        for (const device of interfaces) {
+          if (await probeDevice(device)) {
+            this.addDevice(device)
+            break
+          }
+        }
+      }
+    }
+
+    this.processingConnect = false
   }
 
   onDisconnect = (event: HIDConnectionEvent) => {
-    const key = deviceGroupKey(event.device)
-    const existing = this.reconcileTimers.get(key)
-    if (existing) {
-      clearTimeout(existing)
-      this.reconcileTimers.delete(key)
+    const hidDevice = event.device
+    const device = this.devices.find(
+      (d) => d.hid.vendorId === hidDevice.vendorId && d.hid.productId === hidDevice.productId
+    )
+    if (device) {
+      this.removeDevice(device)
     }
-    this.removeDevicesByGroupKey(key)
-  }
-
-  private scheduleReconcilation(device: HIDDevice) {
-    const key = deviceGroupKey(device)
-
-    const existing = this.reconcileTimers.get(key)
-    if (existing) clearTimeout(existing)
-
-    const timer = setTimeout(async () => {
-      this.reconcileTimers.delete(key)
-
-      const all = await navigator.hid.getDevices()
-      const group = all.filter((d) => deviceGroupKey(d) === key)
-
-      if (group.length === 0) {
-        this.removeDevicesByGroupKey(key)
-        return
-      }
-
-      const best = selectBestInterface(group)
-      if (!best) return
-
-      this.replaceInferiorInterface(key, best)
-    }, 600)
-
-    this.reconcileTimers.set(key, timer)
-  }
-
-  @action.bound
-  private removeDevicesByGroupKey(key: string) {
-    const toRemove = this.devices.filter((d) => deviceGroupKey(d.hid) === key)
-    for (const device of toRemove) {
-      device.hid.close()
-      if (this.selectedDeviceId === device.id) {
-        this.selectedDeviceId = undefined
-      }
-    }
-    this.devices = this.devices.filter((d) => deviceGroupKey(d.hid) !== key)
-    if (toRemove.length > 0) {
-      toast.warning('Device disconnected: ' + toRemove[0].hid.productName, {
-        duration: 4000
-      })
-    }
-  }
-
-  private replaceInferiorInterface(key: string, best: HIDDevice) {
-    const existing = this.devices.find((d) => deviceGroupKey(d.hid) === key)
-    if (existing && existing.hid === best) {
-      return
-    }
-    if (existing) {
-      existing.hid.close()
-      if (this.selectedDeviceId === existing.id) {
-        this.selectedDeviceId = undefined
-      }
-      runInAction(() => {
-        this.devices = this.devices.filter((d) => d !== existing)
-      })
-    }
-    this.addDevice(best)
   }
 
   dispose() {
     this.reactions.forEach((dispose) => dispose())
     this.reactions = []
-    this.reconcileTimers.forEach((timer) => clearTimeout(timer))
-    this.reconcileTimers.clear()
     navigator.hid.removeEventListener('connect', this.onConnect)
     navigator.hid.removeEventListener('disconnect', this.onDisconnect)
   }
