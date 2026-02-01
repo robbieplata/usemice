@@ -13,6 +13,7 @@ import type { PollingData, PollingInfo } from '../capabilities/razer/polling'
 import type { Polling2Data, Polling2Info } from '../capabilities/razer/polling2'
 import type { SerialData, SerialInfo } from '../capabilities/razer/serial'
 import { toast } from 'sonner'
+import type { DongleLedData, DongleLedInfo } from '../capabilities/razer/dongleLed'
 
 export type DeviceStatus = 'Initializing' | 'Ready' | 'Failed'
 
@@ -21,6 +22,7 @@ export type CapabilityInfoMap = {
   chargeStatus: ChargeStatusInfo
   dpi: DpiInfo
   dpiStages: DpiStagesInfo
+  dongleLed: DongleLedInfo
   dongleLedMulti: DongleLedMultiInfo
   firmwareVersion: FirmwareVersionInfo
   idleTime: IdleTimeInfo
@@ -34,6 +36,7 @@ export type CapabilityDataMap = {
   chargeStatus: ChargeStatusData
   dpi: DpiData
   dpiStages: DpiStagesData
+  dongleLed: DongleLedData
   dongleLedMulti: DongleLedMultiData
   firmwareVersion: FirmwareVersionData
   idleTime: IdleTimeData

@@ -1,5 +1,6 @@
 import { chargeLevel } from '../capabilities/razer/chargeLevel'
 import { chargeStatus } from '../capabilities/razer/chargeStatus'
+import { dongleLed } from '../capabilities/razer/dongleLed'
 import { dongleLedMulti } from '../capabilities/razer/dongleLedMulti'
 import { dpi } from '../capabilities/razer/dpi'
 import { dpiStages } from '../capabilities/razer/dpiStages'
@@ -847,7 +848,8 @@ export function getDeviceDefinition(vid: number, pid: number): DeviceProfile {
               chargeLevel: { info: { txId: 0x1f }, command: chargeLevel },
               chargeStatus: { info: { txId: 0x1f }, command: chargeStatus },
               firmwareVersion: { info: { txId: 0x1f }, command: firmwareVersion },
-              serial: { info: { txId: 0x1f }, command: serial }
+              serial: { info: { txId: 0x1f }, command: serial },
+              dongleLed: { info: { txId: 0x1f }, command: dongleLed }
             }
           }
         }
@@ -1096,8 +1098,7 @@ export function getDeviceDefinition(vid: number, pid: number): DeviceProfile {
               chargeLevel: { info: { txId: 0x1f }, command: chargeLevel },
               chargeStatus: { info: { txId: 0x1f }, command: chargeStatus },
               firmwareVersion: { info: { txId: 0x1f }, command: firmwareVersion },
-              serial: { info: { txId: 0x1f }, command: serial },
-              dongleLedMulti: { info: { txId: 0x1f }, command: dongleLedMulti }
+              serial: { info: { txId: 0x1f }, command: serial }
             }
           }
         }
@@ -1146,7 +1147,8 @@ export function getDeviceDefinition(vid: number, pid: number): DeviceProfile {
               chargeLevel: { info: { txId: 0x1f }, command: chargeLevel },
               chargeStatus: { info: { txId: 0x1f }, command: chargeStatus },
               firmwareVersion: { info: { txId: 0x1f }, command: firmwareVersion },
-              serial: { info: { txId: 0x1f }, command: serial }
+              serial: { info: { txId: 0x1f }, command: serial },
+              dongleLed: { info: { txId: 0xff }, command: dongleLed }
             }
           }
         }
@@ -1174,7 +1176,8 @@ export function getDeviceDefinition(vid: number, pid: number): DeviceProfile {
               chargeLevel: { info: { txId: 0x1f }, command: chargeLevel },
               chargeStatus: { info: { txId: 0x1f }, command: chargeStatus },
               firmwareVersion: { info: { txId: 0x1f }, command: firmwareVersion },
-              serial: { info: { txId: 0x1f }, command: serial }
+              serial: { info: { txId: 0x1f }, command: serial },
+              dongleLed: { info: { txId: 0x1f }, command: dongleLed }
             }
           }
         }

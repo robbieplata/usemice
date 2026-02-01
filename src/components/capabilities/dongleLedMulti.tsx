@@ -32,7 +32,7 @@ export const DongleLedMulti = observer(({ device }: DongleLedMultiProps) => {
     device.set('dongleLedMulti', newModes)
   }
 
-  const ledLabels = ['Mode 1', 'Mode 2', 'Mode 3']
+  const ledLabels = ['Left Mode', 'Middle Mode', 'Right Mode']
 
   return (
     <section>

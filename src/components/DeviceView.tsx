@@ -11,6 +11,7 @@ import { DongleLedMulti } from './capabilities/dongleLedMulti'
 import { NoDeviceDetected } from './NoDeviceDetected'
 import { SkeletonDevice } from './SkeletonDevice'
 import { Hash, Cpu, Battery, Zap, AlertCircle, RotateCcw } from 'lucide-react'
+import { DongleLed } from './capabilities/dongleLed'
 
 type DeviceViewProps = {
   device?: DeviceInStatusVariant
@@ -144,6 +145,7 @@ const DeviceView = observer(({ device, onOpenSidebar }: DeviceViewProps) => {
         {isCapableOf(device, ['dpiStages']) && <DpiStages device={device} />}
         {isCapableOf(device, ['polling2']) && <Polling2 device={device} />}
         {isCapableOf(device, ['polling']) && <Polling device={device} />}
+        {isCapableOf(device, ['dongleLed']) && <DongleLed device={device} />}
         {isCapableOf(device, ['dongleLedMulti']) && <DongleLedMulti device={device} />}
       </div>
     </>
