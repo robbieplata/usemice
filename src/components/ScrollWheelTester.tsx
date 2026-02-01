@@ -34,7 +34,7 @@ export function ScrollWheelTester() {
   const [totalScrollUp, setTotalScrollUp] = useState(0)
   const [totalScrollDown, setTotalScrollDown] = useState(0)
   const [scrollEvents, setScrollEvents] = useState(0)
-  const [isListening, setIsListening] = useState(false)
+  const [isRunning, setIsRunning] = useState(false)
   const [maxAbsDelta, setMaxAbsDelta] = useState(100)
 
   const timeIndexRef = useRef(0)
@@ -56,7 +56,7 @@ export function ScrollWheelTester() {
 
   const handleWheel = useCallback(
     (e: WheelEvent) => {
-      if (!isListening) return
+      if (!isRunning) return
 
       e.preventDefault()
       e.stopPropagation()
@@ -96,11 +96,11 @@ export function ScrollWheelTester() {
         return newData
       })
     },
-    [isListening, calculateScrollSpeed]
+    [isRunning, calculateScrollSpeed]
   )
 
   useEffect(() => {
-    if (!isListening) return
+    if (!isRunning) return
 
     const container = containerRef.current
     if (!container) return
@@ -109,17 +109,17 @@ export function ScrollWheelTester() {
     return () => {
       container.removeEventListener('wheel', handleWheel)
     }
-  }, [isListening, handleWheel])
+  }, [isRunning, handleWheel])
 
   useEffect(() => {
-    if (!isListening) return
+    if (!isRunning) return
 
     const interval = setInterval(() => {
       setScrollSpeed(calculateScrollSpeed())
     }, 200)
 
     return () => clearInterval(interval)
-  }, [isListening, calculateScrollSpeed])
+  }, [isRunning, calculateScrollSpeed])
 
   const handleReset = () => {
     setData([])
@@ -133,8 +133,8 @@ export function ScrollWheelTester() {
     recentEventsRef.current = []
   }
 
-  const toggleListening = () => {
-    setIsListening((prev) => !prev)
+  const toggleRunning = () => {
+    setIsRunning((prev) => !prev)
   }
 
   return (
@@ -150,8 +150,8 @@ export function ScrollWheelTester() {
           </div>
         </div>
         <div className='flex items-center gap-2'>
-          <Button variant='outline' size='sm' onClick={toggleListening}>
-            {isListening ? 'Pause' : 'Start'}
+          <Button variant='outline' size='sm' onClick={toggleRunning}>
+            {isRunning ? 'Pause' : 'Start'}
           </Button>
           <Button variant='ghost' size='sm' onClick={handleReset}>
             <RotateCcw className='size-3' />
@@ -190,9 +190,9 @@ export function ScrollWheelTester() {
               {scrollEvents}
             </Badge>
           </div>
-          {isListening && (
-            <Badge variant='default' className='ml-auto animate-pulse'>
-              Listening
+          {isRunning && (
+            <Badge variant='default' className='ml-auto animate-pulse text-primary-foreground'>
+              Recording
             </Badge>
           )}
         </div>
@@ -217,7 +217,7 @@ export function ScrollWheelTester() {
         <div
           ref={containerRef}
           className={`rounded-lg border-2 border-dashed transition-colors ${
-            isListening ? 'border-primary/50 bg-primary/5' : 'border-muted-foreground/20'
+            isRunning ? 'border-primary/50 bg-primary/5' : 'border-muted-foreground/20'
           }`}
         >
           <ChartContainer config={chartConfig} className='h-[200px] w-full'>
