@@ -2,7 +2,10 @@ import { VID_RAZER } from './constants'
 import type { Mutex } from '../mutex'
 import { find, groupBy, some } from 'lodash'
 
-const DEFAULT_FILTER = [{ vendorId: VID_RAZER }]
+const HID_USAGE_PAGE_GENERIC_DESKTOP = 0x01
+const HID_USAGE_MOUSE = 0x02
+
+const DEFAULT_FILTER: HIDDeviceFilter[] = [{ vendorId: VID_RAZER }]
 
 type Result<T, E> = { value: T; error?: never } | { error: E }
 
@@ -69,27 +72,19 @@ const matchesFilters = (d: HIDDevice, filters: HIDDeviceFilter[]) =>
       (f.productId === undefined || f.productId === d.productId)
   )
 
-const HID_USAGE_PAGE_GENERIC_DESKTOP = 0x01
-const HID_USAGE_MOUSE = 0x02
+export const hasFeatureReports = (dev: HIDDevice): boolean =>
+  dev.collections.some((c) => (c.featureReports?.length ?? 0) > 0)
 
+export const isMouseInterface = (dev: HIDDevice): boolean =>
+  dev.collections.some((c) => c.usagePage === HID_USAGE_PAGE_GENERIC_DESKTOP && c.usage === HID_USAGE_MOUSE)
+
+/** mouse interface with feature reports > any feature reports > mouse interface */
 export const selectBestInterface = (sameProduct: HIDDevice[]): HIDDevice | undefined => {
-  const withFeatureReports = find(sameProduct, (dev) =>
-    dev.collections.some((c) => (c.featureReports?.length ?? 0) > 0)
-  )
-  if (withFeatureReports) {
-    console.log(`[HID] Selected interface with feature reports for device ${sameProduct[0].productName}`)
-    return withFeatureReports
-  }
-  const mouseInterface = find(sameProduct, (dev) =>
-    dev.collections.some((c) => c.usagePage === HID_USAGE_PAGE_GENERIC_DESKTOP && c.usage === HID_USAGE_MOUSE)
-  )
-  if (mouseInterface) {
-    console.log(`[HID] Selected mouse interface for device ${sameProduct[0].productName}`)
-    return mouseInterface
-  }
-
-  console.warn(`[HID] No optimal interface found for device ${sameProduct[0].productName}, using first available`)
-  return sameProduct[0]
+  const mouseWithFeatureReports = find(sameProduct, (dev) => isMouseInterface(dev) && hasFeatureReports(dev))
+  if (mouseWithFeatureReports) return mouseWithFeatureReports
+  const anyFeatureReports = find(sameProduct, hasFeatureReports)
+  if (anyFeatureReports) return anyFeatureReports
+  return find(sameProduct, isMouseInterface)
 }
 
 /** @TODO remove temporary */

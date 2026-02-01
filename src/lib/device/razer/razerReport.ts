@@ -1,5 +1,6 @@
 import { receiveBuffer, sendBuffer, type HidSession } from '@/lib/device/hid'
 import { toast } from 'sonner'
+import { RAZER_WIRELESS_RECEIVERS } from '@/lib/device/constants'
 
 export class TransactionError extends Error {
   readonly name = 'TransactionError'
@@ -13,6 +14,13 @@ const RAZER_REPORT_ID = 0x00
 const PAYLOAD_OFFSET = 8
 const CRC_INDEX = 88
 const MAX_ARGS = CRC_INDEX - PAYLOAD_OFFSET
+
+const RAZER_WAIT_MS = 1 // around 600-800µs
+const RAZER_WIRELESS_WAIT_MS = 60 // conservative wait time for bad connection
+
+const waitMs = (pid: number): number => {
+  return RAZER_WIRELESS_RECEIVERS.has(pid) ? RAZER_WIRELESS_WAIT_MS : RAZER_WAIT_MS
+}
 
 enum RAZER_STATUS {
   NEW = 0x00,
@@ -55,22 +63,21 @@ export class RazerReport {
 
       const result = await sendBuffer(device.hid, RAZER_REPORT_ID, this.buffer)
       if (result.error) throw result.error
-      await _sleep(20)
 
       for (let attempt = 0; attempt < maxRetries; attempt++) {
+        await new Promise((r) => setTimeout(r, waitMs(device.hid.productId)))
+
         const recv = await receiveBuffer(device.hid, RAZER_REPORT_ID)
         if (recv.error) throw recv.error
 
         const response = RazerReport.fromBytes(recv.value)
         if (response.commandClass !== expectedCommandClass || response.commandId !== expectedCommandId) {
-          await _sleep(20)
           continue
         }
         switch (response.status) {
           case RAZER_STATUS.SUCCESS:
             return response
           case RAZER_STATUS.BUSY:
-            await _sleep(20)
             continue
           case RAZER_STATUS.FAILURE:
             toast('Device returned failure status')
@@ -81,7 +88,6 @@ export class RazerReport {
             toast('Command not supported by device')
             throw new TransactionError('Command not supported by device')
           default:
-            await _sleep(20)
             continue
         }
       }
