@@ -9,9 +9,6 @@ import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card'
 import { ScrollArea } from './components/ui/scroll-area'
 import { ThemeToggle } from './components/ThemeToggle'
 import { Button } from './components/ui/button'
-import UnsupportedBrowser from './components/UnsupportedBrowser'
-
-const browserSupported = 'hid' in navigator
 
 const App = observer(() => {
   const {
@@ -26,10 +23,6 @@ const App = observer(() => {
   useEffect(() => {
     document.title = pageTitle
   }, [pageTitle])
-
-  if (!browserSupported) {
-    return <UnsupportedBrowser />
-  }
 
   return (
     <div className='mx-auto w-full space-y-4 p-4'>

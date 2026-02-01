@@ -4,6 +4,9 @@ import { Component } from 'react'
 import { Card, CardContent } from './ui/card'
 import { Button } from './ui/button'
 import { AlertCircle, RotateCcw } from 'lucide-react'
+import UnsupportedBrowser from './UnsupportedBrowser'
+
+const browserSupported = 'hid' in navigator
 
 const ErrorFallback = ({ error, onReset }: { error: Error | null; onReset: () => void }) => {
   return (
@@ -63,6 +66,9 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
   }
 
   render() {
+    if (!browserSupported) {
+      return <UnsupportedBrowser />
+    }
     if (this.state.hasError) {
       return <ErrorFallback error={this.state.error} onReset={this.handleReset} />
     }
