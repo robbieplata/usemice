@@ -826,7 +826,7 @@ export function getDeviceDefinition(vid: number, pid: number): DeviceProfile {
             capabilities: {
               dpi: { info: { minDpi: 100, maxDpi: 30000, txId: 0x1f }, command: dpi },
               dpiStages: { info: { minDpi: 100, maxDpi: 30000, maxStages: 5, txId: 0x1f }, command: dpiStages },
-              polling2: { info: { supportedIntervals: [125, 500, 1000], txId: 0x1f }, command: polling2 },
+              polling: { info: { supportedIntervals: [125, 500, 1000], txId: 0x1f }, command: polling },
               idleTime: { info: { minSeconds: 60, maxSeconds: 900, txId: 0x1f }, command: idleTime },
               chargeLevel: { info: { txId: 0x1f }, command: chargeLevel },
               chargeStatus: { info: { txId: 0x1f }, command: chargeStatus },
