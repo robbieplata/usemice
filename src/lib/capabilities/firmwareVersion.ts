@@ -1,10 +1,13 @@
 import type { CapabilityCommand, CapabilityEntry, DeviceWithCapabilities } from '../device/device'
 import { RazerReport } from '../device/razer/razerReport'
 
-export type FirmwareVersionData = { vendor: 'razer'; major: number; minor: number }
-export type FirmwareVersionInfo = { vendor: 'razer'; txId: number }
+export type RazerFirmwareVersionData = { vendor: 'razer'; major: number; minor: number }
+export type FirmwareVersionData = RazerFirmwareVersionData
 
-const firmwareVersionCommand: CapabilityCommand<'firmwareVersion', FirmwareVersionData> = {
+export type RazerFirmwareVersionInfo = { vendor: 'razer'; txId: number }
+export type FirmwareVersionInfo = RazerFirmwareVersionInfo
+
+const razerFirmwareVersionCommand: CapabilityCommand<'firmwareVersion', FirmwareVersionData> = {
   get: async (device: DeviceWithCapabilities<'firmwareVersion'>): Promise<FirmwareVersionData> => {
     const report = RazerReport.from({
       commandClass: 0x00,
@@ -18,7 +21,9 @@ const firmwareVersionCommand: CapabilityCommand<'firmwareVersion', FirmwareVersi
   }
 }
 
-export const firmwareVersion = (txId: number): CapabilityEntry<'firmwareVersion'> => ({
+const razer = (txId: number): CapabilityEntry<'firmwareVersion'> => ({
   info: { vendor: 'razer', txId },
-  command: firmwareVersionCommand
+  command: razerFirmwareVersionCommand
 })
+
+export const firmwareVersion = { razer }

@@ -1,8 +1,11 @@
 import type { CapabilityCommand, CapabilityEntry, DeviceWithCapabilities } from '../device/device'
 import { RazerReport } from '../device/razer/razerReport'
 
-export type DongleLedMultiData = { vendor: 'razer'; modes: [number, number, number] }
-export type DongleLedMultiInfo = { vendor: 'razer'; txId: number }
+export type RazerDongleLedMultiData = { vendor: 'razer'; modes: [number, number, number] }
+export type DongleLedMultiData = RazerDongleLedMultiData
+
+export type RazerDongleLedMultiInfo = { vendor: 'razer'; txId: number }
+export type DongleLedMultiInfo = RazerDongleLedMultiInfo
 
 export const DongleLedMultiMode = {
   OFF: 0x00,
@@ -12,7 +15,7 @@ export const DongleLedMultiMode = {
   DPI_INDICATOR: 0x04
 }
 
-const dongleLedMultiCommand: CapabilityCommand<'dongleLedMulti', DongleLedMultiData> = {
+const razerDongleLedMultiCommand: CapabilityCommand<'dongleLedMulti', DongleLedMultiData> = {
   get: async (device: DeviceWithCapabilities<'dongleLedMulti'>): Promise<DongleLedMultiData> => {
     const report = RazerReport.from({
       commandClass: 0x07,
@@ -38,7 +41,9 @@ const dongleLedMultiCommand: CapabilityCommand<'dongleLedMulti', DongleLedMultiD
   }
 }
 
-export const dongleLedMulti = (txId: number): CapabilityEntry<'dongleLedMulti'> => ({
+const razer = (txId: number): CapabilityEntry<'dongleLedMulti'> => ({
   info: { vendor: 'razer', txId },
-  command: dongleLedMultiCommand
+  command: razerDongleLedMultiCommand
 })
+
+export const dongleLedMulti = { razer }

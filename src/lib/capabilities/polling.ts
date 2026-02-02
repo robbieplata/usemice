@@ -1,14 +1,16 @@
 import type { CapabilityCommand, CapabilityEntry, DeviceWithCapabilities } from '../device/device'
 import { RazerReport } from '../device/razer/razerReport'
 
-export type PollingData = { vendor: 'razer'; interval: number }
+export type RazerPollingData = { vendor: 'razer'; interval: number }
+export type PollingData = RazerPollingData
 
-export type PollingInfo = {
+export type RazerPollingInfo = {
   vendor: 'razer'
   protocol: 'legacy' | 'v2'
   supportedIntervals: number[]
   txId: number
 }
+export type PollingInfo = RazerPollingInfo
 
 enum LegacyPollingCode {
   Hz1000 = 0x01,
@@ -50,7 +52,7 @@ const V2_INTERVAL_TO_CODE = Object.fromEntries(
   Object.entries(V2_CODE_TO_INTERVAL).map(([code, interval]) => [interval, Number(code)])
 ) as Record<number, V2PollingCode>
 
-const pollingCommand: CapabilityCommand<'polling', PollingData> = {
+const razerPollingCommand: CapabilityCommand<'polling', PollingData> = {
   get: async (device: DeviceWithCapabilities<'polling'>): Promise<PollingData> => {
     const info = device.capabilities.polling.info
     if (info.vendor === 'razer' && info.protocol === 'legacy') {
@@ -125,7 +127,7 @@ const pollingCommand: CapabilityCommand<'polling', PollingData> = {
 
 const razer = (protocol: 'legacy' | 'v2', supportedIntervals: number[], txId: number): CapabilityEntry<'polling'> => ({
   info: { vendor: 'razer', protocol, supportedIntervals, txId },
-  command: pollingCommand
+  command: razerPollingCommand
 })
 
 export const polling = { razer }

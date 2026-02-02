@@ -1,10 +1,13 @@
 import type { CapabilityCommand, CapabilityEntry, DeviceWithCapabilities } from '../device/device'
 import { RazerReport } from '../device/razer/razerReport'
 
-export type SerialData = { vendor: 'razer'; serialNumber: string }
-export type SerialInfo = { vendor: 'razer'; txId: number }
+export type RazerSerialData = { vendor: 'razer'; serialNumber: string }
+export type SerialData = RazerSerialData
 
-const serialCommand: CapabilityCommand<'serial', SerialData> = {
+export type RazerSerialInfo = { vendor: 'razer'; txId: number }
+export type SerialInfo = RazerSerialInfo
+
+const razerSerialCommand: CapabilityCommand<'serial', SerialData> = {
   get: async (device: DeviceWithCapabilities<'serial'>): Promise<SerialData> => {
     const report = RazerReport.from({
       commandClass: 0x00,
@@ -22,7 +25,9 @@ const serialCommand: CapabilityCommand<'serial', SerialData> = {
   }
 }
 
-export const serial = (txId: number): CapabilityEntry<'serial'> => ({
+const razer = (txId: number): CapabilityEntry<'serial'> => ({
   info: { vendor: 'razer', txId },
-  command: serialCommand
+  command: razerSerialCommand
 })
+
+export const serial = { razer }

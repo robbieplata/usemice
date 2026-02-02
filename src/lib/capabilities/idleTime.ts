@@ -1,10 +1,13 @@
 import type { CapabilityCommand, CapabilityEntry, DeviceWithCapabilities } from '../device/device'
 import { RazerReport } from '../device/razer/razerReport'
 
-export type IdleTimeData = { vendor: 'razer'; seconds: number }
-export type IdleTimeInfo = { vendor: 'razer'; minSeconds: number; maxSeconds: number; txId: number }
+export type RazerIdleTimeData = { vendor: 'razer'; seconds: number }
+export type IdleTimeData = RazerIdleTimeData
 
-const idleTimeCommand: CapabilityCommand<'idleTime', IdleTimeData> = {
+export type RazerIdleTimeInfo = { vendor: 'razer'; minSeconds: number; maxSeconds: number; txId: number }
+export type IdleTimeInfo = RazerIdleTimeInfo
+
+const razerIdleTimeCommand: CapabilityCommand<'idleTime', IdleTimeData> = {
   get: async (device: DeviceWithCapabilities<'idleTime'>): Promise<IdleTimeData> => {
     const report = RazerReport.from({
       commandClass: 0x07,
@@ -38,7 +41,9 @@ const idleTimeCommand: CapabilityCommand<'idleTime', IdleTimeData> = {
   }
 }
 
-export const idleTime = (minSeconds: number, maxSeconds: number, txId: number): CapabilityEntry<'idleTime'> => ({
+const razer = (minSeconds: number, maxSeconds: number, txId: number): CapabilityEntry<'idleTime'> => ({
   info: { vendor: 'razer', minSeconds, maxSeconds, txId },
-  command: idleTimeCommand
+  command: razerIdleTimeCommand
 })
+
+export const idleTime = { razer }

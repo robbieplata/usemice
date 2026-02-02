@@ -1,19 +1,11 @@
 import { type CapabilityCommand, type CapabilityEntry, type DeviceWithCapabilities } from '../device/device'
 import { RazerReport } from '../device/razer/razerReport'
 
-export type DpiStagesData = {
-  vendor: 'razer'
-  dpiLevels: [number, number][]
-  activeStage: number
-}
+export type RazerDpiStagesData = { vendor: 'razer'; dpiLevels: [number, number][]; activeStage: number }
+export type DpiStagesData = RazerDpiStagesData
 
-export type DpiStagesInfo = {
-  vendor: 'razer'
-  minDpi: number
-  maxDpi: number
-  maxStages: number
-  txId: number
-}
+export type RazerDpiStagesInfo = { vendor: 'razer'; minDpi: number; maxDpi: number; maxStages: number; txId: number }
+export type DpiStagesInfo = RazerDpiStagesInfo
 /**
  * Response format (hex):
  * 01    varstore
@@ -31,7 +23,7 @@ export type DpiStagesInfo = {
  * 00 00 reserved
  */
 
-const dpiStagesCommand: CapabilityCommand<'dpiStages', DpiStagesData> = {
+const razerDpiStagesCommand: CapabilityCommand<'dpiStages', DpiStagesData> = {
   get: async (device: DeviceWithCapabilities<'dpiStages'>): Promise<DpiStagesData> => {
     const report = RazerReport.from({
       commandClass: 0x04,
@@ -104,12 +96,9 @@ const dpiStagesCommand: CapabilityCommand<'dpiStages', DpiStagesData> = {
   }
 }
 
-export const dpiStages = (
-  minDpi: number,
-  maxDpi: number,
-  maxStages: number,
-  txId: number
-): CapabilityEntry<'dpiStages'> => ({
+const razer = (minDpi: number, maxDpi: number, maxStages: number, txId: number): CapabilityEntry<'dpiStages'> => ({
   info: { vendor: 'razer', minDpi, maxDpi, maxStages, txId },
-  command: dpiStagesCommand
+  command: razerDpiStagesCommand
 })
+
+export const dpiStages = { razer }

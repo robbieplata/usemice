@@ -1,10 +1,13 @@
 import type { CapabilityCommand, CapabilityEntry, DeviceWithCapabilities } from '../device/device'
 import { RazerReport } from '../device/razer/razerReport'
 
-export type ChargeLevelData = { vendor: 'razer'; percentage: number }
-export type ChargeLevelInfo = { vendor: 'razer'; txId: number }
+export type RazerChargeLevelData = { vendor: 'razer'; percentage: number }
+export type ChargeLevelData = RazerChargeLevelData
 
-const chargeLevelCommand: CapabilityCommand<'chargeLevel', ChargeLevelData> = {
+export type RazerChargeLevelInfo = { vendor: 'razer'; txId: number }
+export type ChargeLevelInfo = RazerChargeLevelInfo
+
+const razerChargeLevelCommand: CapabilityCommand<'chargeLevel', ChargeLevelData> = {
   get: async (device: DeviceWithCapabilities<'chargeLevel'>): Promise<ChargeLevelData> => {
     const report = RazerReport.from({
       commandClass: 0x07,
@@ -18,7 +21,9 @@ const chargeLevelCommand: CapabilityCommand<'chargeLevel', ChargeLevelData> = {
   }
 }
 
-export const chargeLevel = (txId: number): CapabilityEntry<'chargeLevel'> => ({
+const razer = (txId: number): CapabilityEntry<'chargeLevel'> => ({
   info: { vendor: 'razer', txId },
-  command: chargeLevelCommand
+  command: razerChargeLevelCommand
 })
+
+export const chargeLevel = { razer }
