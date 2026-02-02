@@ -1,8 +1,5 @@
 import type { CapabilityCommand, CapabilityEntry, DeviceWithCapabilities } from '../device/device'
 import { RazerReport } from '../device/razer/razerReport'
-import { createErrorClass } from '../errors'
-
-export const DongleLedError = createErrorClass('DongleLedError')
 
 export type DongleLedData = { vendor: 'razer'; mode: number }
 export type DongleLedInfo = { vendor: 'razer'; txId: number }
@@ -28,7 +25,7 @@ const dongleLedCommand: CapabilityCommand<'dongleLed', DongleLedData> = {
 
   set: async (device: DeviceWithCapabilities<'dongleLed'>, data: DongleLedData): Promise<void> => {
     if (data.mode < 0x01 || data.mode > 0x03) {
-      throw new DongleLedError(`Invalid dongle LED mode: ${data.mode}`)
+      throw new Error(`Invalid dongle LED mode: ${data.mode}`)
     }
     const args = new Uint8Array([data.mode])
     const report = RazerReport.from({

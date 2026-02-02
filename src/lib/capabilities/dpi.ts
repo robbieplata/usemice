@@ -1,8 +1,5 @@
 import type { CapabilityCommand, CapabilityEntry, DeviceWithCapabilities } from '../device/device'
 import { RazerReport } from '../device/razer/razerReport'
-import { createErrorClass } from '../errors'
-
-export const DpiError = createErrorClass('DpiError')
 
 export type DpiData = {
   vendor: 'razer'

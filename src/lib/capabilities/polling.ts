@@ -1,6 +1,5 @@
 import type { CapabilityCommand, CapabilityEntry, DeviceWithCapabilities } from '../device/device'
 import { RazerReport } from '../device/razer/razerReport'
-import { createErrorClass } from '../errors'
 
 export type PollingData = { vendor: 'razer'; interval: number }
 
@@ -10,8 +9,6 @@ export type PollingInfo = {
   supportedIntervals: number[]
   txId: number
 }
-
-export const PollingError = createErrorClass('PollingError')
 
 enum LegacyPollingCode {
   Hz1000 = 0x01,
@@ -68,7 +65,7 @@ const pollingCommand: CapabilityCommand<'polling', PollingData> = {
       const value = response.args[0] as LegacyPollingCode
       const interval = LEGACY_CODE_TO_INTERVAL[value]
       if (interval === undefined) {
-        throw new PollingError(`Unsupported polling interval received: 0x${value.toString(16)}`)
+        throw new Error(`Unsupported polling interval received: 0x${value.toString(16)}`)
       }
       return { vendor: 'razer', interval }
     } else if (info.vendor === 'razer' && info.protocol === 'v2') {
@@ -83,18 +80,18 @@ const pollingCommand: CapabilityCommand<'polling', PollingData> = {
       const value = response.args[1] as V2PollingCode
       const interval = V2_CODE_TO_INTERVAL[value]
       if (interval === undefined) {
-        throw new PollingError(`Unsupported polling interval received: 0x${value.toString(16)}`)
+        throw new Error(`Unsupported polling interval received: 0x${value.toString(16)}`)
       }
       return { vendor: 'razer', interval }
     }
-    throw new PollingError('Unsupported polling vendor/protocol')
+    throw new Error('Unsupported polling vendor/protocol')
   },
   set: async (device: DeviceWithCapabilities<'polling'>, data: PollingData): Promise<void> => {
     const info = device.capabilities.polling.info
     if (info.vendor === 'razer' && info.protocol === 'legacy') {
       const value = LEGACY_INTERVAL_TO_CODE[data.interval]
       if (value === undefined) {
-        throw new PollingError('Unsupported polling interval set')
+        throw new Error('Unsupported polling interval set')
       }
       const report = RazerReport.from({
         commandClass: 0x00,
@@ -107,7 +104,7 @@ const pollingCommand: CapabilityCommand<'polling', PollingData> = {
     } else if (info.vendor === 'razer' && info.protocol === 'v2') {
       const value = V2_INTERVAL_TO_CODE[data.interval]
       if (value === undefined) {
-        throw new PollingError('Unsupported polling interval set')
+        throw new Error('Unsupported polling interval set')
       }
       // Some devices expect the same write twice: argument 0x00 then 0x01 (openrazer driver comment)
       for (const argument of [0x00, 0x01] as const) {
@@ -121,7 +118,7 @@ const pollingCommand: CapabilityCommand<'polling', PollingData> = {
         await report.sendReport(device)
       }
     } else {
-      throw new PollingError('Unsupported polling vendor/protocol')
+      throw new Error('Unsupported polling vendor/protocol')
     }
   }
 }

@@ -1,8 +1,5 @@
 import type { CapabilityCommand, CapabilityEntry, DeviceWithCapabilities } from '../device/device'
 import { RazerReport } from '../device/razer/razerReport'
-import { createErrorClass } from '../errors'
-
-export const DongleLedMultiError = createErrorClass('DongleLedMultiError')
 
 export type DongleLedMultiData = { vendor: 'razer'; modes: [number, number, number] }
 export type DongleLedMultiInfo = { vendor: 'razer'; txId: number }

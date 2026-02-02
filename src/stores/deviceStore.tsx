@@ -15,7 +15,7 @@ const SELECTED_DEVICE_KEY = 'usemice:selectedDeviceId'
 export class DeviceStore {
   @observable accessor devices: DeviceInStatusVariant[] = []
   @observable accessor selectedDeviceId: number | undefined
-  @observable accessor errors: Error[] = []
+  @observable accessor initErrors: Error[] = []
   @observable accessor initialized: boolean = false
 
   private reactions: IReactionDisposer[] = []
@@ -47,10 +47,10 @@ export class DeviceStore {
         { fireImmediately: true }
       ),
       reaction(
-        () => this.errors.length,
+        () => this.initErrors.length,
         (length, previousLength) => {
           if (length > previousLength) {
-            const newError = this.errors[length - 1]
+            const newError = this.initErrors[length - 1]
             toast.warning('Error: ' + newError.message, {
               duration: 5000
             })
@@ -166,7 +166,7 @@ export class DeviceStore {
         const error = e instanceof Error ? e : new Error('Unknown error opening HID device')
         device.status = 'Failed'
         device.failureReason = error
-        this.errors.push(error)
+        this.initErrors.push(error)
         return { error }
       }
     }
@@ -184,11 +184,6 @@ export class DeviceStore {
       device.failureReason = e instanceof Error ? e : new Error('Unknown error during device initialization')
       assertStatus(device, 'Failed')
     }
-
-    if (device.failureReason) {
-      this.errors.push(device.failureReason)
-    }
-
     return { value: device }
   }
 
@@ -202,7 +197,7 @@ export class DeviceStore {
   *requestDevice(options?: HIDDeviceRequestOptions) {
     const hidDevice: Result<HIDDevice, RequestHidDeviceError> = yield requestHidInterface(options)
     if (hidDevice.error) {
-      this.errors.push(hidDevice.error)
+      this.initErrors.push(hidDevice.error)
     }
     return hidDevice
   }

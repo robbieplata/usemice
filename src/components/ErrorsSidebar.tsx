@@ -41,14 +41,19 @@ export const ErrorsSidebar = observer(({ open, onOpenChange }: ErrorsSidebarProp
           <div className='space-y-3 p-4 pr-6'>
             {commandErrors.length > 0 ? (
               commandErrors.map((error, index) => (
-                <div key={index} className='rounded-xl border border-destructive/30 bg-destructive/5 p-4'>
-                  <div className='flex items-center justify-between'>
-                    <div className='text-xs font-medium text-destructive'>{error.name}</div>
-                    <div className='text-xs text-muted-foreground'>
-                      {new Date(error._timestamp).toLocaleTimeString()}
+                <div key={index} className='rounded-lg border border-destructive/20 overflow-hidden'>
+                  <div className='flex items-center justify-between gap-2 bg-destructive/10 px-3 py-1.5'>
+                    <div className='flex items-baseline gap-2 min-w-0'>
+                      <AlertCircle className='size-3.5 text-destructive shrink-0 self-center' />
+                      <span className='text-xs font-medium text-destructive'>{error.command}</span>
                     </div>
+                    <span className='text-[10px] text-muted-foreground tabular-nums shrink-0'>
+                      {new Date(error._timestamp).toLocaleTimeString()}
+                    </span>
                   </div>
-                  <div className='text-sm mt-2'>{error.message}</div>
+                  <div className='bg-destructive/5 px-3 py-2.5'>
+                    <code className='text-xs text-foreground/80 leading-relaxed block'>{error.message}</code>
+                  </div>
                 </div>
               ))
             ) : (

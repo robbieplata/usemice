@@ -132,9 +132,11 @@ export class DeviceNotSupportedError extends Error {
 export class CommandError extends Error {
   readonly _timestamp = new Date()
   name = 'CommandError'
+  readonly command: string
   readonly message: string
-  constructor(error: Error | string) {
+  constructor(command: string, error: Error | string) {
     super()
+    this.command = command
     if (typeof error === 'string') {
       this.message = error
     } else {
@@ -215,9 +217,9 @@ export class Device {
       .catch((err) => {
         runInAction(() => {
           if (err instanceof Error) {
-            this.commandErrors.push(new CommandError(err))
+            this.commandErrors.push(new CommandError(key, err))
           } else {
-            this.commandErrors.push(new CommandError(String(err)))
+            this.commandErrors.push(new CommandError(key, String(err)))
           }
         })
         throw err
@@ -240,9 +242,9 @@ export class Device {
       .catch((err) => {
         runInAction(() => {
           if (err instanceof Error) {
-            this.commandErrors.push(new CommandError(err))
+            this.commandErrors.push(new CommandError(key, err))
           } else {
-            this.commandErrors.push(new CommandError(String(err)))
+            this.commandErrors.push(new CommandError(key, String(err)))
           }
         })
       })

@@ -1,5 +1,4 @@
 import { receiveBuffer, sendBuffer, type HidSession } from '@/lib/device/hid'
-import { toast } from 'sonner'
 import { RAZER_WIRELESS_RECEIVERS } from '@/lib/device/constants'
 
 export class TransactionError extends Error {
@@ -80,12 +79,10 @@ export class RazerReport {
           case RAZER_STATUS.BUSY:
             continue
           case RAZER_STATUS.FAILURE:
-            toast('Device returned failure status')
             throw new TransactionError('Device returned failure status')
           case RAZER_STATUS.TIMEOUT:
             throw new TransactionError('Device returned timeout status')
           case RAZER_STATUS.NOT_SUPPORTED:
-            toast('Command not supported by device')
             throw new TransactionError('Command not supported by device')
           default:
             continue
