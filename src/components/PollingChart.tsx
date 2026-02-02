@@ -6,6 +6,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from './ui/chart'
 import { Button } from './ui/button'
 import { Activity, Pause, Play, RotateCcw } from 'lucide-react'
 import { Badge } from './ui/badge'
+import { cn } from '@/lib/utils'
 
 type PollingDataPoint = {
   time: number
@@ -22,7 +23,7 @@ const chartConfig = {
 const MAX_DATA_POINTS = 60
 const SAMPLE_WINDOW_MS = 1000
 
-export function PollingChart() {
+export function PollingChart({ className }: { className?: string }) {
   const [data, setData] = useState<PollingDataPoint[]>([])
   const [isRunning, setIsRunning] = useState(false)
   const [currentRate, setCurrentRate] = useState(0)
@@ -117,7 +118,7 @@ export function PollingChart() {
   }
 
   return (
-    <Card className='w-full'>
+    <Card className={cn('overflow-hidden flex flex-col', className)}>
       <CardHeader className='flex flex-row items-center justify-between pb-2'>
         <div className='flex items-center gap-3'>
           <div className='rounded-lg bg-primary/10 p-2'>
@@ -146,7 +147,7 @@ export function PollingChart() {
         </div>
       </CardHeader>
 
-      <CardContent className='space-y-4'>
+      <CardContent className='flex-1 flex flex-col min-h-0 space-y-4'>
         <div className='flex items-center gap-4'>
           <div className='flex items-center gap-2'>
             <span className='text-sm text-muted-foreground'>Current:</span>
@@ -174,11 +175,11 @@ export function PollingChart() {
         </div>
 
         <div
-          className={`rounded-lg border-2 border-dashed transition-colors ${
+          className={`flex-1 min-h-0 rounded-lg border-2 border-dashed transition-colors ${
             isRunning ? 'border-primary/50 bg-primary/5' : 'border-muted-foreground/20'
           }`}
         >
-          <ChartContainer config={chartConfig} className='h-[250px] w-full'>
+          <ChartContainer config={chartConfig} className='h-full w-full'>
             <AreaChart
               data={data}
               margin={{

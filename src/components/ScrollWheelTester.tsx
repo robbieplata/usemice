@@ -6,6 +6,7 @@ import { ChartContainer } from './ui/chart'
 import { Button } from './ui/button'
 import { ArrowDown, ArrowUp, MousePointer2, RotateCcw } from 'lucide-react'
 import { Badge } from './ui/badge'
+import { cn } from '@/lib/utils'
 
 type ScrollDataPoint = {
   time: number
@@ -27,7 +28,7 @@ const chartConfig = {
 
 const MAX_DATA_POINTS = 40
 
-export function ScrollWheelTester() {
+export function ScrollWheelTester({ className }: { className?: string }) {
   const [data, setData] = useState<ScrollDataPoint[]>([])
   const [lastDirection, setLastDirection] = useState<'up' | 'down' | null>(null)
   const [lastDelta, setLastDelta] = useState(0)
@@ -138,7 +139,7 @@ export function ScrollWheelTester() {
   }
 
   return (
-    <Card className='w-full'>
+    <Card className={cn('overflow-hidden flex flex-col', className)}>
       <CardHeader className='flex flex-row items-center justify-between pb-2'>
         <div className='flex items-center gap-3'>
           <div className='rounded-lg bg-primary/10 p-2'>
@@ -159,7 +160,7 @@ export function ScrollWheelTester() {
         </div>
       </CardHeader>
 
-      <CardContent className='space-y-4'>
+      <CardContent className='flex-1 flex flex-col min-h-0 space-y-4'>
         <div className='flex flex-wrap items-center gap-4'>
           <div className='flex items-center gap-2'>
             <span className='text-sm text-muted-foreground'>Direction:</span>
@@ -216,11 +217,11 @@ export function ScrollWheelTester() {
 
         <div
           ref={containerRef}
-          className={`rounded-lg border-2 border-dashed transition-colors ${
+          className={`flex-1 min-h-0 rounded-lg border-2 border-dashed transition-colors ${
             isRunning ? 'border-primary/50 bg-primary/5' : 'border-muted-foreground/20'
           }`}
         >
-          <ChartContainer config={chartConfig} className='h-[200px] w-full'>
+          <ChartContainer config={chartConfig} className='h-full w-full'>
             <BarChart
               data={data}
               margin={{
