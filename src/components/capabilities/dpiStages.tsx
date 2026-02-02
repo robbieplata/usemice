@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { type ReadyDeviceWithCapabilities } from '@/lib/device/device'
 import { Button } from '../ui/button'
 import { Card } from '../ui/card'
 import { Slider } from '../ui/slider'
 import { Input } from '../ui/input'
 import { observer } from 'mobx-react-lite'
-import { Trash, Plus, Target, Link, Unlink } from 'lucide-react'
+import { Trash, Plus, Target, Link, Unlink, GripVertical } from 'lucide-react'
 
 type DpiStagesProps = {
   device: ReadyDeviceWithCapabilities<'dpiStages'>
@@ -22,6 +22,10 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
   const [independentXY, setIndependentXY] = useState(() =>
     device.capabilities.dpiStages.data.dpiLevels.some((lvl) => lvl[0] !== lvl[1])
   )
+
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
+  const dragNodeRef = useRef<HTMLDivElement | null>(null)
 
   const { minDpi, maxDpi, maxStages } = device.capabilities.dpiStages.info
   const { dpiLevels, activeStage } = device.capabilities.dpiStages.data
@@ -177,6 +181,81 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
     setIndependentXY(!independentXY)
   }
 
+  const computePreviewOrder = (): number[] => {
+    const order = localDpiLevels.map((_, i) => i)
+    if (draggedIndex === null || dragOverIndex === null || draggedIndex === dragOverIndex) {
+      return order
+    }
+    const result = order.filter((i) => i !== draggedIndex)
+    result.splice(dragOverIndex, 0, draggedIndex)
+    return result
+  }
+
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, index: number) => {
+    setDraggedIndex(index)
+    dragNodeRef.current = e.currentTarget
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', String(index))
+
+    const rect = e.currentTarget.getBoundingClientRect()
+    const dragImage = e.currentTarget.cloneNode(true) as HTMLElement
+    dragImage.style.opacity = '0.4'
+    dragImage.style.position = 'absolute'
+    dragImage.style.top = '-9999px'
+    dragImage.style.left = '-9999px'
+    dragImage.style.width = `${rect.width}px`
+    dragImage.style.background = 'transparent'
+    dragImage.style.pointerEvents = 'none'
+    document.body.appendChild(dragImage)
+    e.dataTransfer.setDragImage(dragImage, e.nativeEvent.offsetX, e.nativeEvent.offsetY)
+
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        document.body.removeChild(dragImage)
+      }, 0)
+    })
+  }
+
+  const handleDragEnd = () => {
+    if (draggedIndex !== null && dragOverIndex !== null && draggedIndex !== dragOverIndex) {
+      const newOrder = computePreviewOrder()
+      const nextLevels = newOrder.map((i) => localDpiLevels[i]) as [number, number][]
+      const nextInputX = newOrder.map((i) => inputTextX[i])
+      const nextInputY = newOrder.map((i) => inputTextY[i])
+
+      let newActiveStage = activeStage
+      const oldActiveIndex = activeStage - 1
+      const newActiveIndex = newOrder.indexOf(oldActiveIndex)
+      if (newActiveIndex !== -1) {
+        newActiveStage = newActiveIndex + 1
+      }
+
+      setLocalDpiLevels(nextLevels)
+      setInputTextX(nextInputX)
+      setInputTextY(nextInputY)
+
+      device.set('dpiStages', {
+        ...device.capabilities.dpiStages.data,
+        dpiLevels: nextLevels,
+        activeStage: newActiveStage
+      })
+    }
+
+    setDraggedIndex(null)
+    setDragOverIndex(null)
+    dragNodeRef.current = null
+  }
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>, index: number) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    if (dragOverIndex !== index) {
+      setDragOverIndex(index)
+    }
+  }
+
+  const previewOrder = computePreviewOrder()
+
   return (
     <section className='space-y-3'>
       <Card size='sm' className='space-y-4 p-4'>
@@ -204,26 +283,45 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
           </div>
         </div>
 
-        {localDpiLevels.map((level, index) => {
-          const isActive = activeStage === index + 1
+        {previewOrder.map((originalIndex, displayIndex) => {
+          const level = localDpiLevels[originalIndex]
+          const isActive = activeStage === originalIndex + 1
           const valueX = level[0]
           const valueY = level[1]
+          const isDragging = draggedIndex === originalIndex
+          const isBeingDraggedOver = dragOverIndex === displayIndex && draggedIndex !== null
 
           return (
-            <div key={index + 1}>
+            <div
+              key={originalIndex}
+              draggable
+              onDragStart={(e) => handleDragStart(e, originalIndex)}
+              onDragEnd={handleDragEnd}
+              onDragOver={(e) => handleDragOver(e, displayIndex)}
+              className={`transition-all duration-200 ${
+                isDragging ? 'opacity-40 bg-transparent' : ''
+              } ${isBeingDraggedOver ? 'translate-y-1' : ''}`}
+              style={isDragging ? { background: 'transparent' } : undefined}
+            >
               <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
                 <div className='flex items-center gap-2'>
+                  <div
+                    className='cursor-grab active:cursor-grabbing p-1 text-muted-foreground hover:text-foreground transition-colors'
+                    title='Drag to reorder'
+                  >
+                    <GripVertical className='size-4' />
+                  </div>
                   <Button
                     className={`min-w-20 justify-center ${isActive ? 'text-primary-foreground' : ''}`}
                     variant={isActive ? 'default' : 'outline'}
                     onClick={() =>
                       device.set('dpiStages', {
                         ...device.capabilities.dpiStages.data,
-                        activeStage: index + 1
+                        activeStage: originalIndex + 1
                       })
                     }
                   >
-                    Stage {index + 1}
+                    Stage {displayIndex + 1}
                   </Button>
 
                   <div className='text-sm w-20 text-center'>
@@ -240,14 +338,14 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
                       value={independentXY ? [valueX, valueY] : [valueX]}
                       onValueChange={(values) => {
                         if (independentXY) {
-                          setStageValueXY(index, values[0], values[1])
+                          setStageValueXY(originalIndex, values[0], values[1])
                         } else {
-                          setStageValue(index, values[0])
+                          setStageValue(originalIndex, values[0])
                         }
                       }}
                       onValueCommit={(values) => {
                         const nextLevels = [...localDpiLevels] as [number, number][]
-                        nextLevels[index] = independentXY ? [values[0], values[1]] : [values[0], values[0]]
+                        nextLevels[originalIndex] = independentXY ? [values[0], values[1]] : [values[0], values[0]]
                         commitLevels(nextLevels)
                       }}
                     />
@@ -261,24 +359,24 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
                       className='w-16'
                       type='text'
                       inputMode='numeric'
-                      value={inputTextX[index] ?? String(valueX)}
+                      value={inputTextX[originalIndex] ?? String(valueX)}
                       onChange={(e) => {
                         const v = e.target.value
                         if (v === '' || /^\d+$/.test(v)) {
                           setInputTextX((t) => {
                             const copy = [...t]
-                            copy[index] = v
+                            copy[originalIndex] = v
                             return copy
                           })
                         }
                       }}
-                      onBlur={() => commitInputX(index)}
+                      onBlur={() => commitInputX(originalIndex)}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') e.currentTarget.blur()
                         if (e.key === 'Escape') {
                           setInputTextX((t) => {
                             const copy = [...t]
-                            copy[index] = String(localDpiLevels[index][0])
+                            copy[originalIndex] = String(localDpiLevels[originalIndex][0])
                             return copy
                           })
                           e.currentTarget.blur()
@@ -292,24 +390,24 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
                           className='w-16'
                           type='text'
                           inputMode='numeric'
-                          value={inputTextY[index] ?? String(valueY)}
+                          value={inputTextY[originalIndex] ?? String(valueY)}
                           onChange={(e) => {
                             const v = e.target.value
                             if (v === '' || /^\d+$/.test(v)) {
                               setInputTextY((t) => {
                                 const copy = [...t]
-                                copy[index] = v
+                                copy[originalIndex] = v
                                 return copy
                               })
                             }
                           }}
-                          onBlur={() => commitInputY(index)}
+                          onBlur={() => commitInputY(originalIndex)}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') e.currentTarget.blur()
                             if (e.key === 'Escape') {
                               setInputTextY((t) => {
                                 const copy = [...t]
-                                copy[index] = String(localDpiLevels[index][1])
+                                copy[originalIndex] = String(localDpiLevels[originalIndex][1])
                                 return copy
                               })
                               e.currentTarget.blur()
@@ -325,8 +423,8 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
                   size='icon'
                   className='size-8'
                   disabled={localDpiLevels.length <= 1}
-                  onClick={() => removeStage(index)}
-                  aria-label={`Remove stage ${index + 1}`}
+                  onClick={() => removeStage(originalIndex)}
+                  aria-label={`Remove stage ${displayIndex + 1}`}
                 >
                   <Trash className='size-4' />
                 </Button>

@@ -7,7 +7,6 @@ import { dpiStages } from '@/lib/capabilities/dpiStages'
 import { firmwareVersion } from '@/lib/capabilities/firmwareVersion'
 import { idleTime } from '@/lib/capabilities/idleTime'
 import { polling } from '@/lib/capabilities/polling'
-
 import { serial } from '@/lib/capabilities/serial'
 import { PID_RAZER } from '../constants'
 import { UnsupportedDeviceError, type DeviceDefinition } from '../definitions'
