@@ -5,7 +5,6 @@ import { Card } from './ui/card'
 import { useStore } from '@/stores'
 import { IdleTime } from './capabilities/idleTime'
 import { DpiStages } from './capabilities/dpiStages'
-import { Polling2 } from './capabilities/polling2'
 import { Polling } from './capabilities/polling'
 import { DongleLedMulti } from './capabilities/dongleLedMulti'
 import { NoDeviceDetected } from './NoDeviceDetected'
@@ -143,7 +142,6 @@ const DeviceView = observer(({ device, onOpenSidebar }: DeviceViewProps) => {
       <div className='animate-stagger-children mt-6 space-y-6'>
         {isCapableOf(device, ['idleTime']) && <IdleTime device={device} />}
         {isCapableOf(device, ['dpiStages']) && <DpiStages device={device} />}
-        {isCapableOf(device, ['polling2']) && <Polling2 device={device} />}
         {isCapableOf(device, ['polling']) && <Polling device={device} />}
         {isCapableOf(device, ['dongleLed']) && <DongleLed device={device} />}
         {isCapableOf(device, ['dongleLedMulti']) && <DongleLedMulti device={device} />}

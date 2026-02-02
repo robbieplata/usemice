@@ -171,14 +171,12 @@ export class DeviceStore {
       }
     }
 
-    const capabilityKeys = Object.keys(device.profile.capabilities) as CapabilityKey[]
-    const fetches: Promise<unknown>[] = []
-    for (const key of capabilityKeys) {
-      fetches.push(device.get(key))
-    }
+    const capabilityKeys = Object.keys(device.capabilities) as CapabilityKey[]
 
     try {
-      yield Promise.all(fetches)
+      for (const key of capabilityKeys) {
+        yield device.get(key)
+      }
       device.status = 'Ready'
       assertStatus(device, 'Ready')
     } catch (e) {

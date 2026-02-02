@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { ReadyDeviceWithCapabilities } from '@/lib/device/device'
-import { DongleLedMode } from '@/lib/capabilities/razer/dongleLed'
+import { DongleLedMode } from '@/lib/capabilities/dongleLed'
 import { Card } from '../ui/card'
 import { Button } from '../ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
@@ -21,11 +21,11 @@ const modeOptions = Object.entries(DongleLedMode).filter(([key]) => isNaN(Number
 
 export const DongleLed = observer(({ device }: DongleLedProps) => {
   const initialData = device.capabilities.dongleLed.data
-  const [mode, setMode] = useState<number>(initialData)
+  const [mode, setMode] = useState<number>(initialData.mode)
 
   const updateMode = (value: number) => {
     setMode(value)
-    device.set('dongleLed', value)
+    device.set('dongleLed', { vendor: 'razer', mode: value })
   }
 
   return (

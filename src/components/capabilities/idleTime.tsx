@@ -21,7 +21,7 @@ const IdleTimeInner = observer(({ device, initialSeconds }: IdleTimeInnerProps) 
   const debouncedUpdateIdleTime = useMemo(
     () =>
       debounce((value: number) => {
-        device.set('idleTime', { seconds: value })
+        device.set('idleTime', { vendor: 'razer', seconds: value })
       }, 300),
     [device]
   )

@@ -1,19 +1,18 @@
 // src/lib/device/device.ts
 import { action, observable, reaction, runInAction, type IReactionDisposer } from 'mobx'
 import { Mutex } from '../mutex'
-import { getDeviceDefinition, type DeviceProfile } from './definitions'
-import type { ChargeLevelData, ChargeLevelInfo } from '../capabilities/razer/chargeLevel'
-import type { ChargeStatusData, ChargeStatusInfo } from '../capabilities/razer/chargeStatus'
-import type { DpiData, DpiInfo } from '../capabilities/razer/dpi'
-import type { DpiStagesData, DpiStagesInfo } from '../capabilities/razer/dpiStages'
-import type { DongleLedMultiData, DongleLedMultiInfo } from '../capabilities/razer/dongleLedMulti'
-import type { FirmwareVersionData, FirmwareVersionInfo } from '../capabilities/razer/firmwareVersion'
-import type { IdleTimeData, IdleTimeInfo } from '../capabilities/razer/idleTime'
-import type { PollingData, PollingInfo } from '../capabilities/razer/polling'
-import type { Polling2Data, Polling2Info } from '../capabilities/razer/polling2'
-import type { SerialData, SerialInfo } from '../capabilities/razer/serial'
+import { getDeviceDefinition } from './definitions'
 import { toast } from 'sonner'
-import type { DongleLedData, DongleLedInfo } from '../capabilities/razer/dongleLed'
+import type { ChargeLevelInfo, ChargeLevelData } from '../capabilities/chargeLevel'
+import type { ChargeStatusInfo, ChargeStatusData } from '../capabilities/chargeStatus'
+import type { DongleLedInfo, DongleLedData } from '../capabilities/dongleLed'
+import type { DongleLedMultiInfo, DongleLedMultiData } from '../capabilities/dongleLedMulti'
+import type { DpiInfo, DpiData } from '../capabilities/dpi'
+import type { DpiStagesInfo, DpiStagesData } from '../capabilities/dpiStages'
+import type { FirmwareVersionInfo, FirmwareVersionData } from '../capabilities/firmwareVersion'
+import type { IdleTimeInfo, IdleTimeData } from '../capabilities/idleTime'
+import type { PollingInfo, PollingData } from '../capabilities/polling'
+import type { SerialInfo, SerialData } from '../capabilities/serial'
 
 export type DeviceStatus = 'Initializing' | 'Ready' | 'Failed'
 
@@ -27,7 +26,6 @@ export type CapabilityInfoMap = {
   firmwareVersion: FirmwareVersionInfo
   idleTime: IdleTimeInfo
   polling: PollingInfo
-  polling2: Polling2Info
   serial: SerialInfo
 }
 
@@ -41,15 +39,14 @@ export type CapabilityDataMap = {
   firmwareVersion: FirmwareVersionData
   idleTime: IdleTimeData
   polling: PollingData
-  polling2: Polling2Data
   serial: SerialData
 }
 
 export type CapabilityKey = keyof CapabilityInfoMap
 
 export type CapabilityState<K extends CapabilityKey, S extends DeviceStatus> = S extends 'Ready'
-  ? { info: CapabilityInfoMap[K]; data: CapabilityDataMap[K] }
-  : { info: CapabilityInfoMap[K]; data?: CapabilityDataMap[K] }
+  ? { info: CapabilityInfoMap[K]; data: CapabilityDataMap[K]; command: CapabilityCommand<K, CapabilityDataMap[K]> }
+  : { info: CapabilityInfoMap[K]; data?: CapabilityDataMap[K]; command: CapabilityCommand<K, CapabilityDataMap[K]> }
 
 export type Capabilities<S extends DeviceStatus> = Partial<{
   [K in CapabilityKey]: CapabilityState<K, S>
@@ -107,18 +104,19 @@ export function isCapableOf<K extends CapabilityKey>(device: Device, keys: K[]):
   return true
 }
 
-function buildCapabilities<S extends DeviceStatus>(profile: DeviceProfile): Capabilities<S> {
-  const caps: Partial<Record<CapabilityKey, unknown>> = {}
-  for (const k in profile.capabilities) {
-    const key = k as CapabilityKey
-    const entry = profile.capabilities[key]
-    if (entry) {
-      caps[key] = {
-        info: entry.info
-      }
-    }
+export function buildCapabilities(hid: HIDDevice): Capabilities<'Initializing'> {
+  const definition = getDeviceDefinition(hid)
+  const caps = {} as Record<CapabilityKey, CapabilityState<CapabilityKey, 'Initializing'>>
+  for (const key of Object.keys(definition) as CapabilityKey[]) {
+    const entry = definition[key]
+    if (!entry) continue
+    caps[key] = {
+      info: entry.info,
+      command: entry.command,
+      data: undefined
+    } as CapabilityState<CapabilityKey, 'Initializing'>
   }
-  return caps as Capabilities<S>
+  return caps as Capabilities<'Initializing'>
 }
 
 export class DeviceNotSupportedError extends Error {
@@ -155,17 +153,13 @@ export class Device {
 
   readonly hid: HIDDevice
   readonly _lock: Mutex
-  readonly profile: DeviceProfile
   toastErrorsDisposer: IReactionDisposer
 
   constructor(hid: HIDDevice) {
-    const profile = getDeviceDefinition(hid.vendorId, hid.productId)
-    if (!profile) throw new DeviceNotSupportedError(hid.vendorId, hid.productId)
     this.hid = hid
     this.id = (hid.vendorId << 16) + hid.productId
     this._lock = new Mutex()
-    this.profile = profile
-    this.capabilities = buildCapabilities<DeviceStatus>(profile)
+    this.capabilities = buildCapabilities(hid)
     this.status = 'Initializing'
     this.failureReason = null
     this.commandErrors = []
@@ -195,7 +189,7 @@ export class Device {
   }
 
   private entry<K extends CapabilityKey>(key: K) {
-    const entry = this.profile.capabilities[key]
+    const entry = this.capabilities[key]
     if (!entry) throw new Error(`Capability "${String(key)}" is disabled for this device`)
     return entry
   }

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { ReadyDeviceWithCapabilities } from '@/lib/device/device'
-import { DongleLedMultiMode } from '@/lib/capabilities/razer/dongleLedMulti'
+import { DongleLedMultiMode } from '@/lib/capabilities/dongleLedMulti'
 import { Card } from '../ui/card'
 import { Button } from '../ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
@@ -23,13 +23,17 @@ const modeOptions = Object.entries(DongleLedMultiMode).filter(([key]) => isNaN(N
 
 export const DongleLedMulti = observer(({ device }: DongleLedMultiProps) => {
   const initialData = device.capabilities.dongleLedMulti.data
-  const [modes, setModes] = useState<[number, number, number]>([initialData[0], initialData[1], initialData[2]])
+  const [modes, setModes] = useState<[number, number, number]>([
+    initialData.modes[0],
+    initialData.modes[1],
+    initialData.modes[2]
+  ])
 
   const updateMode = (index: 0 | 1 | 2, value: number) => {
     const newModes: [number, number, number] = [...modes] as [number, number, number]
     newModes[index] = value
     setModes(newModes)
-    device.set('dongleLedMulti', newModes)
+    device.set('dongleLedMulti', { vendor: 'razer', modes: newModes })
   }
 
   const ledLabels = ['Left Mode', 'Middle Mode', 'Right Mode']
