@@ -33,7 +33,7 @@ export const HIDPP_PAGE = {
   COLOR_LED_EFFECTS: 0x8070,
   RGB_EFFECTS: 0x8071,
   ONBOARD_PROFILES: 0x8100,
-  MOUSE_BUTTON_SPY: 0x8110
+  MOUSE_BUTTON_SPY: 0x8110,
 } as const
 
 // Onboard Profiles (0x8100) function IDs. These are raw 4-bit function ids; the
@@ -48,7 +48,7 @@ export const CMD_ONBOARD_PROFILES = {
   MEMORY_ADDR_WRITE: 0x06,
   MEMORY_WRITE: 0x07,
   MEMORY_WRITE_END: 0x08,
-  GET_CRC: 0x09
+  GET_CRC: 0x09,
 } as const
 
 export const ONBOARD_PROFILE = {
@@ -56,7 +56,7 @@ export const ONBOARD_PROFILE = {
   MAX_DPI_STAGES: 5,
   MAX_BUTTONS: 16,
   PROFILE_NAME_LENGTH: 24, // UTF-16LE, 48 bytes
-  PROFILE_DATA_SIZE: 256
+  PROFILE_DATA_SIZE: 256,
 } as const
 
 export const HIDPP_PAGE_ROOT_IDX = 0x00
@@ -71,7 +71,7 @@ export const HIDPP20_ERROR = {
   INVALID_FEATURE_INDEX: 0x06,
   INVALID_FUNCTION_ID: 0x07,
   BUSY: 0x08,
-  UNSUPPORTED: 0x09
+  UNSUPPORTED: 0x09,
 } as const
 
 export const HIDPP10_ERROR = {
@@ -87,7 +87,7 @@ export const HIDPP10_ERROR = {
   RESOURCE_ERROR: 0x09,
   REQUEST_UNAVAILABLE: 0x0a,
   INVALID_PARAM_VALUE: 0x0b,
-  WRONG_PIN_CODE: 0x0c
+  WRONG_PIN_CODE: 0x0c,
 } as const
 
 /**
@@ -99,7 +99,7 @@ export const REPORT_RATE_FLAGS = {
   MS_1: 0x01, // 1ms  = 1000 Hz
   MS_2: 0x02, // 2ms  =  500 Hz
   MS_4: 0x04, // 4ms  =  250 Hz
-  MS_8: 0x08 // 8ms  =  125 Hz
+  MS_8: 0x08, // 8ms  =  125 Hz
 } as const
 
 /** Map from a single bit in the 0x8060 bitmask to its rate in Hz. */
@@ -107,7 +107,7 @@ export const REPORT_RATE_MS_TO_HZ: Record<number, number> = {
   0x01: 1000,
   0x02: 500,
   0x04: 250,
-  0x08: 125
+  0x08: 125,
 }
 
 // timings
@@ -189,7 +189,7 @@ export const PID_LOGITECH = {
 
   BOLT_RECEIVER: 0xc548,
 
-  LIGHTSPEED_RECEIVER: 0xc539
+  LIGHTSPEED_RECEIVER: 0xc539,
 } as const
 
 export const LOGITECH_WIRELESS_RECEIVERS = new Set([
@@ -209,5 +209,5 @@ export const LOGITECH_WIRELESS_RECEIVERS = new Set([
   PID_LOGITECH.G903_RECEIVER,
   PID_LOGITECH.GPW_RECEIVER,
   PID_LOGITECH.GPW_SUPERLIGHT_RECEIVER,
-  PID_LOGITECH.GPW_SUPERLIGHT2_RECEIVER
+  PID_LOGITECH.GPW_SUPERLIGHT2_RECEIVER,
 ])

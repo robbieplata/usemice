@@ -1,12 +1,12 @@
 import { observer } from 'mobx-react-lite'
 import { flowResult } from 'mobx'
-import { useStore } from '../stores'
-import { Badge } from './ui/badge'
-import { ScrollArea } from './ui/scroll-area'
-import { Button } from './ui/button'
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from './ui/sheet'
+import { useStore } from '../stores/index.tsx'
+import { Badge } from './ui/badge.tsx'
+import { ScrollArea } from './ui/scroll-area.tsx'
+import { Button } from './ui/button.tsx'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from './ui/sheet.tsx'
 import { Menu, Unplug } from 'lucide-react'
-import { Skeleton } from './ui/skeleton'
+import { Skeleton } from './ui/skeleton.tsx'
 
 interface DevicesSidebarProps {
   open: boolean
@@ -15,7 +15,7 @@ interface DevicesSidebarProps {
 
 export const DevicesSidebar = observer(({ open, onOpenChange }: DevicesSidebarProps) => {
   const {
-    deviceStore: { addDevice, requestDevice, selectedDevice, devices, setSelectedDeviceId, removeDevice }
+    deviceStore: { addDevice, requestDevice, selectedDevice, devices, setSelectedDeviceId, removeDevice },
   } = useStore()
 
   const connect = async () => {
@@ -66,7 +66,7 @@ export const DevicesSidebar = observer(({ open, onOpenChange }: DevicesSidebarPr
                     'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                     isSelected
                       ? 'border-primary bg-primary/10 shadow-md'
-                      : 'bg-card border-border hover:bg-accent cursor-pointer'
+                      : 'bg-card border-border hover:bg-accent cursor-pointer',
                   ].join(' ')}
                 >
                   <div className='flex items-start justify-between gap-3 min-w-0'>

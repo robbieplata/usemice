@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo } from 'react'
-import { DeviceStore } from './deviceStore'
+import { DeviceStore } from './deviceStore.tsx'
 
 class RootStore {
   deviceStore: DeviceStore

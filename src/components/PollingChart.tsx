@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
-import type { ChartConfig } from './ui/chart'
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from './ui/chart'
-import { Button } from './ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card.tsx'
+import type { ChartConfig } from './ui/chart.tsx'
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from './ui/chart.tsx'
+import { Button } from './ui/button.tsx'
 import { Activity, Pause, Play, RotateCcw } from 'lucide-react'
-import { Badge } from './ui/badge'
-import { cn } from '@/lib/utils'
+import { Badge } from './ui/badge.tsx'
+import { cn } from '../lib/utils.ts'
 
 type PollingDataPoint = {
   time: number
@@ -16,8 +16,8 @@ type PollingDataPoint = {
 const chartConfig = {
   rate: {
     label: 'Polling Rate',
-    color: 'var(--chart-1)'
-  }
+    color: 'var(--chart-1)',
+  },
 } satisfies ChartConfig
 
 const MAX_DATA_POINTS = 60
@@ -72,7 +72,7 @@ export function PollingChart({ className }: { className?: string }) {
           setData((prev) => {
             const newPoint: PollingDataPoint = {
               time: timeIndexRef.current++,
-              rate
+              rate,
             }
 
             const newData = [...prev, newPoint].slice(-MAX_DATA_POINTS)
@@ -84,15 +84,15 @@ export function PollingChart({ className }: { className?: string }) {
         }
       }
     },
-    [isRunning, calculatePollingRate]
+    [isRunning, calculatePollingRate],
   )
 
   useEffect(() => {
     if (!isRunning) return
 
-    window.addEventListener('pointermove', handlePointerMove)
+    globalThis.addEventListener('pointermove', handlePointerMove)
     return () => {
-      window.removeEventListener('pointermove', handlePointerMove)
+      globalThis.removeEventListener('pointermove', handlePointerMove)
     }
   }, [isRunning, handlePointerMove])
 
@@ -130,17 +130,19 @@ export function PollingChart({ className }: { className?: string }) {
           </div>
         </div>
         <div className='flex items-center gap-2'>
-          {isRunning ? (
-            <Button variant='outline' size='sm' onClick={handlePause}>
-              <Pause className='mr-1 size-3' />
-              Pause
-            </Button>
-          ) : (
-            <Button variant='outline' size='sm' onClick={handleStart}>
-              <Play className='mr-1 size-3' />
-              Start
-            </Button>
-          )}
+          {isRunning
+            ? (
+              <Button variant='outline' size='sm' onClick={handlePause}>
+                <Pause className='mr-1 size-3' />
+                Pause
+              </Button>
+            )
+            : (
+              <Button variant='outline' size='sm' onClick={handleStart}>
+                <Play className='mr-1 size-3' />
+                Start
+              </Button>
+            )}
           <Button variant='ghost' size='sm' onClick={handleReset}>
             <RotateCcw className='size-3' />
           </Button>
@@ -186,7 +188,7 @@ export function PollingChart({ className }: { className?: string }) {
                 top: 10,
                 right: 10,
                 left: 0,
-                bottom: 0
+                bottom: 0,
               }}
             >
               <defs>

@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { type Ready, type RazerDevice } from '@/lib/device/device'
-import { DongleLedMode } from '@/lib/device/razer'
-import { Card } from '../ui/card'
-import { Button } from '../ui/button'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
+import { type RazerDevice, type Ready } from '../../lib/device/device.ts'
+import { DongleLedMode } from '../../lib/device/razer/index.ts'
+import { Card } from '../ui/card.tsx'
+import { Button } from '../ui/button.tsx'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu.tsx'
 import { observer } from 'mobx-react-lite'
-import { Lightbulb, ChevronDown } from 'lucide-react'
+import { ChevronDown, Lightbulb } from 'lucide-react'
 
 type DongleLedProps = {
   device: Ready<RazerDevice<'dongleLed'>>
@@ -14,7 +14,7 @@ type DongleLedProps = {
 const modeLabels: Record<number, string> = {
   [DongleLedMode.CONNECTION_STATUS]: 'Connection Status',
   [DongleLedMode.BATTERY_STATUS]: 'Battery Status',
-  [DongleLedMode.BATTERY_WARNING]: 'Battery Warning'
+  [DongleLedMode.BATTERY_WARNING]: 'Battery Warning',
 }
 
 const modeOptions = Object.entries(DongleLedMode).filter(([key]) => isNaN(Number(key))) as [string, number][]

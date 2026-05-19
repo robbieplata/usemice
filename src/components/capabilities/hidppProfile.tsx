@@ -1,20 +1,14 @@
-import { type HidppDevice, type Ready } from '@/lib/device/device'
-import { Button } from '../ui/button'
-import { Card } from '../ui/card'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger
-} from '../ui/dropdown-menu'
-import { Slider } from '../ui/slider'
+import { type HidppDevice, type Ready } from '../../lib/device/device.ts'
+import { Button } from '../ui/button.tsx'
+import { Card } from '../ui/card.tsx'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu.tsx'
+import { Slider } from '../ui/slider.tsx'
 import { observer } from 'mobx-react-lite'
-import { Save, Target, Layers } from 'lucide-react'
+import { Layers, Save, Target } from 'lucide-react'
 
 type Props = {
   device: Ready<HidppDevice<'profile' | 'dpi'>>
 }
-
 
 export const HidppProfile = observer(({ device }: Props) => {
   const profileCap = device.capabilities.profile

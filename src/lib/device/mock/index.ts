@@ -1,5 +1,7 @@
-import type { Device } from '@/lib/device/device'
-import { buildDeathadderV3ProWirelessMock, buildGProXSuperlight2Mock } from './devices'
+/// <reference path="../../../vite-env.d.ts" />
+
+import type { Device } from '../device.ts'
+import { buildDeathadderV3ProWirelessMock, buildGProXSuperlight2Mock } from './devices.ts'
 
 export { buildDeathadderV3ProWirelessMock, buildGProXSuperlight2Mock }
 
@@ -10,7 +12,7 @@ type MockFlag = {
 
 const FLAGS: MockFlag[] = [
   { envKey: 'VITE_MOCK_DEATHADDER_V3_PRO', build: buildDeathadderV3ProWirelessMock },
-  { envKey: 'VITE_MOCK_GPRO_SUPERLIGHT2', build: buildGProXSuperlight2Mock }
+  { envKey: 'VITE_MOCK_GPRO_SUPERLIGHT2', build: buildGProXSuperlight2Mock },
 ]
 
 const isTruthyFlag = (value: unknown): boolean => {

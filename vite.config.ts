@@ -1,34 +1,40 @@
-import { defineConfig } from 'vitest/config'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from 'rolldown-vite'
+import react from '@vitejs/plugin-react-swc'
 import tailwindcss from '@tailwindcss/vite'
-import path from 'path'
+import { fileURLToPath } from 'node:url'
 
-// https://vite.dev/config/
 export default defineConfig({
   appType: 'spa',
   plugins: [
     react({
-      babel: {
-        plugins: [
-          [
-            '@babel/plugin-proposal-decorators',
-            {
-              version: '2023-05'
-            }
-          ]
-        ]
-      }
+      plugins: [],
+      tsDecorators: true,
+      useAtYourOwnRisk_mutateSwcOptions(options) {
+        options.jsc ??= {}
+        options.jsc.transform ??= {}
+        options.jsc.transform.decoratorVersion = '2023-11'
+      },
     }),
-    tailwindcss()
+    tailwindcss(),
   ],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src')
-    }
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+    },
   },
-  test: {
-    environment: 'node',
-    globals: false,
-    include: ['src/**/*.{test,spec}.{ts,tsx}']
-  }
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return
+          if (id.includes('recharts') || id.includes('d3-')) return 'recharts'
+          if (id.includes('react-dom') || id.includes('/react/') || id.includes('scheduler')) {
+            return 'react'
+          }
+          if (id.includes('radix-ui') || id.includes('@radix-ui')) return 'radix'
+          if (id.includes('mobx')) return 'mobx'
+        },
+      },
+    },
+  },
 })

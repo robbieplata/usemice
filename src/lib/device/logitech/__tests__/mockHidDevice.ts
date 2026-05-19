@@ -1,5 +1,5 @@
-import { Mutex } from '@/lib/mutex'
-import type { HidSession } from '@/lib/device/hid'
+import { Mutex } from '../../../mutex.ts'
+import type { HidSession } from '../../hid.ts'
 
 export type RecordedSend = {
   via: 'feature' | 'output'
@@ -36,7 +36,7 @@ export class MockHidDevice {
    * Return `undefined` to dispatch nothing.
    */
   responder?: (
-    send: RecordedSend
+    send: RecordedSend,
   ) => { reportId: number; data: Uint8Array } | { reportId: number; data: Uint8Array }[] | undefined
 
   private listeners = new Set<InputReportListener>()
@@ -51,18 +51,19 @@ export class MockHidDevice {
     this.inputQueue.push({ reportId, data })
   }
 
-  async sendFeatureReport(reportId: number, buffer: BufferSource): Promise<void> {
+  sendFeatureReport(reportId: number, buffer: BufferSource): Promise<void> {
     this.sends.push({ via: 'feature', reportId, data: toUint8(buffer) })
+    return Promise.resolve()
   }
 
-  async receiveFeatureReport(reportId: number): Promise<DataView> {
+  receiveFeatureReport(reportId: number): Promise<DataView> {
     const q = this.featureResponses.get(reportId) ?? []
     const data = q.shift()
     if (!data) throw new Error(`No queued feature response for reportId 0x${reportId.toString(16)}`)
-    return new DataView(data.buffer, data.byteOffset, data.byteLength)
+    return Promise.resolve(new DataView(data.buffer, data.byteOffset, data.byteLength))
   }
 
-  async sendReport(reportId: number, buffer: BufferSource): Promise<void> {
+  sendReport(reportId: number, buffer: BufferSource): Promise<void> {
     const send: RecordedSend = { via: 'output', reportId, data: toUint8(buffer) }
     this.sends.push(send)
 
@@ -79,6 +80,7 @@ export class MockHidDevice {
         }
       }
     })
+    return Promise.resolve()
   }
 
   private dispatchInputReport(reportId: number, data: Uint8Array): void {
@@ -86,17 +88,16 @@ export class MockHidDevice {
       reportId,
       data: new DataView(data.buffer, data.byteOffset, data.byteLength),
       device: this,
-      type: 'inputreport'
+      type: 'inputreport',
     }
     for (const listener of this.listeners) listener(event)
   }
 
   addEventListener(type: string, listener: EventListenerOrEventListenerObject): void {
     if (type !== 'inputreport') return
-    const fn =
-      typeof listener === 'function'
-        ? (listener as unknown as InputReportListener)
-        : ((e: InputEvent) => listener.handleEvent(e as unknown as Event)) as InputReportListener
+    const fn = typeof listener === 'function'
+      ? (listener as unknown as InputReportListener)
+      : ((e: InputEvent) => listener.handleEvent(e as unknown as Event)) as InputReportListener
     listenerMap.set(listener, fn)
     this.listeners.add(fn)
   }
@@ -110,16 +111,19 @@ export class MockHidDevice {
     }
   }
 
-  async open(): Promise<void> {
+  open(): Promise<void> {
     this.opened = true
+    return Promise.resolve()
   }
 
-  async close(): Promise<void> {
+  close(): Promise<void> {
     this.opened = false
+    return Promise.resolve()
   }
 
-  async forget(): Promise<void> {
+  forget(): Promise<void> {
     this.opened = false
+    return Promise.resolve()
   }
 }
 
@@ -134,6 +138,6 @@ export const createMockSession = (init?: Partial<MockHidDevice>): MockSession =>
   const hid = Object.assign(new MockHidDevice(), init)
   return {
     hid: hid as unknown as MockHidDevice & HIDDevice,
-    _lock: new Mutex()
+    _lock: new Mutex(),
   }
 }

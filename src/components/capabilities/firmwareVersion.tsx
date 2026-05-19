@@ -1,6 +1,6 @@
 import { Cpu } from 'lucide-react'
-import { Card } from '../ui/card'
-import { type Ready, type RazerDevice } from '@/lib/device/device'
+import { Card } from '../ui/card.tsx'
+import { type RazerDevice, type Ready } from '../../lib/device/device.ts'
 import { observer } from 'mobx-react-lite'
 
 type FirmwareVersionProps = {

@@ -1,11 +1,11 @@
-import { useEffect, useState, useRef } from 'react'
-import { type Ready, type RazerDevice } from '@/lib/device/device'
-import { Button } from '../ui/button'
-import { Card } from '../ui/card'
-import { Slider } from '../ui/slider'
-import { Input } from '../ui/input'
+import { useEffect, useRef, useState } from 'react'
+import { type RazerDevice, type Ready } from '../../lib/device/device.ts'
+import { Button } from '../ui/button.tsx'
+import { Card } from '../ui/card.tsx'
+import { Slider } from '../ui/slider.tsx'
+import { Input } from '../ui/input.tsx'
 import { observer } from 'mobx-react-lite'
-import { Trash, Plus, Target, Link, Unlink, GripVertical } from 'lucide-react'
+import { GripVertical, Link, Plus, Target, Trash, Unlink } from 'lucide-react'
 
 type DpiStagesProps = {
   device: Ready<RazerDevice<'dpiStages'>>
@@ -35,7 +35,7 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
   const commitLevels = (nextLevels: typeof localDpiLevels) => {
     device.capabilities.dpiStages.set({
       ...device.capabilities.dpiStages.data,
-      dpiLevels: nextLevels
+      dpiLevels: nextLevels,
     })
   }
 
@@ -109,7 +109,7 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
     commitLevels(
       localDpiLevels.map((lvl, i) =>
         i === index ? (independentXY ? [clamp(parsed), lvl[1]] : [clamp(parsed), clamp(parsed)]) : lvl
-      ) as [number, number][]
+      ) as [number, number][],
     )
   }
 
@@ -133,12 +133,11 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
     if (localDpiLevels.length <= 1) return
 
     const nextLevels = localDpiLevels.filter((_, i) => i !== index)
-    const newActiveStage =
-      activeStage > index + 1
-        ? activeStage - 1
-        : activeStage === index + 1
-          ? Math.min(activeStage, nextLevels.length)
-          : activeStage
+    const newActiveStage = activeStage > index + 1
+      ? activeStage - 1
+      : activeStage === index + 1
+      ? Math.min(activeStage, nextLevels.length)
+      : activeStage
 
     setLocalDpiLevels(nextLevels)
     setInputTextX((t) => t.filter((_, i) => i !== index))
@@ -147,7 +146,7 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
     device.capabilities.dpiStages.set({
       ...device.capabilities.dpiStages.data,
       dpiLevels: nextLevels,
-      activeStage: newActiveStage
+      activeStage: newActiveStage,
     })
   }
 
@@ -163,7 +162,7 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
 
     device.capabilities.dpiStages.set({
       ...device.capabilities.dpiStages.data,
-      dpiLevels: nextLevels
+      dpiLevels: nextLevels,
     })
   }
 
@@ -175,7 +174,7 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
       setInputTextY(nextLevels.map((lvl) => String(lvl[1])))
       device.capabilities.dpiStages.set({
         ...device.capabilities.dpiStages.data,
-        dpiLevels: nextLevels
+        dpiLevels: nextLevels,
       })
     }
     setIndependentXY(!independentXY)
@@ -237,7 +236,7 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
       device.capabilities.dpiStages.set({
         ...device.capabilities.dpiStages.data,
         dpiLevels: nextLevels,
-        activeStage: newActiveStage
+        activeStage: newActiveStage,
       })
     }
 
@@ -298,9 +297,9 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
               onDragStart={(e) => handleDragStart(e, originalIndex)}
               onDragEnd={handleDragEnd}
               onDragOver={(e) => handleDragOver(e, displayIndex)}
-              className={`transition-all duration-200 ${
-                isDragging ? 'opacity-40 bg-transparent' : ''
-              } ${isBeingDraggedOver ? 'translate-y-1' : ''}`}
+              className={`transition-all duration-200 ${isDragging ? 'opacity-40 bg-transparent' : ''} ${
+                isBeingDraggedOver ? 'translate-y-1' : ''
+              }`}
               style={isDragging ? { background: 'transparent' } : undefined}
             >
               <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
@@ -317,9 +316,8 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
                     onClick={() =>
                       device.capabilities.dpiStages.set({
                         ...device.capabilities.dpiStages.data,
-                        activeStage: originalIndex + 1
-                      })
-                    }
+                        activeStage: originalIndex + 1,
+                      })}
                   >
                     Stage {displayIndex + 1}
                   </Button>

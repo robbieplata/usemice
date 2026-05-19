@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Bar, BarChart, Cell, ReferenceLine, XAxis, YAxis } from 'recharts'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
-import type { ChartConfig } from './ui/chart'
-import { ChartContainer } from './ui/chart'
-import { Button } from './ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card.tsx'
+import type { ChartConfig } from './ui/chart.tsx'
+import { ChartContainer } from './ui/chart.tsx'
+import { Button } from './ui/button.tsx'
 import { ArrowDown, ArrowUp, MousePointer2, RotateCcw } from 'lucide-react'
-import { Badge } from './ui/badge'
-import { cn } from '@/lib/utils'
+import { Badge } from './ui/badge.tsx'
+import { cn } from '../lib/utils.ts'
 
 type ScrollDataPoint = {
   time: number
@@ -22,8 +22,8 @@ type ScrollEvent = {
 const chartConfig = {
   delta: {
     label: 'Scroll Delta',
-    color: 'var(--chart-1)'
-  }
+    color: 'var(--chart-1)',
+  },
 } satisfies ChartConfig
 
 const MAX_DATA_POINTS = 40
@@ -68,7 +68,7 @@ export function ScrollWheelTester({ className }: { className?: string }) {
       recentEventsRef.current.push({
         timestamp: performance.now(),
         deltaY,
-        deltaX
+        deltaX,
       })
 
       if (deltaY !== 0) {
@@ -89,7 +89,7 @@ export function ScrollWheelTester({ className }: { className?: string }) {
       setData((prev) => {
         const newPoint: ScrollDataPoint = {
           time: timeIndexRef.current++,
-          delta: -deltaY
+          delta: -deltaY,
         }
         const newData = [...prev, newPoint].slice(-MAX_DATA_POINTS)
         const maxAbs = Math.max(...newData.map((d) => Math.abs(d.delta)), 100)
@@ -97,7 +97,7 @@ export function ScrollWheelTester({ className }: { className?: string }) {
         return newData
       })
     },
-    [isRunning, calculateScrollSpeed]
+    [isRunning, calculateScrollSpeed],
   )
 
   useEffect(() => {
@@ -164,14 +164,14 @@ export function ScrollWheelTester({ className }: { className?: string }) {
         <div className='flex flex-wrap items-center gap-4'>
           <div className='flex items-center gap-2'>
             <span className='text-sm text-muted-foreground'>Direction:</span>
-            {lastDirection ? (
-              <Badge variant='secondary' className='flex items-center gap-1'>
-                {lastDirection === 'up' ? <ArrowUp className='size-3' /> : <ArrowDown className='size-3' />}
-                {lastDirection}
-              </Badge>
-            ) : (
-              <Badge variant='outline'>—</Badge>
-            )}
+            {lastDirection
+              ? (
+                <Badge variant='secondary' className='flex items-center gap-1'>
+                  {lastDirection === 'up' ? <ArrowUp className='size-3' /> : <ArrowDown className='size-3' />}
+                  {lastDirection}
+                </Badge>
+              )
+              : <Badge variant='outline'>—</Badge>}
           </div>
           <div className='flex items-center gap-2'>
             <span className='text-sm text-muted-foreground'>Delta:</span>
@@ -228,7 +228,7 @@ export function ScrollWheelTester({ className }: { className?: string }) {
                 top: 20,
                 right: 10,
                 left: 0,
-                bottom: 0
+                bottom: 0,
               }}
             >
               <XAxis dataKey='time' tickLine={false} axisLine={false} tick={false} />

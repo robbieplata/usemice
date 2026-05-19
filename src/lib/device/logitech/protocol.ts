@@ -1,7 +1,7 @@
-import type { HidSession } from '@/lib/device/hid'
-import { getFeatures } from './features'
-import { HIDPP_PAGE, CMD_ONBOARD_PROFILES, ONBOARD_PROFILE, REPORT_RATE_MS_TO_HZ } from './constants'
-import { HidppNotSupportedError, setBE16, getBE16, getLE16, setLE16, crcCcitt } from './hidppReport'
+import type { HidSession } from '../hid.ts'
+import { getFeatures } from './features.ts'
+import { CMD_ONBOARD_PROFILES, HIDPP_PAGE, ONBOARD_PROFILE, REPORT_RATE_MS_TO_HZ } from './constants.ts'
+import { crcCcitt, getBE16, getLE16, HidppNotSupportedError, setBE16, setLE16 } from './hidppReport.ts'
 
 const CMD_BATTERY_LEVEL_STATUS_GET = 0x00
 
@@ -19,7 +19,7 @@ export async function logitechGetBatteryLevel(device: HidSession): Promise<Logit
     return {
       level: response.getParameter(0),
       nextLevel: response.getParameter(1),
-      status: response.getParameter(2)
+      status: response.getParameter(2),
     }
   }
 
@@ -28,7 +28,7 @@ export async function logitechGetBatteryLevel(device: HidSession): Promise<Logit
     return {
       level: response.getParameter(0),
       nextLevel: 0,
-      status: response.getParameter(2)
+      status: response.getParameter(2),
     }
   }
 
@@ -40,7 +40,7 @@ export async function logitechGetBatteryLevel(device: HidSession): Promise<Logit
     return {
       level: Math.round(percentage),
       nextLevel: 0,
-      status: response.getParameter(2)
+      status: response.getParameter(2),
     }
   }
 
@@ -80,7 +80,7 @@ export async function logitechGetDpiInfo(device: HidSession): Promise<LogitechDp
   const listResponse = await features.featureRequest(
     HIDPP_PAGE.ADJUSTABLE_DPI,
     CMD_ADJUSTABLE_DPI_GET_SENSOR_DPI_LIST,
-    params
+    params,
   )
 
   const dpiList: number[] = []
@@ -124,7 +124,7 @@ export async function logitechGetDpi(device: HidSession, sensorIndex = 0): Promi
   return {
     sensorIndex: response.getParameter(0),
     dpi: response.getParameterBE16(1),
-    defaultDpi: response.getParameterBE16(3)
+    defaultDpi: response.getParameterBE16(3),
   }
 }
 
@@ -216,7 +216,7 @@ export async function getDeviceInfo(device: HidSession): Promise<LogitechDeviceI
     entityCount: response.getParameter(0),
     unitId: Array.from(response.parameters.slice(1, 5)),
     transport: Array.from(response.parameters.slice(5, 8)),
-    modelId: Array.from(response.parameters.slice(8, 14))
+    modelId: Array.from(response.parameters.slice(8, 14)),
   }
 }
 
@@ -286,7 +286,7 @@ export async function logitechGetProfilesDescription(device: HidSession): Promis
     sectorCount: response.getParameter(6),
     sectorSize: response.getParameterBE16(7),
     mechanicalLayout: response.getParameter(9),
-    variousInfo: response.getParameter(10)
+    variousInfo: response.getParameter(10),
   }
 }
 
@@ -326,7 +326,7 @@ async function readProfileMemory(device: HidSession, sector: number, offset: num
   const response = await features.featureRequestLong(
     HIDPP_PAGE.ONBOARD_PROFILES,
     CMD_ONBOARD_PROFILES.MEMORY_READ,
-    params
+    params,
   )
   return response.parameters
 }
@@ -365,14 +365,14 @@ function parseProfileData(data: Uint8Array): OnboardProfileData {
     defaultDpiIndex,
     dpiShiftIndex,
     dpiStages,
-    name: name.trim() || `Profile`
+    name: name.trim() || `Profile`,
   }
 }
 
 export async function logitechReadProfile(
   device: HidSession,
   sector: number,
-  sectorSize: number
+  sectorSize: number,
 ): Promise<OnboardProfileData> {
   const data = new Uint8Array(sectorSize)
   let offset = 0
@@ -391,7 +391,7 @@ export async function logitechReadProfile(
 export async function logitechReadProfileSector(
   device: HidSession,
   sector: number,
-  sectorSize: number
+  sectorSize: number,
 ): Promise<Uint8Array> {
   const data = new Uint8Array(sectorSize)
   let offset = 0
@@ -410,7 +410,7 @@ async function writeProfileMemoryStart(
   device: HidSession,
   sector: number,
   offset: number,
-  count: number
+  count: number,
 ): Promise<void> {
   const features = getFeatures(device)
   // 6 parameter bytes; needs the long-request variant for the same reason as MEMORY_READ.
@@ -439,7 +439,7 @@ export async function logitechWriteProfileSector(
   device: HidSession,
   sector: number,
   data: Uint8Array,
-  writeCrc: boolean = true
+  writeCrc: boolean = true,
 ): Promise<void> {
   const sectorSize = data.length
 
@@ -460,7 +460,7 @@ export async function logitechWriteProfile(
   device: HidSession,
   sector: number,
   sectorSize: number,
-  profile: OnboardProfileData
+  profile: OnboardProfileData,
 ): Promise<void> {
   const data = await logitechReadProfileSector(device, sector, sectorSize)
 
@@ -492,7 +492,7 @@ export async function logitechWriteProfile(
 export async function logitechWriteProfileDirectory(
   device: HidSession,
   sectorSize: number,
-  profiles: { sector: number; enabled: boolean }[]
+  profiles: { sector: number; enabled: boolean }[],
 ): Promise<void> {
   const data = new Uint8Array(sectorSize)
   data.fill(0xff)
@@ -514,7 +514,7 @@ export async function logitechWriteProfileDirectory(
 export async function logitechCommitProfiles(
   device: HidSession,
   description: OnboardProfilesDescription,
-  profiles: (OnboardProfileData & { sector: number; enabled?: boolean })[]
+  profiles: (OnboardProfileData & { sector: number; enabled?: boolean })[],
 ): Promise<void> {
   // Write each profile
   for (let i = 0; i < profiles.length; i++) {
@@ -525,14 +525,14 @@ export async function logitechCommitProfiles(
   // Write the profile directory
   const directory = profiles.map((p) => ({
     sector: p.sector,
-    enabled: p.enabled ?? true
+    enabled: p.enabled ?? true,
   }))
   await logitechWriteProfileDirectory(device, description.sectorSize, directory)
 }
 
 async function getProfileHeaders(
   device: HidSession,
-  sectorSize: number
+  sectorSize: number,
 ): Promise<{ sector: number; enabled: boolean }[]> {
   const headers: { sector: number; enabled: boolean }[] = []
   // Try RAM (sector 0x0000) first; if blank, fall back to ROM (sector 0x0001).
@@ -582,7 +582,7 @@ export async function logitechGetAllProfiles(device: HidSession): Promise<{
     profiles.push({
       ...profileData,
       sector: header.sector,
-      name: profileData.name || `Profile ${i + 1}`
+      name: profileData.name || `Profile ${i + 1}`,
     })
 
     if (header.sector === activeProfileSector) {

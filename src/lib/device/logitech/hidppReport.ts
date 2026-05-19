@@ -1,19 +1,19 @@
-import { sendOutputReport, type HidSession } from '@/lib/device/hid'
+import { type HidSession, sendOutputReport } from '../hid.ts'
 import {
-  REPORT_ID_SHORT,
-  REPORT_ID_LONG,
-  SHORT_MESSAGE_LENGTH,
-  LONG_MESSAGE_LENGTH,
   ERROR_MSG,
-  HIDPP20_ERROR,
   HIDPP10_ERROR,
-  HIDPP_WAIT_MS,
-  HIDPP_TIMEOUT_MS,
+  HIDPP20_ERROR,
   HIDPP_MAX_RETRIES,
   HIDPP_SOFTWARE_ID,
+  HIDPP_TIMEOUT_MS,
+  HIDPP_WAIT_MS,
+  HIDPP_WIRED_DEVICE_IDX,
   LOGITECH_WIRELESS_RECEIVERS,
-  HIDPP_WIRED_DEVICE_IDX
-} from './constants'
+  LONG_MESSAGE_LENGTH,
+  REPORT_ID_LONG,
+  REPORT_ID_SHORT,
+  SHORT_MESSAGE_LENGTH,
+} from './constants.ts'
 
 export class HidppError extends Error {
   readonly errorCode: number
@@ -40,7 +40,9 @@ export class HidppNotSupportedError extends HidppError {
 }
 
 const waitMs = (pid: number): number => {
-  return LOGITECH_WIRELESS_RECEIVERS.has(pid as Parameters<typeof LOGITECH_WIRELESS_RECEIVERS.has>[0]) ? 50 : HIDPP_WAIT_MS
+  return LOGITECH_WIRELESS_RECEIVERS.has(pid as Parameters<typeof LOGITECH_WIRELESS_RECEIVERS.has>[0])
+    ? 50
+    : HIDPP_WAIT_MS
 }
 
 export const getBE16 = (data: Uint8Array, offset: number): number => {
@@ -123,7 +125,7 @@ export class HidppReport {
     deviceIdx = HIDPP_WIRED_DEVICE_IDX,
     subId,
     address,
-    parameters
+    parameters,
   }: HidppReportParams): HidppReport {
     const r = new HidppReport(reportType)
     r.deviceIdx = deviceIdx
@@ -249,7 +251,7 @@ export class HidppReport {
       [HIDPP20_ERROR.INVALID_FEATURE_INDEX]: 'Invalid feature index',
       [HIDPP20_ERROR.INVALID_FUNCTION_ID]: 'Invalid function ID',
       [HIDPP20_ERROR.BUSY]: 'Device busy',
-      [HIDPP20_ERROR.UNSUPPORTED]: 'Not supported'
+      [HIDPP20_ERROR.UNSUPPORTED]: 'Not supported',
     }
     return messages[code] ?? `Unknown error code: 0x${code.toString(16)}`
   }
@@ -266,7 +268,7 @@ export class HidppReport {
    *   - The device MAY answer a short (0x10) request with a long (0x11) report
    *     (e.g. MEMORY_READ on 0x8100 returns 16 bytes), so we accept both.
    */
-  async send(device: HidSession, maxRetries = HIDPP_MAX_RETRIES): Promise<HidppReport> {
+  send(device: HidSession, maxRetries = HIDPP_MAX_RETRIES): Promise<HidppReport> {
     return device._lock.withLock(async () => {
       const expectedSubId = this.subId
       const expectedAddress = this.address
@@ -345,7 +347,7 @@ export const hidpp20Request = (
   featureIndex: number,
   functionId: number,
   parameters?: Uint8Array,
-  deviceIdx = HIDPP_WIRED_DEVICE_IDX
+  deviceIdx = HIDPP_WIRED_DEVICE_IDX,
 ): HidppReport => {
   const address = ((functionId & 0x0f) << 4) | (HIDPP_SOFTWARE_ID & 0x0f)
   return HidppReport.short({ deviceIdx, subId: featureIndex, address, parameters })
@@ -356,7 +358,7 @@ export const hidpp20RequestLong = (
   featureIndex: number,
   functionId: number,
   parameters?: Uint8Array,
-  deviceIdx = HIDPP_WIRED_DEVICE_IDX
+  deviceIdx = HIDPP_WIRED_DEVICE_IDX,
 ): HidppReport => {
   const address = ((functionId & 0x0f) << 4) | (HIDPP_SOFTWARE_ID & 0x0f)
   return HidppReport.long({ deviceIdx, subId: featureIndex, address, parameters })

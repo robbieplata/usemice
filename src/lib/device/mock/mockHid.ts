@@ -11,28 +11,37 @@ export class MockHidDevice {
     this.productName = init.productName
   }
 
-  async open(): Promise<void> {
+  open(): Promise<void> {
     this.opened = true
+    return Promise.resolve()
   }
 
-  async close(): Promise<void> {
+  close(): Promise<void> {
     this.opened = false
+    return Promise.resolve()
   }
 
-  async forget(): Promise<void> {
+  forget(): Promise<void> {
     this.opened = false
+    return Promise.resolve()
   }
 
-  async sendReport(): Promise<void> {
-    throw new Error('MockHidDevice.sendReport called: mock capabilities should not reach the transport')
+  sendReport(): Promise<void> {
+    return Promise.reject(
+      new Error('MockHidDevice.sendReport called: mock capabilities should not reach the transport'),
+    )
   }
 
-  async sendFeatureReport(): Promise<void> {
-    throw new Error('MockHidDevice.sendFeatureReport called: mock capabilities should not reach the transport')
+  sendFeatureReport(): Promise<void> {
+    return Promise.reject(
+      new Error('MockHidDevice.sendFeatureReport called: mock capabilities should not reach the transport'),
+    )
   }
 
-  async receiveFeatureReport(): Promise<DataView> {
-    throw new Error('MockHidDevice.receiveFeatureReport called: mock capabilities should not reach the transport')
+  receiveFeatureReport(): Promise<DataView> {
+    return Promise.reject(
+      new Error('MockHidDevice.receiveFeatureReport called: mock capabilities should not reach the transport'),
+    )
   }
 
   addEventListener(): void {}

@@ -1,7 +1,7 @@
-import { type HidppDevice, type Ready, type RazerDevice } from '@/lib/device/device'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
-import { Button } from '../ui/button'
-import { Card } from '../ui/card'
+import { type HidppDevice, type RazerDevice, type Ready } from '../../lib/device/device.ts'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu.tsx'
+import { Button } from '../ui/button.tsx'
+import { Card } from '../ui/card.tsx'
 import { observer } from 'mobx-react-lite'
 import { Gauge } from 'lucide-react'
 

@@ -1,10 +1,9 @@
-/* eslint-disable react-refresh/only-export-components */
 import type { ErrorInfo, ReactNode } from 'react'
 import { Component } from 'react'
-import { Card, CardContent } from './ui/card'
-import { Button } from './ui/button'
+import { Card, CardContent } from './ui/card.tsx'
+import { Button } from './ui/button.tsx'
 import { AlertCircle, RotateCcw } from 'lucide-react'
-import UnsupportedBrowser from './UnsupportedBrowser'
+import UnsupportedBrowser from './UnsupportedBrowser.tsx'
 
 const browserSupported = 'hid' in navigator
 
@@ -33,7 +32,7 @@ const ErrorFallback = ({ error, onReset }: { error: Error | null; onReset: () =>
               <RotateCcw className='mr-2 size-4' />
               Try Again
             </Button>
-            <Button onClick={() => window.location.reload()}>Refresh Page</Button>
+            <Button onClick={() => globalThis.location.reload()}>Refresh Page</Button>
           </div>
         </CardContent>
       </Card>
@@ -51,13 +50,13 @@ interface ErrorBoundaryState {
 }
 
 export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  state: ErrorBoundaryState = { hasError: false, error: null }
+  override state: ErrorBoundaryState = { hasError: false, error: null }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { hasError: true, error }
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo)
   }
 
@@ -65,7 +64,7 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
     this.setState({ hasError: false, error: null })
   }
 
-  render() {
+  override render() {
     if (!browserSupported) {
       return <UnsupportedBrowser />
     }

@@ -1,21 +1,22 @@
-import { describe, it, expect } from 'vitest'
-import { REPORT_ID_SHORT, REPORT_ID_LONG, HIDPP_PAGE, CMD_ONBOARD_PROFILES, ONBOARD_PROFILE } from '../constants'
-import { setBE16, setLE16, crcCcitt } from '../hidppReport'
+import { describe, it } from '@std/testing/bdd'
+import { expect } from '@std/expect'
+import { CMD_ONBOARD_PROFILES, HIDPP_PAGE, ONBOARD_PROFILE, REPORT_ID_LONG, REPORT_ID_SHORT } from '../constants.ts'
+import { crcCcitt, setBE16, setLE16 } from '../hidppReport.ts'
 import {
+  logitechGetActiveProfile,
+  logitechGetAllProfiles,
   logitechGetBatteryLevel,
   logitechGetDpi,
   logitechGetDpiInfo,
-  logitechSetDpi,
   logitechGetPollingRate,
   logitechGetPollingRateInfo,
-  logitechSetPollingRate,
-  logitechGetActiveProfile,
-  logitechSetActiveProfile,
   logitechGetProfilesDescription,
   logitechReadProfile,
-  logitechGetAllProfiles
-} from '../protocol'
-import { createMockSession, type RecordedSend } from './mockHidDevice'
+  logitechSetActiveProfile,
+  logitechSetDpi,
+  logitechSetPollingRate,
+} from '../protocol.ts'
+import { createMockSession, type RecordedSend } from './mockHidDevice.ts'
 
 const short = (subId: number, address: number, params: number[] = []) => {
   const data = new Uint8Array(6)
@@ -36,11 +37,15 @@ const long = (subId: number, address: number, params: Uint8Array | number[]) => 
 }
 
 type Features = Map<number, number>
-type FeatureHandler = (functionId: number, params: Uint8Array, send: RecordedSend) => ReturnType<NonNullable<ReturnType<typeof createMockSession>['hid']['responder']>>
+type FeatureHandler = (
+  functionId: number,
+  params: Uint8Array,
+  send: RecordedSend,
+) => ReturnType<NonNullable<ReturnType<typeof createMockSession>['hid']['responder']>>
 
 const buildDevice = (
   features: Features,
-  handlers: Partial<Record<number, FeatureHandler>>
+  handlers: Partial<Record<number, FeatureHandler>>,
 ) => {
   return (send: RecordedSend) => {
     const subId = send.data[1]
@@ -76,7 +81,7 @@ describe('battery level', () => {
       [HIDPP_PAGE.BATTERY_LEVEL_STATUS]: (fn, _p, s) => {
         if (fn === 0x00) return short(s.data[1], s.data[2], [82, 100, 0x01])
         return undefined
-      }
+      },
     })
 
     const info = await logitechGetBatteryLevel(session)
@@ -91,7 +96,7 @@ describe('battery level', () => {
       [HIDPP_PAGE.UNIFIED_BATTERY]: (fn, _p, s) => {
         if (fn === 0x00) return short(s.data[1], s.data[2], [60, 0, 0x02])
         return undefined
-      }
+      },
     })
 
     const info = await logitechGetBatteryLevel(session)
@@ -110,7 +115,7 @@ describe('battery level', () => {
           return long(s.data[1], s.data[2], p)
         }
         return undefined
-      }
+      },
     })
 
     const info = await logitechGetBatteryLevel(session)
@@ -121,7 +126,7 @@ describe('battery level', () => {
   it('throws when no battery feature is supported', async () => {
     const session = createMockSession()
     session.hid.responder = buildDevice(new Map(), {})
-    await expect(logitechGetBatteryLevel(session)).rejects.toThrowError(/not supported/i)
+    await expect(logitechGetBatteryLevel(session)).rejects.toThrow(/not supported/i)
   })
 })
 
@@ -138,7 +143,7 @@ describe('DPI (0x2201)', () => {
           return long(s.data[1], s.data[2], params)
         }
         return undefined
-      }
+      },
     })
 
     const info = await logitechGetDpiInfo(session)
@@ -162,7 +167,7 @@ describe('DPI (0x2201)', () => {
           return long(s.data[1], s.data[2], params)
         }
         return undefined
-      }
+      },
     })
 
     const info = await logitechGetDpiInfo(session)
@@ -183,7 +188,7 @@ describe('DPI (0x2201)', () => {
           return long(s.data[1], s.data[2], params)
         }
         return undefined
-      }
+      },
     })
 
     const dpi = await logitechGetDpi(session)
@@ -198,7 +203,7 @@ describe('DPI (0x2201)', () => {
       [HIDPP_PAGE.ADJUSTABLE_DPI]: (fn, _p, s) => {
         if (fn === 0x03) return short(s.data[1], s.data[2], [0, 0, 0])
         return undefined
-      }
+      },
     })
 
     await logitechSetDpi(session, 2400)
@@ -221,7 +226,7 @@ describe('polling rate (HID++ feature 0x8060)', () => {
           return short(s.data[1], s.data[2], [0x0f])
         }
         return undefined
-      }
+      },
     })
 
     const info = await logitechGetPollingRateInfo(session)
@@ -234,7 +239,7 @@ describe('polling rate (HID++ feature 0x8060)', () => {
       [HIDPP_PAGE.ADJUSTABLE_REPORT_RATE]: (fn, _p, s) => {
         if (fn === 0x01) return short(s.data[1], s.data[2], [2]) // 2ms = 500Hz
         return undefined
-      }
+      },
     })
     expect(await logitechGetPollingRate(session)).toBe(500)
   })
@@ -245,7 +250,7 @@ describe('polling rate (HID++ feature 0x8060)', () => {
       [HIDPP_PAGE.ADJUSTABLE_REPORT_RATE]: (fn, _p, s) => {
         if (fn === 0x02) return short(s.data[1], s.data[2], [0])
         return undefined
-      }
+      },
     })
 
     await logitechSetPollingRate(session, 125)
@@ -277,7 +282,7 @@ describe('onboard profiles (HID++ feature 0x8100)', () => {
           return long(s.data[1], s.data[2], params)
         }
         return undefined
-      }
+      },
     })
 
     const desc = await logitechGetProfilesDescription(session)
@@ -302,7 +307,7 @@ describe('onboard profiles (HID++ feature 0x8100)', () => {
           return short(s.data[1], s.data[2], [0])
         }
         return undefined
-      }
+      },
     })
 
     expect(await logitechGetActiveProfile(session)).toBe(0x0101)
@@ -335,7 +340,7 @@ describe('onboard profiles (HID++ feature 0x8100)', () => {
           return long(s.data[1], s.data[2], padded)
         }
         return undefined
-      }
+      },
     })
 
     const profile = await logitechReadProfile(session, 0x0101, sectorSize)
@@ -371,7 +376,7 @@ describe('onboard profiles (HID++ feature 0x8100)', () => {
     }
     const sectors = new Map<number, Uint8Array>([
       [0x0000, directory],
-      ...profileSectors.map((s, i) => [s, profileSector(i)] as [number, Uint8Array])
+      ...profileSectors.map((s, i) => [s, profileSector(i)] as [number, Uint8Array]),
     ])
 
     session.hid.responder = buildDevice(new Map([[HIDPP_PAGE.ONBOARD_PROFILES, 9]]), {
@@ -400,7 +405,7 @@ describe('onboard profiles (HID++ feature 0x8100)', () => {
           return long(s.data[1], s.data[2], chunk)
         }
         return undefined
-      }
+      },
     })
 
     const result = await logitechGetAllProfiles(session)

@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { type Ready, type RazerDevice } from '@/lib/device/device'
-import { DongleLedMultiMode } from '@/lib/device/razer'
-import { Card } from '../ui/card'
-import { Button } from '../ui/button'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
+import { type RazerDevice, type Ready } from '../../lib/device/device.ts'
+import { DongleLedMultiMode } from '../../lib/device/razer/index.ts'
+import { Card } from '../ui/card.tsx'
+import { Button } from '../ui/button.tsx'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu.tsx'
 import { observer } from 'mobx-react-lite'
-import { Lightbulb, ChevronDown } from 'lucide-react'
+import { ChevronDown, Lightbulb } from 'lucide-react'
 
 type DongleLedMultiProps = {
   device: Ready<RazerDevice<'dongleLedMulti'>>
@@ -16,7 +16,7 @@ const modeLabels: Record<number, string> = {
   [DongleLedMultiMode.BATTERY_STATUS]: 'Battery Status',
   [DongleLedMultiMode.CONNECTION_STATUS]: 'Connection Status',
   [DongleLedMultiMode.POLLING_RATE_INDICATOR]: 'Polling Rate',
-  [DongleLedMultiMode.DPI_INDICATOR]: 'DPI Indicator'
+  [DongleLedMultiMode.DPI_INDICATOR]: 'DPI Indicator',
 }
 
 const modeOptions = Object.entries(DongleLedMultiMode).filter(([key]) => isNaN(Number(key))) as [string, number][]
@@ -26,7 +26,7 @@ export const DongleLedMulti = observer(({ device }: DongleLedMultiProps) => {
   const [modes, setModes] = useState<[number, number, number]>([
     initialData.modes[0],
     initialData.modes[1],
-    initialData.modes[2]
+    initialData.modes[2],
   ])
 
   const updateMode = (index: 0 | 1 | 2, value: number) => {

@@ -1,29 +1,29 @@
 import { observer } from 'mobx-react-lite'
 import {
-  isCapableOf,
-  isDeviceType,
   type DeviceInStatusVariant,
   type HidppDevice,
+  isCapableOf,
+  isDeviceType,
+  type RazerDevice,
   type Ready,
-  type RazerDevice
-} from '../lib/device/device'
-import { Button } from './ui/button'
-import { Card, CardContent, CardHeader, CardTitle, CardAction } from './ui/card'
-import { ScrollArea } from './ui/scroll-area'
-import { useStore } from '@/stores'
-import { IdleTime } from './capabilities/idleTime'
-import { DpiStages } from './capabilities/dpiStages'
-import { Polling } from './capabilities/polling'
-import { DongleLedMulti } from './capabilities/dongleLedMulti'
-import { NoDeviceDetected } from './NoDeviceDetected'
-import { SkeletonDevice } from './SkeletonDevice'
-import { AlertCircle, RotateCcw, Mouse, Power } from 'lucide-react'
-import { DongleLed } from './capabilities/dongleLed'
-import { ChargeStatus } from './capabilities/chargeStatus'
-import { ChargeLevel } from './capabilities/chargeLevel'
-import { FirmwareVersion } from './capabilities/firmwareVersion'
-import { Serial } from './capabilities/serial'
-import { HidppProfile } from './capabilities/hidppProfile'
+} from '../lib/device/device.ts'
+import { Button } from './ui/button.tsx'
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from './ui/card.tsx'
+import { ScrollArea } from './ui/scroll-area.tsx'
+import { useStore } from '../stores/index.tsx'
+import { IdleTime } from './capabilities/idleTime.tsx'
+import { DpiStages } from './capabilities/dpiStages.tsx'
+import { Polling } from './capabilities/polling.tsx'
+import { DongleLedMulti } from './capabilities/dongleLedMulti.tsx'
+import { NoDeviceDetected } from './NoDeviceDetected.tsx'
+import { SkeletonDevice } from './SkeletonDevice.tsx'
+import { AlertCircle, Mouse, Power, RotateCcw } from 'lucide-react'
+import { DongleLed } from './capabilities/dongleLed.tsx'
+import { ChargeStatus } from './capabilities/chargeStatus.tsx'
+import { ChargeLevel } from './capabilities/chargeLevel.tsx'
+import { FirmwareVersion } from './capabilities/firmwareVersion.tsx'
+import { Serial } from './capabilities/serial.tsx'
+import { HidppProfile } from './capabilities/hidppProfile.tsx'
 
 type DeviceProps = {
   device?: DeviceInStatusVariant
@@ -66,7 +66,7 @@ const Hidpp = observer(({ device }: { device: Ready<HidppDevice> }) => {
 
 const Device = observer(({ device, onOpenSidebar }: DeviceProps) => {
   const {
-    deviceStore: { removeDevice, retryDevice }
+    deviceStore: { removeDevice, retryDevice },
   } = useStore()
 
   const disconnect = () => {

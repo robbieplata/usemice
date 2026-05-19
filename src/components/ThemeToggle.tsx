@@ -1,6 +1,6 @@
 import { Moon, Sun } from 'lucide-react'
-import { useTheme } from './ThemeProvider'
-import { Button } from './ui/button'
+import { useTheme } from './ThemeProvider.tsx'
+import { Button } from './ui/button.tsx'
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme()
@@ -13,7 +13,8 @@ export function ThemeToggle() {
     }
   }
 
-  const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+  const isDark = theme === 'dark' ||
+    (theme === 'system' && globalThis.matchMedia('(prefers-color-scheme: dark)').matches)
 
   return (
     <Button variant='ghost' size='icon' className='size-8' onClick={toggleTheme} aria-label='Toggle theme'>

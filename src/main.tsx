@@ -2,10 +2,10 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
-import { StoreProvider } from './stores'
+import { StoreProvider } from './stores/index.tsx'
 import { ThemeProvider } from './components/ThemeProvider.tsx'
 import ErrorBoundary from './components/ErrorBoundary.tsx'
-import { Toaster } from '@/components/ui/sonner'
+import { Toaster } from './components/ui/sonner.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -17,5 +17,5 @@ createRoot(document.getElementById('root')!).render(
         </StoreProvider>
       </ErrorBoundary>
     </ThemeProvider>
-  </StrictMode>
+  </StrictMode>,
 )

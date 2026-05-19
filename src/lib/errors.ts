@@ -1,6 +1,6 @@
 export function createErrorClass<T extends string>(name: T) {
   return class extends Error {
-    readonly name = name
+    override readonly name = name
     constructor(message: string) {
       super(message)
     }

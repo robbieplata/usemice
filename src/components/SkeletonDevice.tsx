@@ -1,4 +1,4 @@
-import { Skeleton } from './ui/skeleton'
+import { Skeleton } from './ui/skeleton.tsx'
 
 export const SkeletonDevice = () => {
   return (

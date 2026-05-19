@@ -1,6 +1,6 @@
-import type { HidSession } from '@/lib/device/hid'
-import { HidppReport, HidppNotSupportedError, hidpp20Request, hidpp20RequestLong, setBE16 } from './hidppReport'
-import { HIDPP_PAGE, HIDPP_PAGE_ROOT_IDX } from './constants'
+import type { HidSession } from '../hid.ts'
+import { hidpp20Request, hidpp20RequestLong, HidppNotSupportedError, HidppReport, setBE16 } from './hidppReport.ts'
+import { HIDPP_PAGE, HIDPP_PAGE_ROOT_IDX } from './constants.ts'
 
 const CMD_ROOT_GET_FEATURE = 0x00
 const CMD_ROOT_GET_PROTOCOL_VERSION = 0x01
@@ -43,7 +43,7 @@ export class HidppFeatures {
       const response = await msg.send(this.device)
       this.protocolVersion = {
         major: response.getParameter(0),
-        minor: response.getParameter(1)
+        minor: response.getParameter(1),
       }
     } catch (e) {
       // If we get INVALID_SUBID, the device is HID++ 1.0
@@ -96,7 +96,7 @@ export class HidppFeatures {
           featurePage,
           featureIndex,
           featureType,
-          featureVersion
+          featureVersion,
         })
       }
 
@@ -146,7 +146,7 @@ export class HidppFeatures {
             featurePage,
             featureIndex: i,
             featureType,
-            featureVersion: 0
+            featureVersion: 0,
           })
         }
       } catch {

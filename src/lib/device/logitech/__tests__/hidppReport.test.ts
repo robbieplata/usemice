@@ -1,27 +1,28 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it } from '@std/testing/bdd'
+import { expect } from '@std/expect'
 import {
-  HidppReport,
-  HidppError,
-  HidppNotSupportedError,
-  HidppTimeoutError,
-  hidpp20Request,
-  hidpp20RequestLong,
+  crcCcitt,
   getBE16,
   getLE16,
+  hidpp20Request,
+  hidpp20RequestLong,
+  HidppError,
+  HidppNotSupportedError,
+  HidppReport,
+  HidppTimeoutError,
   setBE16,
   setLE16,
-  crcCcitt
-} from '../hidppReport'
+} from '../hidppReport.ts'
 import {
-  REPORT_ID_SHORT,
-  REPORT_ID_LONG,
-  SHORT_MESSAGE_LENGTH,
-  LONG_MESSAGE_LENGTH,
-  HIDPP20_ERROR,
+  ERROR_MSG,
   HIDPP10_ERROR,
-  ERROR_MSG
-} from '../constants'
-import { createMockSession } from './mockHidDevice'
+  HIDPP20_ERROR,
+  LONG_MESSAGE_LENGTH,
+  REPORT_ID_LONG,
+  REPORT_ID_SHORT,
+  SHORT_MESSAGE_LENGTH,
+} from '../constants.ts'
+import { createMockSession } from './mockHidDevice.ts'
 
 describe('byte helpers', () => {
   it('reads/writes BE16', () => {
@@ -78,7 +79,7 @@ describe('HidppReport encoding', () => {
       deviceIdx: 0xff,
       subId: 0x07,
       address: 0x4f,
-      parameters: new Uint8Array([0xaa, 0xbb, 0xcc])
+      parameters: new Uint8Array([0xaa, 0xbb, 0xcc]),
     })
     const bytes = r.toBytes
     expect(bytes[1]).toBe(0xff)
@@ -108,7 +109,7 @@ describe('HidppReport encoding', () => {
     const r = HidppReport.short({
       subId: 0x00,
       address: 0x00,
-      parameters: new Uint8Array([0x12, 0x34, 0x56])
+      parameters: new Uint8Array([0x12, 0x34, 0x56]),
     })
     expect(r.getParameter(0)).toBe(0x12)
     expect(r.getParameterBE16(0)).toBe(0x1234)
@@ -116,7 +117,28 @@ describe('HidppReport encoding', () => {
   })
 
   it('fromBytes reconstructs a report from a wire buffer (with report-id at byte 0)', () => {
-    const wire = new Uint8Array([REPORT_ID_LONG, 0x01, 0x07, 0x4f, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16])
+    const wire = new Uint8Array([
+      REPORT_ID_LONG,
+      0x01,
+      0x07,
+      0x4f,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+    ])
     const r = HidppReport.fromBytes(wire)
     expect(r.reportType).toBe('long')
     expect(r.deviceIdx).toBe(0x01)
@@ -140,7 +162,7 @@ describe('HidppReport.send() over the WebHID transport', () => {
     session.hid.responder = (send) => ({
       reportId: send.reportId,
       // build a valid response: deviceIdx, subId, address, p0..p2
-      data: new Uint8Array([0x00, send.data[1] /*subId in payload (without report id)*/, 0, 0, 0, 0])
+      data: new Uint8Array([0x00, send.data[1], /*subId in payload (without report id)*/ 0, 0, 0, 0]),
     })
 
     const req = hidpp20Request(0x05, 0x00)
@@ -151,7 +173,7 @@ describe('HidppReport.send() over the WebHID transport', () => {
       const address = send.data[2]
       return {
         reportId: send.reportId,
-        data: new Uint8Array([0x00, subId, address, 0xa1, 0xb2, 0xc3])
+        data: new Uint8Array([0x00, subId, address, 0xa1, 0xb2, 0xc3]),
       }
     }
 
@@ -168,7 +190,7 @@ describe('HidppReport.send() over the WebHID transport', () => {
     const session = createMockSession()
     session.hid.responder = (send) => ({
       reportId: send.reportId,
-      data: new Uint8Array([0x00, send.data[1], send.data[2], 0, 0, 0])
+      data: new Uint8Array([0x00, send.data[1], send.data[2], 0, 0, 0]),
     })
 
     const req = hidpp20Request(0x05, 0x03, new Uint8Array([0xde, 0xad, 0xbe]))
@@ -213,7 +235,7 @@ describe('HidppReport.send() over the WebHID transport', () => {
       const address = send.data[2]
       return {
         reportId: send.reportId,
-        data: new Uint8Array([0x00, ERROR_MSG, subId, address, HIDPP20_ERROR.UNSUPPORTED, 0])
+        data: new Uint8Array([0x00, ERROR_MSG, subId, address, HIDPP20_ERROR.UNSUPPORTED, 0]),
       }
     }
 
@@ -228,13 +250,13 @@ describe('HidppReport.send() over the WebHID transport', () => {
       const address = send.data[2]
       return {
         reportId: send.reportId,
-        data: new Uint8Array([0x00, ERROR_MSG, subId, address, HIDPP10_ERROR.INVALID_SUBID, 0])
+        data: new Uint8Array([0x00, ERROR_MSG, subId, address, HIDPP10_ERROR.INVALID_SUBID, 0]),
       }
     }
 
     const req = hidpp20Request(0x00, 0x01) // ROOT.GET_PROTOCOL_VERSION
     await expect(req.send(session)).rejects.toMatchObject({
-      errorCode: HIDPP10_ERROR.INVALID_SUBID
+      errorCode: HIDPP10_ERROR.INVALID_SUBID,
     })
   })
 
@@ -243,7 +265,7 @@ describe('HidppReport.send() over the WebHID transport', () => {
     // No responder, no queued input report
     const req = hidpp20Request(0x05, 0x00)
     await expect(req.send(session, 1)).rejects.toBeInstanceOf(HidppTimeoutError)
-  }, 10_000)
+  })
 
   it('ignores unrelated input reports and matches the right response by subId+address', async () => {
     const session = createMockSession()
@@ -256,7 +278,7 @@ describe('HidppReport.send() over the WebHID transport', () => {
         // notification frame with software_id=0 (lower nibble of address) — must be ignored
         { reportId: REPORT_ID_SHORT, data: new Uint8Array([0x00, subId, address & 0xf0, 0x77, 0, 0]) },
         // the real response
-        { reportId: REPORT_ID_SHORT, data: new Uint8Array([0x00, subId, address, 0x99, 0, 0]) }
+        { reportId: REPORT_ID_SHORT, data: new Uint8Array([0x00, subId, address, 0x99, 0, 0]) },
       ]
     }
 

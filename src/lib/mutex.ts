@@ -2,10 +2,10 @@ export class Mutex {
   private locked = false
   private queue: Array<(release: () => void) => void> = []
 
-  async acquire(): Promise<() => void> {
+  acquire(): Promise<() => void> {
     if (!this.locked) {
       this.locked = true
-      return this.makeRelease()
+      return Promise.resolve(this.makeRelease())
     }
 
     return new Promise<() => void>((resolve) => {

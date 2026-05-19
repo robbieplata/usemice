@@ -1,27 +1,31 @@
-import { action, computed, flow, observable, reaction, runInAction, type IReactionDisposer } from 'mobx'
+import { action, computed, flow, type IReactionDisposer, observable, reaction, runInAction } from 'mobx'
 import {
   assertStatus,
   Device,
-  isDeviceType,
   type DeviceInStatus,
   type DeviceInStatusVariant,
-  type IDevice
-} from '../lib/device/device'
-import { getHidInterfaces, probeDevice, RequestHidDeviceError, requestHidInterface } from '../lib/device/hid'
+  type IDevice,
+  isDeviceType,
+} from '../lib/device/device.ts'
+import { getHidInterfaces, probeDevice, RequestHidDeviceError, requestHidInterface } from '../lib/device/hid.ts'
 import { toast } from 'sonner'
-import type { Result } from '@/lib/result'
-import { VID_LOGITECH } from '@/lib/device/logitech/constants'
-import { discoverHidppCapabilities } from '@/lib/device/logitech/capabilities'
-import { discoverRazerCapabilities } from '@/lib/device/razer/capabilities'
-import { getEnabledMockDevices } from '@/lib/device/mock'
+import type { Result } from '../lib/result.ts'
+import { VID_LOGITECH } from '../lib/device/logitech/constants.ts'
+import { discoverHidppCapabilities } from '../lib/device/logitech/capabilities.ts'
+import { discoverRazerCapabilities } from '../lib/device/razer/capabilities.ts'
+import { getEnabledMockDevices } from '../lib/device/mock/index.ts'
 
 const SELECTED_DEVICE_KEY = 'usemice:selectedDeviceId'
 
 export class DeviceStore {
-  @observable accessor devices: DeviceInStatusVariant[] = []
-  @observable accessor selectedDeviceId: number | undefined
-  @observable accessor initErrors: Error[] = []
-  @observable accessor initialized: boolean = false
+  @observable
+  accessor devices: DeviceInStatusVariant[] = []
+  @observable
+  accessor selectedDeviceId: number | undefined
+  @observable
+  accessor initErrors: Error[] = []
+  @observable
+  accessor initialized: boolean = false
 
   private reactions: IReactionDisposer[] = []
   private connectQueue: Map<string, HIDDevice[]> = new Map()
@@ -33,7 +37,7 @@ export class DeviceStore {
         () => ({
           initialized: this.initialized,
           deviceCount: this.devices.length,
-          selectedDeviceId: this.selectedDeviceId
+          selectedDeviceId: this.selectedDeviceId,
         }),
         (state) => {
           if (!state.initialized) return
@@ -49,7 +53,7 @@ export class DeviceStore {
           }
           this.setSelectedDeviceId(this.devices[0].id)
         },
-        { fireImmediately: true }
+        { fireImmediately: true },
       ),
       reaction(
         () => this.initErrors.length,
@@ -57,11 +61,11 @@ export class DeviceStore {
           if (length > previousLength) {
             const newError = this.initErrors[length - 1]
             toast.warning('Error: ' + newError.message, {
-              duration: 5000
+              duration: 5000,
             })
           }
-        }
-      )
+        },
+      ),
     )
     navigator.hid.addEventListener('connect', this.onConnect)
     navigator.hid.addEventListener('disconnect', this.onDisconnect)
@@ -116,7 +120,7 @@ export class DeviceStore {
   onDisconnect = (event: HIDConnectionEvent) => {
     const hidDevice = event.device
     const device = this.devices.find(
-      (d) => d.hid.vendorId === hidDevice.vendorId && d.hid.productId === hidDevice.productId
+      (d) => d.hid.vendorId === hidDevice.vendorId && d.hid.productId === hidDevice.productId,
     )
     if (device) {
       this.removeDevice(device)
@@ -185,8 +189,9 @@ export class DeviceStore {
 
     if (isDeviceType(device, 'razer')) {
       try {
-        const capabilities: Awaited<ReturnType<typeof discoverRazerCapabilities>> =
-          yield discoverRazerCapabilities(device)
+        const capabilities: Awaited<ReturnType<typeof discoverRazerCapabilities>> = yield discoverRazerCapabilities(
+          device,
+        )
         device.setCapabilities(capabilities)
         device.status = 'Ready'
         assertStatus(device, 'Ready')
@@ -202,8 +207,9 @@ export class DeviceStore {
 
     if (isDeviceType(device, 'hidpp')) {
       try {
-        const capabilities: Awaited<ReturnType<typeof discoverHidppCapabilities>> =
-          yield discoverHidppCapabilities(device)
+        const capabilities: Awaited<ReturnType<typeof discoverHidppCapabilities>> = yield discoverHidppCapabilities(
+          device,
+        )
         device.setCapabilities(capabilities)
         device.status = 'Ready'
         assertStatus(device, 'Ready')

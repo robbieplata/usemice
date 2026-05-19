@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { DevicesSidebar } from './DevicesSidebar'
-import { ErrorsSidebar } from './ErrorsSidebar'
-import { ThemeToggle } from './ThemeToggle'
-import { Button } from '../components/ui/button'
+import { DevicesSidebar } from './DevicesSidebar.tsx'
+import { ErrorsSidebar } from './ErrorsSidebar.tsx'
+import { ThemeToggle } from './ThemeToggle.tsx'
+import { Button } from './ui/button.tsx'
 import { observer } from 'mobx-react-lite'
 
 type HeaderProps = {

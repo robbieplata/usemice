@@ -1,8 +1,8 @@
-import { receiveBuffer, sendBuffer, type HidSession } from '@/lib/device/hid'
-import { RAZER_WIRELESS_RECEIVERS } from '@/lib/device/razer/constants'
+import { type HidSession, receiveBuffer, sendBuffer } from '../hid.ts'
+import { RAZER_WIRELESS_RECEIVERS } from './constants.ts'
 
 export class TransactionError extends Error {
-  readonly name = 'TransactionError'
+  override readonly name = 'TransactionError'
   constructor(message: string) {
     super(message)
   }
@@ -27,7 +27,7 @@ enum RAZER_STATUS {
   SUCCESS = 0x02,
   FAILURE = 0x03,
   TIMEOUT = 0x04,
-  NOT_SUPPORTED = 0x05
+  NOT_SUPPORTED = 0x05,
 }
 
 export const _sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -55,7 +55,7 @@ export class RazerReport {
     return r
   }
 
-  async sendReport(device: HidSession, maxRetries = 10): Promise<RazerReport> {
+  sendReport(device: HidSession, maxRetries = 10): Promise<RazerReport> {
     return device._lock.withLock(async () => {
       const expectedCommandClass = this.commandClass
       const expectedCommandId = this.commandId
@@ -97,7 +97,7 @@ export class RazerReport {
     const crc = RazerReport.computeCrc(bytes)
     if (crc !== bytes[CRC_INDEX]) {
       throw new Error(
-        `Invalid CRC on RazerReport: expected 0x${bytes[CRC_INDEX].toString(16)}, computed 0x${crc.toString(16)}`
+        `Invalid CRC on RazerReport: expected 0x${bytes[CRC_INDEX].toString(16)}, computed 0x${crc.toString(16)}`,
       )
     }
     r.bytes.set(bytes.subarray(0, RAZER_REPORT_SIZE))

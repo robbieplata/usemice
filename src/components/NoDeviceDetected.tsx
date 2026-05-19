@@ -1,5 +1,5 @@
-import { MouseImage } from './MouseImage'
-import { Button } from './ui/button'
+import { MouseImage } from './MouseImage.tsx'
+import { Button } from './ui/button.tsx'
 import { Plus } from 'lucide-react'
 
 type NoDeviceDetectedProps = {

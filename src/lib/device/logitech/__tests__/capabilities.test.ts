@@ -1,13 +1,14 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it } from '@std/testing/bdd'
+import { expect } from '@std/expect'
 import { reaction, runInAction } from 'mobx'
 import {
-  HidppProfileCapability,
   HidppDerivedDpiCapability,
   HidppDerivedPollingCapability,
+  HidppProfileCapability,
   type HidppProfileData,
-  type IHidppDeviceCore
-} from '../capabilities'
-import { Mutex } from '@/lib/mutex'
+  type IHidppDeviceCore,
+} from '../capabilities.ts'
+import { Mutex } from '../../../mutex.ts'
 
 const baseData = (): HidppProfileData => ({
   description: {
@@ -20,7 +21,7 @@ const baseData = (): HidppProfileData => ({
     sectorCount: 8,
     sectorSize: 256,
     mechanicalLayout: 0,
-    variousInfo: 0
+    variousInfo: 0,
   },
   activeProfileIndex: 0,
   profiles: [
@@ -31,7 +32,7 @@ const baseData = (): HidppProfileData => ({
       dpiStages: [400, 800, 1600],
       activeDpiIndex: 1,
       dpiShiftIndex: 2,
-      dirty: false
+      dirty: false,
     },
     {
       sector: 0x0102,
@@ -40,9 +41,9 @@ const baseData = (): HidppProfileData => ({
       dpiStages: [800, 1600],
       activeDpiIndex: 0,
       dpiShiftIndex: 1,
-      dirty: false
-    }
-  ]
+      dirty: false,
+    },
+  ],
 })
 
 const stubDevice = (): IHidppDeviceCore => {
@@ -54,15 +55,23 @@ describe('HidppProfileCapability state management', () => {
   it('updateActiveProfile replaces data immutably and triggers reactions', () => {
     const cap = new HidppProfileCapability(
       stubDevice(),
-      { profileCount: 2, dpiMin: 200, dpiMax: 25600, dpiStep: 50, maxDpiStages: 5, hasGShift: false, hasDpiShift: false },
-      baseData()
+      {
+        profileCount: 2,
+        dpiMin: 200,
+        dpiMax: 25600,
+        dpiStep: 50,
+        maxDpiStages: 5,
+        hasGShift: false,
+        hasDpiShift: false,
+      },
+      baseData(),
     )
 
     const observed: number[] = []
     const dispose = reaction(
       () => cap.activeProfile.dpiStages[0],
       (dpi) => observed.push(dpi),
-      { fireImmediately: true }
+      { fireImmediately: true },
     )
 
     cap.updateActiveProfile((p) => ({ ...p, dpiStages: [500, ...p.dpiStages.slice(1)], dirty: true }))
@@ -79,8 +88,16 @@ describe('HidppProfileCapability state management', () => {
   it('hasDirtyProfiles reflects current state', () => {
     const cap = new HidppProfileCapability(
       stubDevice(),
-      { profileCount: 2, dpiMin: 200, dpiMax: 25600, dpiStep: 50, maxDpiStages: 5, hasGShift: false, hasDpiShift: false },
-      baseData()
+      {
+        profileCount: 2,
+        dpiMin: 200,
+        dpiMax: 25600,
+        dpiStep: 50,
+        maxDpiStages: 5,
+        hasGShift: false,
+        hasDpiShift: false,
+      },
+      baseData(),
     )
     expect(cap.hasDirtyProfiles).toBe(false)
     cap.updateActiveProfile((p) => ({ ...p, dirty: true }))
@@ -90,8 +107,16 @@ describe('HidppProfileCapability state management', () => {
   it('set with no dirty profiles is a no-op writer and stores the new value', async () => {
     const cap = new HidppProfileCapability(
       stubDevice(),
-      { profileCount: 2, dpiMin: 200, dpiMax: 25600, dpiStep: 50, maxDpiStages: 5, hasGShift: false, hasDpiShift: false },
-      baseData()
+      {
+        profileCount: 2,
+        dpiMin: 200,
+        dpiMax: 25600,
+        dpiStep: 50,
+        maxDpiStages: 5,
+        hasGShift: false,
+        hasDpiShift: false,
+      },
+      baseData(),
     )
 
     const next = baseData()
@@ -105,8 +130,16 @@ describe('HidppDerivedDpiCapability', () => {
   it('reads DPI from the active profile/stage', () => {
     const profile = new HidppProfileCapability(
       stubDevice(),
-      { profileCount: 2, dpiMin: 200, dpiMax: 25600, dpiStep: 50, maxDpiStages: 5, hasGShift: false, hasDpiShift: false },
-      baseData()
+      {
+        profileCount: 2,
+        dpiMin: 200,
+        dpiMax: 25600,
+        dpiStep: 50,
+        maxDpiStages: 5,
+        hasGShift: false,
+        hasDpiShift: false,
+      },
+      baseData(),
     )
     const dpi = new HidppDerivedDpiCapability(stubDevice(), profile, { minDpi: 200, maxDpi: 25600, step: 50 })
     expect(dpi.data).toEqual({ x: 800, y: 800 })
@@ -123,10 +156,20 @@ describe('HidppDerivedPollingCapability', () => {
   it('reads polling rate (Hz) from active profile reportRateMs', () => {
     const profile = new HidppProfileCapability(
       stubDevice(),
-      { profileCount: 2, dpiMin: 200, dpiMax: 25600, dpiStep: 50, maxDpiStages: 5, hasGShift: false, hasDpiShift: false },
-      baseData()
+      {
+        profileCount: 2,
+        dpiMin: 200,
+        dpiMax: 25600,
+        dpiStep: 50,
+        maxDpiStages: 5,
+        hasGShift: false,
+        hasDpiShift: false,
+      },
+      baseData(),
     )
-    const polling = new HidppDerivedPollingCapability(stubDevice(), profile, { supportedIntervals: [125, 250, 500, 1000] })
+    const polling = new HidppDerivedPollingCapability(stubDevice(), profile, {
+      supportedIntervals: [125, 250, 500, 1000],
+    })
     expect(polling.data.interval).toBe(1000) // profile A: 1ms = 1000Hz
 
     runInAction(() => {

@@ -1,5 +1,5 @@
 import { AlertCircle } from 'lucide-react'
-import { Card, CardContent } from './ui/card'
+import { Card, CardContent } from './ui/card.tsx'
 
 const UnsupportedBrowser: React.FC = () => {
   return (

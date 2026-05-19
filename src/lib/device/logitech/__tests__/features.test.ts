@@ -1,7 +1,8 @@
-import { describe, it, expect } from 'vitest'
-import { HidppFeatures, getFeatures } from '../features'
-import { REPORT_ID_SHORT, REPORT_ID_LONG, ERROR_MSG, HIDPP20_ERROR, HIDPP10_ERROR, HIDPP_PAGE } from '../constants'
-import { createMockSession, type RecordedSend } from './mockHidDevice'
+import { describe, it } from '@std/testing/bdd'
+import { expect } from '@std/expect'
+import { getFeatures, HidppFeatures } from '../features.ts'
+import { ERROR_MSG, HIDPP10_ERROR, HIDPP20_ERROR, HIDPP_PAGE, REPORT_ID_LONG, REPORT_ID_SHORT } from '../constants.ts'
+import { createMockSession, type RecordedSend } from './mockHidDevice.ts'
 
 /** Build a short-report response payload (sans report-id). */
 const short = (subId: number, address: number, params: number[] = []): { reportId: number; data: Uint8Array } => {
@@ -25,7 +26,7 @@ const long = (subId: number, address: number, params: number[]): { reportId: num
 const errorResponse = (
   origSubId: number,
   origAddress: number,
-  errorCode: number
+  errorCode: number,
 ): { reportId: number; data: Uint8Array } => {
   const data = new Uint8Array(6)
   data[0] = 0x00
@@ -40,7 +41,7 @@ type SimulatedFeature = { index: number; type?: number; version?: number }
 
 const buildSimulator = (
   features: Map<number, SimulatedFeature>,
-  custom?: (send: RecordedSend) => ReturnType<NonNullable<ReturnType<typeof createMockSession>['hid']['responder']>>
+  custom?: (send: RecordedSend) => ReturnType<NonNullable<ReturnType<typeof createMockSession>['hid']['responder']>>,
 ) => {
   return (send: RecordedSend) => {
     const subId = send.data[1]
@@ -94,7 +95,7 @@ describe('HidppFeatures', () => {
     const session = createMockSession()
     const sim = new Map<number, SimulatedFeature>([
       [HIDPP_PAGE.FEATURE_SET, { index: 1 }],
-      [HIDPP_PAGE.ADJUSTABLE_DPI, { index: 5, type: 0 }]
+      [HIDPP_PAGE.ADJUSTABLE_DPI, { index: 5, type: 0 }],
     ])
     session.hid.responder = buildSimulator(sim)
 
@@ -160,7 +161,7 @@ describe('HidppFeatures', () => {
     const sim = new Map<number, SimulatedFeature>([
       [HIDPP_PAGE.FEATURE_SET, { index: 1 }],
       [HIDPP_PAGE.ADJUSTABLE_DPI, { index: 5, type: 0 }],
-      [HIDPP_PAGE.ADJUSTABLE_REPORT_RATE, { index: 6, type: 0 }]
+      [HIDPP_PAGE.ADJUSTABLE_REPORT_RATE, { index: 6, type: 0 }],
     ])
     session.hid.responder = buildSimulator(sim)
 
@@ -175,7 +176,7 @@ describe('HidppFeatures', () => {
     const session = createMockSession()
     const sim = new Map<number, SimulatedFeature>([
       [HIDPP_PAGE.FEATURE_SET, { index: 1 }],
-      [HIDPP_PAGE.ONBOARD_PROFILES, { index: 9 }]
+      [HIDPP_PAGE.ONBOARD_PROFILES, { index: 9 }],
     ])
     session.hid.responder = buildSimulator(sim, (send) => {
       const subId = send.data[1]
@@ -202,7 +203,7 @@ describe('HidppFeatures', () => {
     const session = createMockSession()
     session.hid.responder = buildSimulator(new Map())
     const features = new HidppFeatures(session)
-    await expect(features.featureRequest(0xabcd, 0x00)).rejects.toThrowError(/0xabcd/i)
+    await expect(features.featureRequest(0xabcd, 0x00)).rejects.toThrow(/0xabcd/i)
   })
 
   it('clearCache wipes the feature index map and lets us re-discover', async () => {
@@ -210,8 +211,8 @@ describe('HidppFeatures', () => {
     session.hid.responder = buildSimulator(
       new Map([
         [HIDPP_PAGE.FEATURE_SET, { index: 1 }],
-        [HIDPP_PAGE.ADJUSTABLE_DPI, { index: 5 }]
-      ])
+        [HIDPP_PAGE.ADJUSTABLE_DPI, { index: 5 }],
+      ]),
     )
 
     const features = new HidppFeatures(session)

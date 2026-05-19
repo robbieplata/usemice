@@ -1,15 +1,15 @@
-import { observable, action } from 'mobx'
-import { RazerReport } from './razerReport'
-import { type HidSession } from '@/lib/device/hid'
+import { action, observable } from 'mobx'
+import { RazerReport } from './razerReport.ts'
+import { type HidSession } from '../hid.ts'
 import {
-  V2PollingCode,
-  LegacyPollingCode,
   LEGACY_CODE_TO_INTERVAL,
   LEGACY_INTERVAL_TO_CODE,
+  LegacyPollingCode,
   V2_CODE_TO_INTERVAL,
-  V2_INTERVAL_TO_CODE
-} from './constants'
-import { getRazerDefinition, UnsupportedDeviceError } from './definitions'
+  V2_INTERVAL_TO_CODE,
+  V2PollingCode,
+} from './constants.ts'
+import { getRazerDefinition, UnsupportedDeviceError } from './definitions.ts'
 
 export { UnsupportedDeviceError }
 
@@ -19,11 +19,12 @@ export interface IRazerDeviceCore extends HidSession {
 
 export class RazerDpiCapability {
   readonly info: { txId: number; minDpi: number; maxDpi: number }
-  @observable accessor data: { x: number; y: number }
+  @observable
+  accessor data: { x: number; y: number }
 
   constructor(
     private device: IRazerDeviceCore,
-    info: RazerDpiCapability['info']
+    info: RazerDpiCapability['info'],
   ) {
     this.info = info
     this.data = { x: 0, y: 0 }
@@ -36,7 +37,7 @@ export class RazerDpiCapability {
       commandId: 0x85,
       dataSize: 0x07,
       args: new Uint8Array(0),
-      txId: this.info.txId
+      txId: this.info.txId,
     })
 
     const response = await report.sendReport(this.device)
@@ -59,7 +60,7 @@ export class RazerDpiCapability {
       commandId: 0x05,
       dataSize: 0x07,
       args,
-      txId: this.info.txId
+      txId: this.info.txId,
     })
 
     await report.sendReport(this.device)
@@ -71,11 +72,12 @@ export type RazerDpiStagesData = { dpiLevels: [number, number][]; activeStage: n
 
 export class RazerDpiStagesCapability {
   readonly info: { txId: number; minDpi: number; maxDpi: number; maxStages: number }
-  @observable accessor data: RazerDpiStagesData
+  @observable
+  accessor data: RazerDpiStagesData
 
   constructor(
     private device: IRazerDeviceCore,
-    info: RazerDpiStagesCapability['info']
+    info: RazerDpiStagesCapability['info'],
   ) {
     this.info = info
     this.data = { dpiLevels: [], activeStage: 1 }
@@ -88,7 +90,7 @@ export class RazerDpiStagesCapability {
       commandId: 0x86,
       dataSize: 0x26,
       args: new Uint8Array([0x01]),
-      txId: this.info.txId
+      txId: this.info.txId,
     })
 
     const response = await report.sendReport(this.device)
@@ -145,7 +147,7 @@ export class RazerDpiStagesCapability {
       commandId: 0x06,
       dataSize: 0x26,
       args,
-      txId: this.info.txId
+      txId: this.info.txId,
     })
 
     await report.sendReport(this.device)
@@ -169,23 +171,23 @@ export class RazerDpiStagesCapability {
       throw new Error('Cannot remove the last DPI stage')
     }
     const newLevels = this.data.dpiLevels.filter((_, i) => i !== index)
-    const newActiveStage =
-      this.data.activeStage > index + 1
-        ? this.data.activeStage - 1
-        : this.data.activeStage === index + 1
-          ? Math.min(this.data.activeStage, newLevels.length)
-          : this.data.activeStage
+    const newActiveStage = this.data.activeStage > index + 1
+      ? this.data.activeStage - 1
+      : this.data.activeStage === index + 1
+      ? Math.min(this.data.activeStage, newLevels.length)
+      : this.data.activeStage
     await this.set({ dpiLevels: newLevels, activeStage: newActiveStage })
   }
 }
 
 export class RazerPollingCapability {
   readonly info: { txId: number; version: 'legacy' | 'v2'; supportedIntervals: number[] }
-  @observable accessor data: { interval: number }
+  @observable
+  accessor data: { interval: number }
 
   constructor(
     private device: IRazerDeviceCore,
-    info: RazerPollingCapability['info']
+    info: RazerPollingCapability['info'],
   ) {
     this.info = info
     this.data = { interval: 1000 }
@@ -199,7 +201,7 @@ export class RazerPollingCapability {
         commandId: 0x85,
         dataSize: 0x00,
         args: new Uint8Array([]),
-        txId: this.info.txId
+        txId: this.info.txId,
       })
       const response = await report.sendReport(this.device)
       const value = response.args[0] as LegacyPollingCode
@@ -214,7 +216,7 @@ export class RazerPollingCapability {
         commandId: 0xc0,
         dataSize: 0x01,
         args: new Uint8Array([0x00]),
-        txId: this.info.txId
+        txId: this.info.txId,
       })
       const response = await report.sendReport(this.device)
       const value = response.args[1] as V2PollingCode
@@ -237,7 +239,7 @@ export class RazerPollingCapability {
         commandId: 0x05,
         dataSize: 0x01,
         args: new Uint8Array([code]),
-        txId: this.info.txId
+        txId: this.info.txId,
       })
       await report.sendReport(this.device)
     } else {
@@ -251,7 +253,7 @@ export class RazerPollingCapability {
           commandId: 0x40,
           dataSize: 0x02,
           args: new Uint8Array([argument, code]),
-          txId: this.info.txId
+          txId: this.info.txId,
         })
         await report.sendReport(this.device)
       }
@@ -262,11 +264,12 @@ export class RazerPollingCapability {
 
 export class RazerChargeLevelCapability {
   readonly info: { txId: number }
-  @observable accessor data: { percentage: number }
+  @observable
+  accessor data: { percentage: number }
 
   constructor(
     private device: IRazerDeviceCore,
-    info: RazerChargeLevelCapability['info']
+    info: RazerChargeLevelCapability['info'],
   ) {
     this.info = info
     this.data = { percentage: 0 }
@@ -279,7 +282,7 @@ export class RazerChargeLevelCapability {
       commandId: 0x80,
       dataSize: 0x02,
       args: new Uint8Array(0),
-      txId: this.info.txId
+      txId: this.info.txId,
     })
     const response = await report.sendReport(this.device)
     this.data = { percentage: (response.args[1] / 0xff) * 100 }
@@ -288,11 +291,12 @@ export class RazerChargeLevelCapability {
 
 export class RazerChargeStatusCapability {
   readonly info: { txId: number }
-  @observable accessor data: { status: boolean }
+  @observable
+  accessor data: { status: boolean }
 
   constructor(
     private device: IRazerDeviceCore,
-    info: RazerChargeStatusCapability['info']
+    info: RazerChargeStatusCapability['info'],
   ) {
     this.info = info
     this.data = { status: false }
@@ -305,7 +309,7 @@ export class RazerChargeStatusCapability {
       commandId: 0x84,
       dataSize: 0x02,
       args: new Uint8Array(0),
-      txId: this.info.txId
+      txId: this.info.txId,
     })
     const response = await report.sendReport(this.device)
     this.data = { status: Boolean(response.args[1]) }
@@ -314,11 +318,12 @@ export class RazerChargeStatusCapability {
 
 export class RazerIdleTimeCapability {
   readonly info: { txId: number; minSeconds: number; maxSeconds: number }
-  @observable accessor data: { seconds: number }
+  @observable
+  accessor data: { seconds: number }
 
   constructor(
     private device: IRazerDeviceCore,
-    info: RazerIdleTimeCapability['info']
+    info: RazerIdleTimeCapability['info'],
   ) {
     this.info = info
     this.data = { seconds: 0 }
@@ -331,7 +336,7 @@ export class RazerIdleTimeCapability {
       commandId: 0x83,
       dataSize: 0x02,
       args: new Uint8Array(0),
-      txId: this.info.txId
+      txId: this.info.txId,
     })
     const response = await report.sendReport(this.device)
     this.data = { seconds: (response.args[0] << 8) | (response.args[1] & 0xff) }
@@ -351,7 +356,7 @@ export class RazerIdleTimeCapability {
       commandId: 0x03,
       dataSize: 0x02,
       args,
-      txId: this.info.txId
+      txId: this.info.txId,
     })
     await report.sendReport(this.device)
     await this.refresh()
@@ -360,11 +365,12 @@ export class RazerIdleTimeCapability {
 
 export class RazerFirmwareVersionCapability {
   readonly info: { txId: number }
-  @observable accessor data: { major: number; minor: number }
+  @observable
+  accessor data: { major: number; minor: number }
 
   constructor(
     private device: IRazerDeviceCore,
-    info: RazerFirmwareVersionCapability['info']
+    info: RazerFirmwareVersionCapability['info'],
   ) {
     this.info = info
     this.data = { major: 0, minor: 0 }
@@ -377,7 +383,7 @@ export class RazerFirmwareVersionCapability {
       commandId: 0x81,
       dataSize: 0x02,
       args: new Uint8Array(0),
-      txId: this.info.txId
+      txId: this.info.txId,
     })
     const response = await report.sendReport(this.device)
     this.data = { major: response.args[0], minor: response.args[1] }
@@ -386,11 +392,12 @@ export class RazerFirmwareVersionCapability {
 
 export class RazerSerialCapability {
   readonly info: { txId: number }
-  @observable accessor data: { serialNumber: string }
+  @observable
+  accessor data: { serialNumber: string }
 
   constructor(
     private device: IRazerDeviceCore,
-    info: RazerSerialCapability['info']
+    info: RazerSerialCapability['info'],
   ) {
     this.info = info
     this.data = { serialNumber: '' }
@@ -403,7 +410,7 @@ export class RazerSerialCapability {
       commandId: 0x82,
       dataSize: 0x16,
       args: new Uint8Array([0x00]),
-      txId: this.info.txId
+      txId: this.info.txId,
     })
     const response = await report.sendReport(this.device)
     const bytes = response.args.slice(0, 22)
@@ -415,11 +422,12 @@ export class RazerSerialCapability {
 
 export class RazerDongleLedCapability {
   readonly info: { txId: number }
-  @observable accessor data: { mode: number }
+  @observable
+  accessor data: { mode: number }
 
   constructor(
     private device: IRazerDeviceCore,
-    info: RazerDongleLedCapability['info']
+    info: RazerDongleLedCapability['info'],
   ) {
     this.info = info
     this.data = { mode: 0 }
@@ -432,7 +440,7 @@ export class RazerDongleLedCapability {
       commandId: 0x90,
       dataSize: 0x01,
       args: new Uint8Array(0),
-      txId: this.info.txId
+      txId: this.info.txId,
     })
     const response = await report.sendReport(this.device)
     this.data = { mode: response.args[0] }
@@ -447,7 +455,7 @@ export class RazerDongleLedCapability {
       commandId: 0x10,
       dataSize: 0x01,
       args: new Uint8Array([value.mode]),
-      txId: this.info.txId
+      txId: this.info.txId,
     })
     await report.sendReport(this.device)
     await this.refresh()
@@ -456,11 +464,12 @@ export class RazerDongleLedCapability {
 
 export class RazerDongleLedMultiCapability {
   readonly info: { txId: number }
-  @observable accessor data: { modes: [number, number, number] }
+  @observable
+  accessor data: { modes: [number, number, number] }
 
   constructor(
     private device: IRazerDeviceCore,
-    info: RazerDongleLedMultiCapability['info']
+    info: RazerDongleLedMultiCapability['info'],
   ) {
     this.info = info
     this.data = { modes: [0, 0, 0] }
@@ -473,7 +482,7 @@ export class RazerDongleLedMultiCapability {
       commandId: 0x95,
       dataSize: 0x03,
       args: new Uint8Array(0),
-      txId: this.info.txId
+      txId: this.info.txId,
     })
     const response = await report.sendReport(this.device)
     this.data = { modes: [response.args[0], response.args[1], response.args[2]] }
@@ -485,7 +494,7 @@ export class RazerDongleLedMultiCapability {
       commandId: 0x15,
       dataSize: 0x03,
       args: new Uint8Array(value.modes),
-      txId: this.info.txId
+      txId: this.info.txId,
     })
     await report.sendReport(this.device)
     await this.refresh()

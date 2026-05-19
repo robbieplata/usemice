@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
-import debounce from 'lodash/debounce'
-import { type Ready, type RazerDevice } from '@/lib/device/device'
-import { Slider } from '../ui/slider'
-import { Card } from '../ui/card'
+import { debounce } from 'lodash-es'
+import { type RazerDevice, type Ready } from '../../lib/device/device.ts'
+import { Slider } from '../ui/slider.tsx'
+import { Card } from '../ui/card.tsx'
 import { Clock } from 'lucide-react'
 import { observer } from 'mobx-react-lite'
 
@@ -23,7 +23,7 @@ const IdleTimeInner = observer(({ device, initialSeconds }: IdleTimeInnerProps) 
       debounce((value: number) => {
         device.capabilities.idleTime.set({ seconds: value })
       }, 300),
-    [device]
+    [device],
   )
 
   useEffect(() => {

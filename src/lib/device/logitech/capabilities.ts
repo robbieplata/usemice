@@ -1,19 +1,19 @@
-import { computed, observable, makeObservable, action } from 'mobx'
+import { action, computed, makeObservable, observable } from 'mobx'
 import {
-  logitechGetBatteryLevel,
-  logitechSetDpi,
-  logitechSetPollingRate,
   logitechGetAllProfiles,
-  logitechWriteProfile,
-  logitechSetActiveProfile,
+  logitechGetBatteryLevel,
   logitechGetDpiInfo,
   logitechGetPollingRateInfo,
-  logitechGetProfilesDescription
-} from './protocol'
-import type { OnboardProfilesDescription } from './protocol'
-import type { HidSession } from '@/lib/device/hid'
-import { getFeatures } from './features'
-import { HIDPP_PAGE, ONBOARD_PROFILE } from './constants'
+  logitechGetProfilesDescription,
+  logitechSetActiveProfile,
+  logitechSetDpi,
+  logitechSetPollingRate,
+  logitechWriteProfile,
+} from './protocol.ts'
+import type { OnboardProfilesDescription } from './protocol.ts'
+import type { HidSession } from '../hid.ts'
+import { getFeatures } from './features.ts'
+import { HIDPP_PAGE, ONBOARD_PROFILE } from './constants.ts'
 
 export interface IHidppDeviceCore extends HidSession {
   readonly type: 'hidpp'
@@ -45,12 +45,13 @@ export class HidppProfileCapability {
     hasGShift: boolean
     hasDpiShift: boolean
   }
-  @observable accessor data: HidppProfileData
+  @observable
+  accessor data: HidppProfileData
 
   constructor(
     private device: IHidppDeviceCore,
     info: HidppProfileCapability['info'],
-    initialData: HidppProfileData
+    initialData: HidppProfileData,
   ) {
     this.info = info
     this.data = initialData
@@ -69,8 +70,8 @@ export class HidppProfileCapability {
         dpiStages: p.dpiStages,
         activeDpiIndex: p.defaultDpiIndex,
         dpiShiftIndex: p.dpiShiftIndex,
-        dirty: false
-      }))
+        dirty: false,
+      })),
     }
   }
 
@@ -87,7 +88,7 @@ export class HidppProfileCapability {
         defaultDpiIndex: profile.activeDpiIndex,
         dpiShiftIndex: profile.dpiShiftIndex,
         dpiStages: profile.dpiStages,
-        name: profile.name
+        name: profile.name,
       })
       clearedProfiles.push({ ...profile, dirty: false })
     }
@@ -131,11 +132,11 @@ export class HidppProfileCapability {
       defaultDpiIndex: profile.activeDpiIndex,
       dpiShiftIndex: profile.dpiShiftIndex,
       dpiStages: profile.dpiStages,
-      name: profile.name
+      name: profile.name,
     })
     this.data = {
       ...this.data,
-      profiles: this.data.profiles.map((p) => (p.sector === profile.sector ? { ...p, dirty: false } : p))
+      profiles: this.data.profiles.map((p) => (p.sector === profile.sector ? { ...p, dirty: false } : p)),
     }
   }
 
@@ -154,11 +155,11 @@ export class HidppDerivedDpiCapability {
   constructor(
     private device: IHidppDeviceCore,
     private profileCap: HidppProfileCapability,
-    info: HidppDerivedDpiCapability['info']
+    info: HidppDerivedDpiCapability['info'],
   ) {
     this.info = info
     makeObservable(this, {
-      data: computed
+      data: computed,
     })
   }
 
@@ -205,11 +206,11 @@ export class HidppDerivedPollingCapability {
   constructor(
     private device: IHidppDeviceCore,
     private profileCap: HidppProfileCapability,
-    info: HidppDerivedPollingCapability['info']
+    info: HidppDerivedPollingCapability['info'],
   ) {
     this.info = info
     makeObservable(this, {
-      data: computed
+      data: computed,
     })
   }
 
@@ -228,11 +229,12 @@ export class HidppDerivedPollingCapability {
 
 export class HidppChargeLevelCapability {
   readonly info: Record<string, never> = {}
-  @observable accessor data: { percentage: number }
+  @observable
+  accessor data: { percentage: number }
 
   constructor(
     private device: IHidppDeviceCore,
-    initialData: { percentage: number }
+    initialData: { percentage: number },
   ) {
     this.data = initialData
   }
@@ -295,8 +297,8 @@ export async function discoverHidppCapabilities(device: IHidppDeviceCore): Promi
         dpiStages: p.dpiStages,
         activeDpiIndex: p.defaultDpiIndex,
         dpiShiftIndex: p.dpiShiftIndex,
-        dirty: false
-      }))
+        dirty: false,
+      })),
     }
 
     capabilities.profile = new HidppProfileCapability(
@@ -308,22 +310,22 @@ export async function discoverHidppCapabilities(device: IHidppDeviceCore): Promi
         dpiStep,
         maxDpiStages: ONBOARD_PROFILE.MAX_DPI_STAGES,
         hasGShift,
-        hasDpiShift
+        hasDpiShift,
       },
-      profileData
+      profileData,
     )
 
     capabilities.dpi = new HidppDerivedDpiCapability(device, capabilities.profile, {
       minDpi: dpiMin,
       maxDpi: dpiMax,
-      step: dpiStep
+      step: dpiStep,
     })
 
     // Create derived polling capability if device supports it
     if (await features.hasFeature(HIDPP_PAGE.ADJUSTABLE_REPORT_RATE)) {
       const pollingInfo = await logitechGetPollingRateInfo(device)
       capabilities.polling = new HidppDerivedPollingCapability(device, capabilities.profile, {
-        supportedIntervals: pollingInfo.supportedRates
+        supportedIntervals: pollingInfo.supportedRates,
       })
     }
   }

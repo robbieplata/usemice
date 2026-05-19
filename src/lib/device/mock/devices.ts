@@ -1,23 +1,23 @@
-import { Device } from '@/lib/device/device'
-import { VID_RAZER, PID_RAZER } from '@/lib/device/razer/constants'
-import { VID_LOGITECH } from '@/lib/device/logitech/constants'
-import type { IRazerDeviceCore } from '@/lib/device/razer/capabilities'
-import type { IHidppDeviceCore, HidppProfileData } from '@/lib/device/logitech/capabilities'
-import { MockHidDevice, asHidDevice } from './mockHid'
+import { Device } from '../device.ts'
+import { PID_RAZER, VID_RAZER } from '../razer/constants.ts'
+import { VID_LOGITECH } from '../logitech/constants.ts'
+import type { IRazerDeviceCore } from '../razer/capabilities.ts'
+import type { HidppProfileData, IHidppDeviceCore } from '../logitech/capabilities.ts'
+import { asHidDevice, MockHidDevice } from './mockHid.ts'
 import {
-  MockRazerDpiCapability,
-  MockRazerDpiStagesCapability,
-  MockRazerPollingCapability,
-  MockRazerChargeLevelCapability,
-  MockRazerChargeStatusCapability,
-  MockRazerIdleTimeCapability,
-  MockRazerFirmwareVersionCapability,
-  MockRazerSerialCapability,
-  MockHidppProfileCapability,
+  MockHidppChargeLevelCapability,
   MockHidppDerivedDpiCapability,
   MockHidppDerivedPollingCapability,
-  MockHidppChargeLevelCapability
-} from './capabilities'
+  MockHidppProfileCapability,
+  MockRazerChargeLevelCapability,
+  MockRazerChargeStatusCapability,
+  MockRazerDpiCapability,
+  MockRazerDpiStagesCapability,
+  MockRazerFirmwareVersionCapability,
+  MockRazerIdleTimeCapability,
+  MockRazerPollingCapability,
+  MockRazerSerialCapability,
+} from './capabilities.ts'
 
 const mockSession = <Core>(device: Device): Core => {
   // The capability classes only use device._lock and device.hid via HidSession;
@@ -29,7 +29,7 @@ export function buildDeathadderV3ProWirelessMock(): Device {
   const hid = new MockHidDevice({
     vendorId: VID_RAZER,
     productId: PID_RAZER.DEATHADDER_V3_PRO_WIRELESS,
-    productName: 'Razer DeathAdder V3 Pro'
+    productName: 'Razer DeathAdder V3 Pro',
   })
   const device = new Device(asHidDevice(hid), 'razer')
   const core = mockSession<IRazerDeviceCore>(device)
@@ -46,25 +46,25 @@ export function buildDeathadderV3ProWirelessMock(): Device {
           [800, 800],
           [1600, 1600],
           [3200, 3200],
-          [6400, 6400]
+          [6400, 6400],
         ],
-        activeStage: 3
-      }
+        activeStage: 3,
+      },
     ),
     polling: new MockRazerPollingCapability(
       core,
       { txId, version: 'legacy', supportedIntervals: [125, 500, 1000] },
-      { interval: 1000 }
+      { interval: 1000 },
     ),
     idleTime: new MockRazerIdleTimeCapability(
       core,
       { txId, minSeconds: 60, maxSeconds: 900 },
-      { seconds: 300 }
+      { seconds: 300 },
     ),
     chargeLevel: new MockRazerChargeLevelCapability(core, { txId }, { percentage: 78 }),
     chargeStatus: new MockRazerChargeStatusCapability(core, { txId }, { status: false }),
     firmwareVersion: new MockRazerFirmwareVersionCapability(core, { txId }, { major: 1, minor: 2 }),
-    serial: new MockRazerSerialCapability(core, { txId }, { serialNumber: 'MOCK-DAV3P-0001' })
+    serial: new MockRazerSerialCapability(core, { txId }, { serialNumber: 'MOCK-DAV3P-0001' }),
   })
   device.status = 'Ready'
   return device
@@ -72,21 +72,26 @@ export function buildDeathadderV3ProWirelessMock(): Device {
 
 const GPRO_SUPERLIGHT2_PID = 0xc54d
 
-const gproProfile = (sector: number, name: string, baseDpi: number, reportRateMs: number): HidppProfileData['profiles'][number] => ({
+const gproProfile = (
+  sector: number,
+  name: string,
+  baseDpi: number,
+  reportRateMs: number,
+): HidppProfileData['profiles'][number] => ({
   sector,
   name,
   reportRateMs,
   dpiStages: [Math.max(100, baseDpi - 800), baseDpi, baseDpi + 800, baseDpi + 2400, baseDpi + 4800],
   activeDpiIndex: 1,
   dpiShiftIndex: 0,
-  dirty: false
+  dirty: false,
 })
 
 export function buildGProXSuperlight2Mock(): Device {
   const hid = new MockHidDevice({
     vendorId: VID_LOGITECH,
     productId: GPRO_SUPERLIGHT2_PID,
-    productName: 'G Pro X Superlight 2'
+    productName: 'G Pro X Superlight 2',
   })
   const device = new Device(asHidDevice(hid), 'hidpp')
   const core = mockSession<IHidppDeviceCore>(device)
@@ -102,7 +107,7 @@ export function buildGProXSuperlight2Mock(): Device {
       sectorCount: 16,
       sectorSize: 256,
       mechanicalLayout: 0x0a, // g-shift = 2 (bits 0-1), dpi-shift = 2 (bits 2-3)
-      variousInfo: 0x00
+      variousInfo: 0x00,
     },
     activeProfileIndex: 0,
     profiles: [
@@ -110,8 +115,8 @@ export function buildGProXSuperlight2Mock(): Device {
       gproProfile(2, 'Profile 2', 800, 1),
       gproProfile(3, 'Profile 3', 3200, 1),
       gproProfile(4, 'Profile 4', 6400, 2),
-      gproProfile(5, 'Profile 5', 12800, 4)
-    ]
+      gproProfile(5, 'Profile 5', 12800, 4),
+    ],
   }
 
   const profile = new MockHidppProfileCapability(
@@ -123,18 +128,18 @@ export function buildGProXSuperlight2Mock(): Device {
       dpiStep: 50,
       maxDpiStages: 5,
       hasGShift: true,
-      hasDpiShift: true
+      hasDpiShift: true,
     },
-    profileData
+    profileData,
   )
 
   device.setCapabilities({
     profile,
     dpi: new MockHidppDerivedDpiCapability(core, profile, { minDpi: 100, maxDpi: 32000, step: 50 }),
     polling: new MockHidppDerivedPollingCapability(core, profile, {
-      supportedIntervals: [125, 250, 500, 1000, 2000]
+      supportedIntervals: [125, 250, 500, 1000, 2000],
     }),
-    chargeLevel: new MockHidppChargeLevelCapability(core, { percentage: 64 })
+    chargeLevel: new MockHidppChargeLevelCapability(core, { percentage: 64 }),
   })
   device.status = 'Ready'
   return device

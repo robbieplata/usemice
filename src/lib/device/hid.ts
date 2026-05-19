@@ -1,14 +1,14 @@
-import { VID_RAZER } from './razer/constants'
-import { VID_LOGITECH } from './logitech'
-import type { Mutex } from '../mutex'
-import { groupBy, some } from 'lodash'
+import { VID_RAZER } from './razer/constants.ts'
+import { VID_LOGITECH } from './logitech/index.ts'
+import type { Mutex } from '../mutex.ts'
+import { groupBy, some } from 'lodash-es'
 
 const RAZER_FILTER: HIDDeviceFilter = {
-  vendorId: VID_RAZER
+  vendorId: VID_RAZER,
 }
 
 const LOGITECH_FILTER: HIDDeviceFilter = {
-  vendorId: VID_LOGITECH
+  vendorId: VID_LOGITECH,
 }
 
 const DEFAULT_FILTER: HIDDeviceFilter[] = [RAZER_FILTER, LOGITECH_FILTER]
@@ -20,16 +20,15 @@ const PROBE_REPORT_SIZE = 90
 type Result<T, E> = { value: T; error?: never } | { error: E }
 
 export class OpenHidDeviceError extends Error {
-  readonly name = 'OpenHidDeviceError'
-  readonly message: string
+  override readonly name = 'OpenHidDeviceError'
+
   constructor(message: string) {
-    super()
-    this.message = message
+    super(message)
   }
 }
 
 export class RequestHidDeviceError extends Error {
-  readonly name = 'RequestHidDeviceError'
+  override readonly name = 'RequestHidDeviceError'
   constructor(message: string) {
     super(message)
   }
@@ -43,7 +42,7 @@ export type HidSession = {
 export const sendBuffer = async (
   hidDevice: HIDDevice,
   reportId: number,
-  buffer: ArrayBuffer
+  buffer: ArrayBuffer,
 ): Promise<Result<undefined, OpenHidDeviceError>> => {
   try {
     if (!hidDevice.opened) return { error: new OpenHidDeviceError('Device is not opened') }
@@ -57,7 +56,7 @@ export const sendBuffer = async (
 
 export const receiveBuffer = async (
   hidDevice: HIDDevice,
-  reportId: number
+  reportId: number,
 ): Promise<Result<Uint8Array, OpenHidDeviceError>> => {
   if (!hidDevice.opened) return { error: new OpenHidDeviceError('Device is not opened') }
   const view = await hidDevice.receiveFeatureReport(reportId)
@@ -67,7 +66,7 @@ export const receiveBuffer = async (
 export const sendOutputReport = async (
   hidDevice: HIDDevice,
   reportId: number,
-  payload: BufferSource
+  payload: BufferSource,
 ): Promise<Result<undefined, OpenHidDeviceError>> => {
   try {
     if (!hidDevice.opened) return { error: new OpenHidDeviceError('Device is not opened') }
@@ -80,7 +79,7 @@ export const sendOutputReport = async (
 }
 
 export class TransactionError extends Error {
-  readonly name = 'TransactionError'
+  override readonly name = 'TransactionError'
   constructor(message: string) {
     super(message)
   }
@@ -92,9 +91,9 @@ const productKey = (d: HIDDevice): HidProductKey => `${d.vendorId}:${d.productId
 const matchesFilters = (d: HIDDevice, filters: HIDDeviceFilter[]) =>
   some(
     filters,
-    (f) =>
+    (f: HIDDeviceFilter) =>
       (f.vendorId === undefined || f.vendorId === d.vendorId) &&
-      (f.productId === undefined || f.productId === d.productId)
+      (f.productId === undefined || f.productId === d.productId),
   )
 
 export const hasFeatureReports = (dev: HIDDevice): boolean =>
@@ -112,7 +111,7 @@ export const probeDevice = async (dev: HIDDevice): Promise<boolean> => {
         .receiveFeatureReport(PROBE_REPORT_ID)
         .then(() => true)
         .catch(() => false),
-      new Promise<false>((resolve) => setTimeout(() => resolve(false), PROBE_TIMEOUT_MS))
+      new Promise<false>((resolve) => setTimeout(() => resolve(false), PROBE_TIMEOUT_MS)),
     ])
 
     return response
@@ -154,7 +153,7 @@ export const debugInterfaces = (sameProduct: HIDDevice[]): void => {
           `featureReports=${c.featureReports?.length ?? 0}, ` +
           `inputReports=${c.inputReports?.length ?? 0}, ` +
           `outputReports=${c.outputReports?.length ?? 0}`,
-        hasFeatureReports ? '--HAS FEATURE REPORTS--' : ''
+        hasFeatureReports ? '--HAS FEATURE REPORTS--' : '',
       )
     })
     console.groupEnd()
@@ -163,7 +162,7 @@ export const debugInterfaces = (sameProduct: HIDDevice[]): void => {
 }
 
 const pickBestInterfaces = async (devices: HIDDevice[]): Promise<HIDDevice[]> => {
-  const groups = groupBy(devices, productKey)
+  const groups = groupBy(devices, productKey) as Record<HidProductKey, HIDDevice[]>
   const results = await Promise.all(Object.values(groups).map(findResponsiveInterface))
   return results.filter((d): d is HIDDevice => d !== undefined)
 }
@@ -178,7 +177,7 @@ export const getHidInterfaces = async (options?: HIDDeviceRequestOptions): Promi
 }
 
 export const requestHidInterface = async (
-  options?: HIDDeviceRequestOptions
+  options?: HIDDeviceRequestOptions,
 ): Promise<Result<HIDDevice, RequestHidDeviceError>> => {
   const filters = defaultFilters(options)
   try {
@@ -187,7 +186,7 @@ export const requestHidInterface = async (
     if (!requested) return { error: new RequestHidDeviceError('No device selected') }
 
     const { vendorId: vid, productId: pid } = requested
-    const bestInterface = await navigator.hid.getDevices().then(async (devices) => {
+    const bestInterface = await navigator.hid.getDevices().then((devices) => {
       const sameProduct = devices.filter((d) => d.vendorId === vid && d.productId === pid)
       debugInterfaces(sameProduct)
       return findResponsiveInterface(sameProduct)

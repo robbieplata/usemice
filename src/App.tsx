@@ -1,19 +1,20 @@
 import { observer } from 'mobx-react-lite'
 import { useEffect, useState } from 'react'
-import Device from './components/Device'
-import { useStore } from './stores'
-import { PollingChart } from './components/PollingChart'
-import { ScrollWheelTester } from './components/ScrollWheelTester'
-import { Header } from './components/Header'
+import Device from './components/Device.tsx'
+import { useStore } from './stores/index.tsx'
+import { PollingChart } from './components/PollingChart.tsx'
+import { ScrollWheelTester } from './components/ScrollWheelTester.tsx'
+import { Header } from './components/Header.tsx'
 
 const App = observer(() => {
   const {
-    deviceStore: { selectedDevice }
+    deviceStore: { selectedDevice },
   } = useStore()
   const [drawerOpen, setDrawerOpen] = useState(false)
 
-  const pageTitle =
-    selectedDevice !== undefined ? `${selectedDevice.hid.productName} - usemice` : 'Mouse Configuration Tool - usemice'
+  const pageTitle = selectedDevice !== undefined
+    ? `${selectedDevice.hid.productName} - usemice`
+    : 'Mouse Configuration Tool - usemice'
 
   useEffect(() => {
     document.title = pageTitle
