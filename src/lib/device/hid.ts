@@ -1,4 +1,5 @@
 import { VID_RAZER } from './razer/constants'
+import { VID_LOGITECH } from './logitech'
 import type { Mutex } from '../mutex'
 import { groupBy, some } from 'lodash'
 
@@ -6,7 +7,11 @@ const RAZER_FILTER: HIDDeviceFilter = {
   vendorId: VID_RAZER
 }
 
-const DEFAULT_FILTER: HIDDeviceFilter[] = [RAZER_FILTER]
+const LOGITECH_FILTER: HIDDeviceFilter = {
+  vendorId: VID_LOGITECH
+}
+
+const DEFAULT_FILTER: HIDDeviceFilter[] = [RAZER_FILTER, LOGITECH_FILTER]
 
 const PROBE_TIMEOUT_MS = 100
 const PROBE_REPORT_ID = 0x00
@@ -57,6 +62,21 @@ export const receiveBuffer = async (
   if (!hidDevice.opened) return { error: new OpenHidDeviceError('Device is not opened') }
   const view = await hidDevice.receiveFeatureReport(reportId)
   return { value: new Uint8Array(view.buffer, view.byteOffset, view.byteLength) }
+}
+
+export const sendOutputReport = async (
+  hidDevice: HIDDevice,
+  reportId: number,
+  payload: BufferSource
+): Promise<Result<undefined, OpenHidDeviceError>> => {
+  try {
+    if (!hidDevice.opened) return { error: new OpenHidDeviceError('Device is not opened') }
+    await hidDevice.sendReport(reportId, payload)
+  } catch (e) {
+    if (e instanceof Error) return { error: new OpenHidDeviceError(`Failed to send output report: ${e.message}`) }
+    return { error: new OpenHidDeviceError('Failed to send output report: unknown error') }
+  }
+  return { value: undefined }
 }
 
 export class TransactionError extends Error {

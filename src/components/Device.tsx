@@ -1,5 +1,5 @@
 import { observer } from 'mobx-react-lite'
-import { isCapableOf, type DeviceInStatusVariant } from '../lib/device/device'
+import { isCapableOf, isDeviceType, type DeviceInStatusVariant } from '../lib/device/device'
 import { Button } from './ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardAction } from './ui/card'
 import { ScrollArea } from './ui/scroll-area'
@@ -41,23 +41,26 @@ const Device = observer(({ device, onOpenSidebar }: DeviceProps) => {
         return <SkeletonDevice />
 
       case 'Ready':
-        return (
-          <>
-            <div className='animate-stagger-children grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4'>
-              {isCapableOf(device, ['serial']) && <Serial device={device} />}
-              {isCapableOf(device, ['firmwareVersion']) && <FirmwareVersion device={device} />}
-              {isCapableOf(device, ['chargeLevel']) && <ChargeLevel device={device} />}
-              {isCapableOf(device, ['chargeStatus']) && <ChargeStatus device={device} />}
-            </div>
-            <div className='animate-stagger-children mt-6 space-y-6'>
-              {isCapableOf(device, ['idleTime']) && <IdleTime device={device} />}
-              {isCapableOf(device, ['dpiStages']) && <DpiStages device={device} />}
-              {isCapableOf(device, ['polling']) && <Polling device={device} />}
-              {isCapableOf(device, ['dongleLed']) && <DongleLed device={device} />}
-              {isCapableOf(device, ['dongleLedMulti']) && <DongleLedMulti device={device} />}
-            </div>
-          </>
-        )
+        if (isDeviceType(device, 'razer')) {
+          return (
+            <>
+              <div className='animate-stagger-children grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4'>
+                {isCapableOf(device, ['serial']) && <Serial device={device} />}
+                {isCapableOf(device, ['firmwareVersion']) && <FirmwareVersion device={device} />}
+                {isCapableOf(device, ['chargeLevel']) && <ChargeLevel device={device} />}
+                {isCapableOf(device, ['chargeStatus']) && <ChargeStatus device={device} />}
+              </div>
+              <div className='animate-stagger-children mt-6 space-y-6'>
+                {isCapableOf(device, ['idleTime']) && <IdleTime device={device} />}
+                {isCapableOf(device, ['dpiStages']) && <DpiStages device={device} />}
+                {isCapableOf(device, ['polling']) && <Polling device={device} />}
+                {isCapableOf(device, ['dongleLed']) && <DongleLed device={device} />}
+                {isCapableOf(device, ['dongleLedMulti']) && <DongleLedMulti device={device} />}
+              </div>
+            </>
+          )
+        }
+        return <div>Unsupported device</div>
       case 'Failed':
         return (
           <div className='border-destructive/50 bg-destructive/5 p-6 rounded-lg'>

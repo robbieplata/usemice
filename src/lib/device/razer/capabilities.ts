@@ -13,7 +13,9 @@ import { getRazerDefinition, UnsupportedDeviceError } from './definitions'
 
 export { UnsupportedDeviceError }
 
-export type IRazerDeviceCore = HidSession
+export interface IRazerDeviceCore extends HidSession {
+  readonly type: 'razer'
+}
 
 export class RazerDpiCapability {
   readonly info: { txId: number; minDpi: number; maxDpi: number }

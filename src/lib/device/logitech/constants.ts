@@ -1,0 +1,213 @@
+export const VID_LOGITECH = 0x046d
+
+export const REPORT_ID_SHORT = 0x10
+export const REPORT_ID_LONG = 0x11
+export const SHORT_MESSAGE_LENGTH = 7
+export const LONG_MESSAGE_LENGTH = 20
+
+export const HIDPP_RECEIVER_IDX = 0xff
+export const HIDPP_WIRED_DEVICE_IDX = 0x00
+
+export const SET_REGISTER_REQ = 0x80
+export const GET_REGISTER_REQ = 0x81
+export const SET_LONG_REGISTER_REQ = 0x82
+export const GET_LONG_REGISTER_REQ = 0x83
+export const ERROR_MSG = 0x8f
+
+export const HIDPP_PAGE = {
+  ROOT: 0x0000,
+  FEATURE_SET: 0x0001,
+  DEVICE_INFO: 0x0003,
+  DEVICE_NAME: 0x0005,
+  RESET: 0x0020,
+  BATTERY_LEVEL_STATUS: 0x1000,
+  BATTERY_VOLTAGE: 0x1001,
+  UNIFIED_BATTERY: 0x1004,
+  LED_SW_CONTROL: 0x1300,
+  WIRELESS_DEVICE_STATUS: 0x1d4b,
+  KBD_REPROGRAMMABLE_KEYS: 0x1b00,
+  SPECIAL_KEYS_BUTTONS: 0x1b04,
+  MOUSE_POINTER_BASIC: 0x2200,
+  ADJUSTABLE_DPI: 0x2201,
+  ADJUSTABLE_REPORT_RATE: 0x8060,
+  COLOR_LED_EFFECTS: 0x8070,
+  RGB_EFFECTS: 0x8071,
+  ONBOARD_PROFILES: 0x8100,
+  MOUSE_BUTTON_SPY: 0x8110
+} as const
+
+// Onboard Profiles (0x8100) function IDs. These are raw 4-bit function ids; the
+// HID++ address byte is built by hidpp20Request as ((functionId << 4) | software_id).
+export const CMD_ONBOARD_PROFILES = {
+  GET_DESCRIPTION: 0x00,
+  SET_MODE: 0x01,
+  GET_MODE: 0x02,
+  SET_CURRENT_PROFILE: 0x03,
+  GET_CURRENT_PROFILE: 0x04,
+  MEMORY_READ: 0x05,
+  MEMORY_ADDR_WRITE: 0x06,
+  MEMORY_WRITE: 0x07,
+  MEMORY_WRITE_END: 0x08,
+  GET_CRC: 0x09
+} as const
+
+export const ONBOARD_PROFILE = {
+  ROM_BASE_SECTOR: 0x0101, // ROM profiles start at sector 0x0101
+  MAX_DPI_STAGES: 5,
+  MAX_BUTTONS: 16,
+  PROFILE_NAME_LENGTH: 24, // UTF-16LE, 48 bytes
+  PROFILE_DATA_SIZE: 256
+} as const
+
+export const HIDPP_PAGE_ROOT_IDX = 0x00
+
+export const HIDPP20_ERROR = {
+  NO_ERROR: 0x00,
+  UNKNOWN: 0x01,
+  INVALID_ARGUMENT: 0x02,
+  OUT_OF_RANGE: 0x03,
+  HW_ERROR: 0x04,
+  LOGITECH_INTERNAL: 0x05,
+  INVALID_FEATURE_INDEX: 0x06,
+  INVALID_FUNCTION_ID: 0x07,
+  BUSY: 0x08,
+  UNSUPPORTED: 0x09
+} as const
+
+export const HIDPP10_ERROR = {
+  SUCCESS: 0x00,
+  INVALID_SUBID: 0x01,
+  INVALID_ADDRESS: 0x02,
+  INVALID_VALUE: 0x03,
+  CONNECT_FAIL: 0x04,
+  TOO_MANY_DEVICES: 0x05,
+  ALREADY_EXISTS: 0x06,
+  BUSY: 0x07,
+  UNKNOWN_DEVICE: 0x08,
+  RESOURCE_ERROR: 0x09,
+  REQUEST_UNAVAILABLE: 0x0a,
+  INVALID_PARAM_VALUE: 0x0b,
+  WRONG_PIN_CODE: 0x0c
+} as const
+
+/**
+ * Feature 0x8060 ADJUSTABLE_REPORT_RATE bitmask, as reported by getReportRateList.
+ * Each bit N corresponds to a supported period of (N+1) ms (i.e. 1000/(N+1) Hz).
+ * High-rate devices (>1000 Hz) use the separate 0x8061 feature, NOT 0x8060.
+ */
+export const REPORT_RATE_FLAGS = {
+  MS_1: 0x01, // 1ms  = 1000 Hz
+  MS_2: 0x02, // 2ms  =  500 Hz
+  MS_4: 0x04, // 4ms  =  250 Hz
+  MS_8: 0x08 // 8ms  =  125 Hz
+} as const
+
+/** Map from a single bit in the 0x8060 bitmask to its rate in Hz. */
+export const REPORT_RATE_MS_TO_HZ: Record<number, number> = {
+  0x01: 1000,
+  0x02: 500,
+  0x04: 250,
+  0x08: 125
+}
+
+// timings
+export const HIDPP_WAIT_MS = 10
+export const HIDPP_TIMEOUT_MS = 2000
+export const HIDPP_MAX_RETRIES = 5
+
+/**
+ * Software identifier embedded in the lower nibble of the address byte for
+ * HID++ 2.0 requests. The spec reserves software_id = 0 for unsolicited
+ * device-originated reports, so a tool MUST send with a non-zero id and use
+ * the echoed id to filter notifications out of the response stream.
+ */
+export const HIDPP_SOFTWARE_ID = 0x08
+
+export const PID_LOGITECH = {
+  G203_LIGHTSYNC: 0xc092,
+  G203_PRODIGY: 0xc084,
+  G300S: 0xc246,
+  G302: 0xc07f,
+  G303: 0xc080,
+  G304_LIGHTSPEED: 0xc088,
+  G305_LIGHTSPEED: 0x4074,
+  G305_LIGHTSPEED_RECEIVER: 0xc088,
+  G400S: 0xc24c,
+  G402: 0xc07e,
+  G403_WIRED: 0xc082,
+  G403_WIRELESS: 0x405d,
+  G403_WIRELESS_RECEIVER: 0xc08f,
+  G500S: 0xc24e,
+  G502_WIRED: 0xc07d,
+  G502_HERO: 0xc08b,
+  G502_LIGHTSPEED: 0x407f,
+  G502_LIGHTSPEED_RECEIVER: 0xc08d,
+  G502_X: 0xc098,
+  G502_X_PLUS: 0x4099,
+  G502_X_PLUS_RECEIVER: 0xc09d,
+  G600: 0xc24a,
+  G602: 0xc537,
+  G603: 0x4081,
+  G603_RECEIVER: 0xc08c,
+  G604: 0x4085,
+  G604_RECEIVER: 0xc091,
+  G700: 0xc06b,
+  G700S: 0xc07c,
+  G703_HERO: 0x4087,
+  G703_HERO_RECEIVER: 0xc090,
+  G703_LIGHTSPEED: 0x405d,
+  G703_LIGHTSPEED_RECEIVER: 0xc08f,
+  G705: 0x4096,
+  G705_RECEIVER: 0xc09b,
+  G900: 0xc081,
+  G903: 0x4067,
+  G903_RECEIVER: 0xc086,
+  G903_HERO: 0x4087,
+  G903_HERO_RECEIVER: 0xc090,
+  GPW_WIRED: 0xc088,
+  GPW: 0x4079,
+  GPW_RECEIVER: 0xc08a,
+  GPW_SUPERLIGHT: 0x4093,
+  GPW_SUPERLIGHT_RECEIVER: 0xc095,
+  GPW_SUPERLIGHT2: 0x40a3,
+  GPW_SUPERLIGHT2_RECEIVER: 0xc09f,
+  G_PRO: 0xc088,
+
+  MX_MASTER: 0xb012,
+  MX_MASTER_2S: 0xb019,
+  MX_MASTER_3: 0xb023,
+  MX_MASTER_3S: 0xb034,
+  MX_ANYWHERE_2: 0xb013,
+  MX_ANYWHERE_2S: 0xb01a,
+  MX_ANYWHERE_3: 0xb025,
+  MX_ANYWHERE_3S: 0xb037,
+  MX_VERTICAL: 0xb020,
+  MX_ERGO: 0xb01d,
+
+  UNIFYING_RECEIVER: 0xc52b,
+  UNIFYING_RECEIVER_2: 0xc532,
+
+  BOLT_RECEIVER: 0xc548,
+
+  LIGHTSPEED_RECEIVER: 0xc539
+} as const
+
+export const LOGITECH_WIRELESS_RECEIVERS = new Set([
+  PID_LOGITECH.UNIFYING_RECEIVER,
+  PID_LOGITECH.UNIFYING_RECEIVER_2,
+  PID_LOGITECH.BOLT_RECEIVER,
+  PID_LOGITECH.LIGHTSPEED_RECEIVER,
+  PID_LOGITECH.G305_LIGHTSPEED_RECEIVER,
+  PID_LOGITECH.G403_WIRELESS_RECEIVER,
+  PID_LOGITECH.G502_LIGHTSPEED_RECEIVER,
+  PID_LOGITECH.G502_X_PLUS_RECEIVER,
+  PID_LOGITECH.G603_RECEIVER,
+  PID_LOGITECH.G604_RECEIVER,
+  PID_LOGITECH.G703_HERO_RECEIVER,
+  PID_LOGITECH.G703_LIGHTSPEED_RECEIVER,
+  PID_LOGITECH.G705_RECEIVER,
+  PID_LOGITECH.G903_RECEIVER,
+  PID_LOGITECH.GPW_RECEIVER,
+  PID_LOGITECH.GPW_SUPERLIGHT_RECEIVER,
+  PID_LOGITECH.GPW_SUPERLIGHT2_RECEIVER
+])

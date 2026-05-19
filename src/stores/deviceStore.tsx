@@ -2,6 +2,7 @@ import { action, computed, flow, observable, reaction, runInAction, type IReacti
 import {
   assertStatus,
   Device,
+  isDeviceType,
   type DeviceInStatus,
   type DeviceInStatusVariant,
   type IDevice
@@ -9,6 +10,8 @@ import {
 import { getHidInterfaces, probeDevice, RequestHidDeviceError, requestHidInterface } from '../lib/device/hid'
 import { toast } from 'sonner'
 import type { Result } from '@/lib/result'
+import { VID_LOGITECH } from '@/lib/device/logitech/constants'
+import { discoverHidppCapabilities } from '@/lib/device/logitech/capabilities'
 import { discoverRazerCapabilities } from '@/lib/device/razer/capabilities'
 
 const SELECTED_DEVICE_KEY = 'usemice:selectedDeviceId'
@@ -130,7 +133,8 @@ export class DeviceStore {
     if (this.devices.find((d) => d.hid.vendorId === hid.vendorId && d.hid.productId === hid.productId)) {
       return { error: new Error('Device already added') }
     }
-    const device = new Device(hid)
+    const protocol = hid.vendorId === VID_LOGITECH ? 'hidpp' : 'razer'
+    const device = new Device(hid, protocol)
     this.devices.push(device as DeviceInStatus<'Initializing'>)
 
     const result: Result<DeviceInStatusVariant, Error> = yield this.initializeDevice(device)
@@ -172,20 +176,45 @@ export class DeviceStore {
       }
     }
 
-    try {
-      const capabilities: Awaited<ReturnType<typeof discoverRazerCapabilities>> =
-        yield discoverRazerCapabilities(device)
-      device.setCapabilities(capabilities)
-      device.status = 'Ready'
-      assertStatus(device, 'Ready')
-      return { value: device }
-    } catch (e) {
-      const error = e instanceof Error ? e : new Error('Failed to discover device capabilities')
-      device.status = 'Failed'
-      device.failureReason = error
-      this.initErrors.push(error)
-      return { error }
+    if (isDeviceType(device, 'razer')) {
+      try {
+        const capabilities: Awaited<ReturnType<typeof discoverRazerCapabilities>> =
+          yield discoverRazerCapabilities(device)
+        device.setCapabilities(capabilities)
+        device.status = 'Ready'
+        assertStatus(device, 'Ready')
+        return { value: device }
+      } catch (e) {
+        const error = e instanceof Error ? e : new Error('Failed to discover Razer device capabilities')
+        device.status = 'Failed'
+        device.failureReason = error
+        this.initErrors.push(error)
+        return { error }
+      }
     }
+
+    if (isDeviceType(device, 'hidpp')) {
+      try {
+        const capabilities: Awaited<ReturnType<typeof discoverHidppCapabilities>> =
+          yield discoverHidppCapabilities(device)
+        device.setCapabilities(capabilities)
+        device.status = 'Ready'
+        assertStatus(device, 'Ready')
+        return { value: device }
+      } catch (e) {
+        const error = e instanceof Error ? e : new Error('Failed to discover device capabilities')
+        device.status = 'Failed'
+        device.failureReason = error
+        this.initErrors.push(error)
+        return { error }
+      }
+    }
+
+    // Unknown device type
+    device.status = 'Failed'
+    device.failureReason = new Error('Unknown device type')
+    this.initErrors.push(device.failureReason)
+    return { error: device.failureReason }
   }
 
   @action.bound
