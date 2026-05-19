@@ -1,5 +1,12 @@
 import { observer } from 'mobx-react-lite'
-import { isCapableOf, isDeviceType, type DeviceInStatusVariant } from '../lib/device/device'
+import {
+  isCapableOf,
+  isDeviceType,
+  type DeviceInStatusVariant,
+  type HidppDevice,
+  type Ready,
+  type RazerDevice
+} from '../lib/device/device'
 import { Button } from './ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardAction } from './ui/card'
 import { ScrollArea } from './ui/scroll-area'
@@ -16,11 +23,46 @@ import { ChargeStatus } from './capabilities/chargeStatus'
 import { ChargeLevel } from './capabilities/chargeLevel'
 import { FirmwareVersion } from './capabilities/firmwareVersion'
 import { Serial } from './capabilities/serial'
+import { HidppProfile } from './capabilities/hidppProfile'
 
 type DeviceProps = {
   device?: DeviceInStatusVariant
   onOpenSidebar?: () => void
 }
+
+const Razer = observer(({ device }: { device: Ready<RazerDevice> }) => {
+  return (
+    <>
+      <div className='animate-stagger-children grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4'>
+        {isCapableOf(device, ['serial']) && <Serial device={device} />}
+        {isCapableOf(device, ['firmwareVersion']) && <FirmwareVersion device={device} />}
+        {isCapableOf(device, ['chargeLevel']) && <ChargeLevel device={device} />}
+        {isCapableOf(device, ['chargeStatus']) && <ChargeStatus device={device} />}
+      </div>
+      <div className='animate-stagger-children mt-6 space-y-6'>
+        {isCapableOf(device, ['idleTime']) && <IdleTime device={device} />}
+        {isCapableOf(device, ['dpiStages']) && <DpiStages device={device} />}
+        {isCapableOf(device, ['polling']) && <Polling device={device} />}
+        {isCapableOf(device, ['dongleLed']) && <DongleLed device={device} />}
+        {isCapableOf(device, ['dongleLedMulti']) && <DongleLedMulti device={device} />}
+      </div>
+    </>
+  )
+})
+
+const Hidpp = observer(({ device }: { device: Ready<HidppDevice> }) => {
+  return (
+    <>
+      <div className='animate-stagger-children grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4'>
+        {isCapableOf(device, ['chargeLevel']) && <ChargeLevel device={device} />}
+      </div>
+      <div className='animate-stagger-children mt-6 space-y-6'>
+        {isCapableOf(device, ['profile', 'dpi']) && <HidppProfile device={device} />}
+        {isCapableOf(device, ['polling']) && <Polling device={device} />}
+      </div>
+    </>
+  )
+})
 
 const Device = observer(({ device, onOpenSidebar }: DeviceProps) => {
   const {
@@ -42,23 +84,10 @@ const Device = observer(({ device, onOpenSidebar }: DeviceProps) => {
 
       case 'Ready':
         if (isDeviceType(device, 'razer')) {
-          return (
-            <>
-              <div className='animate-stagger-children grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4'>
-                {isCapableOf(device, ['serial']) && <Serial device={device} />}
-                {isCapableOf(device, ['firmwareVersion']) && <FirmwareVersion device={device} />}
-                {isCapableOf(device, ['chargeLevel']) && <ChargeLevel device={device} />}
-                {isCapableOf(device, ['chargeStatus']) && <ChargeStatus device={device} />}
-              </div>
-              <div className='animate-stagger-children mt-6 space-y-6'>
-                {isCapableOf(device, ['idleTime']) && <IdleTime device={device} />}
-                {isCapableOf(device, ['dpiStages']) && <DpiStages device={device} />}
-                {isCapableOf(device, ['polling']) && <Polling device={device} />}
-                {isCapableOf(device, ['dongleLed']) && <DongleLed device={device} />}
-                {isCapableOf(device, ['dongleLedMulti']) && <DongleLedMulti device={device} />}
-              </div>
-            </>
-          )
+          return <Razer device={device} />
+        }
+        if (isDeviceType(device, 'hidpp')) {
+          return <Hidpp device={device} />
         }
         return <div>Unsupported device</div>
       case 'Failed':

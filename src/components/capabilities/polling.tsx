@@ -1,4 +1,4 @@
-import { type Ready, type RazerDevice } from '@/lib/device/device'
+import { type HidppDevice, type Ready, type RazerDevice } from '@/lib/device/device'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
 import { Button } from '../ui/button'
 import { Card } from '../ui/card'
@@ -6,7 +6,7 @@ import { observer } from 'mobx-react-lite'
 import { Gauge } from 'lucide-react'
 
 type PollingProps = {
-  device: Ready<RazerDevice<'polling'>>
+  device: Ready<RazerDevice<'polling'>> | Ready<HidppDevice<'polling'>>
 }
 
 export const Polling = observer(({ device }: PollingProps) => {
