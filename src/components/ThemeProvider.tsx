@@ -20,6 +20,25 @@ const initialState: ThemeProviderState = {
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
 
+function syncThemeColorMeta(): void {
+  const color = getComputedStyle(document.documentElement).getPropertyValue('--background').trim()
+  document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => meta.remove())
+  const meta = document.createElement('meta')
+  meta.setAttribute('name', 'theme-color')
+  meta.setAttribute('content', color)
+  document.head.appendChild(meta)
+}
+
+function applyResolvedTheme(theme: Theme): void {
+  const root = document.documentElement
+  root.classList.remove('light', 'dark')
+  const resolved = theme === 'system'
+    ? (globalThis.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+    : theme
+  root.classList.add(resolved)
+  syncThemeColorMeta()
+}
+
 export function ThemeProvider({
   children,
   defaultTheme = 'system',
@@ -29,18 +48,14 @@ export function ThemeProvider({
   const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem(storageKey) as Theme) || defaultTheme)
 
   useEffect(() => {
-    const root = globalThis.document.documentElement
+    applyResolvedTheme(theme)
 
-    root.classList.remove('light', 'dark')
+    if (theme !== 'system') return
 
-    if (theme === 'system') {
-      const systemTheme = globalThis.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-
-      root.classList.add(systemTheme)
-      return
-    }
-
-    root.classList.add(theme)
+    const mediaQuery = globalThis.matchMedia('(prefers-color-scheme: dark)')
+    const onSystemThemeChange = () => applyResolvedTheme('system')
+    mediaQuery.addEventListener('change', onSystemThemeChange)
+    return () => mediaQuery.removeEventListener('change', onSystemThemeChange)
   }, [theme])
 
   const value = {

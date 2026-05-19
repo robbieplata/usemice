@@ -1,12 +1,14 @@
 import { defineConfig } from 'rolldown-vite'
 import react from '@vitejs/plugin-react-swc'
 import tailwindcss from '@tailwindcss/vite'
+import { VitePWA } from 'vite-plugin-pwa'
 import { fileURLToPath } from 'node:url'
 
 export default defineConfig({
   appType: 'spa',
   plugins: [
     react({
+      oxc: false,
       plugins: [],
       tsDecorators: true,
       useAtYourOwnRisk_mutateSwcOptions(options) {
@@ -16,6 +18,25 @@ export default defineConfig({
       },
     }),
     tailwindcss(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      manifest: false,
+      includeAssets: [
+        'favicon.ico',
+        'favicon-16x16.png',
+        'favicon-32x32.png',
+        'apple-touch-icon.png',
+        'android-chrome-192x192.png',
+        'android-chrome-512x512.png',
+      ],
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,webmanifest}'],
+        navigateFallback: '/index.html',
+      },
+      devOptions: {
+        enabled: true,
+      },
+    }),
   ],
   resolve: {
     alias: {

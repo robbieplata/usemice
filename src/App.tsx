@@ -5,6 +5,7 @@ import { useStore } from './stores/index.tsx'
 import { PollingChart } from './components/PollingChart.tsx'
 import { ScrollWheelTester } from './components/ScrollWheelTester.tsx'
 import { Header } from './components/Header.tsx'
+import { getPageTitle } from './lib/pwa.ts'
 
 const App = observer(() => {
   const {
@@ -12,9 +13,7 @@ const App = observer(() => {
   } = useStore()
   const [drawerOpen, setDrawerOpen] = useState(false)
 
-  const pageTitle = selectedDevice !== undefined
-    ? `${selectedDevice.hid.productName} - usemice`
-    : 'Mouse Configuration Tool - usemice'
+  const pageTitle = getPageTitle(selectedDevice?.hid.productName)
 
   useEffect(() => {
     document.title = pageTitle

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { DevicesSidebar } from './DevicesSidebar.tsx'
 import { ErrorsSidebar } from './ErrorsSidebar.tsx'
 import { ThemeToggle } from './ThemeToggle.tsx'
+import { PwaInstallButton } from './PwaInstallButton.tsx'
 import { Button } from './ui/button.tsx'
 import { observer } from 'mobx-react-lite'
 
@@ -15,13 +16,14 @@ export const Header = observer(({ drawerOpen, setDrawerOpen }: HeaderProps) => {
 
   return (
     <header className='flex items-center justify-between rounded-xl border bg-card px-4 py-3 shadow-sm'>
-      <div className='flex items-center gap-3'>
+      <div className='flex min-w-0 items-center gap-3'>
         <DevicesSidebar open={drawerOpen} onOpenChange={setDrawerOpen} />
         <div className='h-6 w-px bg-border' />
-        <span className='font-semibold text-lg tracking-tight'>usemice</span>
+        <span className='truncate font-semibold text-lg tracking-tight'>usemice</span>
       </div>
-      <div className='flex items-center gap-1'>
+      <div className='flex shrink-0 items-center gap-1'>
         <ErrorsSidebar open={errorsDrawerOpen} onOpenChange={setErrorsDrawerOpen} />
+        <PwaInstallButton />
         <Button variant='ghost' size='icon' className='size-9' asChild>
           <a
             href='https://github.com/robbieplata/usemice'
