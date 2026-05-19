@@ -69,7 +69,7 @@ const Device = observer(({ device, onOpenSidebar }: DeviceProps) => {
                 <h2 className='text-base font-semibold'>{device.hid.productName}</h2>
                 <p className='mt-1 text-sm text-muted-foreground'>Failed to initialize device</p>
                 <code className='mt-3 block rounded-md bg-destructive/10 px-3 py-2 font-mono text-xs text-destructive'>
-                  {device.failureReason.name}: {device.failureReason.message}
+                  {device.failureReason!.name}: {device.failureReason!.message}
                 </code>
                 <div className='mt-4 flex gap-2'>
                   <Button size='sm' variant='outline' onClick={() => retryDevice(device)}>
@@ -87,11 +87,9 @@ const Device = observer(({ device, onOpenSidebar }: DeviceProps) => {
     }
   }
 
-  const showHeader = device && device.status === 'Ready'
-
   return (
     <Card className='xl:col-span-7 h-[90vh] overflow-hidden flex flex-col'>
-      {showHeader && (
+      {device && device.status === 'Ready' && (
         <CardHeader>
           <div className='flex items-center gap-3'>
             <div className='rounded-lg bg-primary/10 p-2'>

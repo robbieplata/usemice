@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import type { ReadyDeviceWithCapabilities } from '@/lib/device/device'
-import { DongleLedMode } from '@/lib/capabilities/dongleLed'
+import { type Ready, type RazerDevice } from '@/lib/device/device'
+import { DongleLedMode } from '@/lib/device/razer'
 import { Card } from '../ui/card'
 import { Button } from '../ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
@@ -8,7 +8,7 @@ import { observer } from 'mobx-react-lite'
 import { Lightbulb, ChevronDown } from 'lucide-react'
 
 type DongleLedProps = {
-  device: ReadyDeviceWithCapabilities<'dongleLed'>
+  device: Ready<RazerDevice<'dongleLed'>>
 }
 
 const modeLabels: Record<number, string> = {
@@ -25,7 +25,7 @@ export const DongleLed = observer(({ device }: DongleLedProps) => {
 
   const updateMode = (value: number) => {
     setMode(value)
-    device.set('dongleLed', { vendor: 'razer', mode: value })
+    device.capabilities.dongleLed.set({ mode: value })
   }
 
   return (

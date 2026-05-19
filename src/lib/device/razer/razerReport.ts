@@ -1,5 +1,5 @@
 import { receiveBuffer, sendBuffer, type HidSession } from '@/lib/device/hid'
-import { RAZER_WIRELESS_RECEIVERS } from '@/lib/device/constants'
+import { RAZER_WIRELESS_RECEIVERS } from '@/lib/device/razer/constants'
 
 export class TransactionError extends Error {
   readonly name = 'TransactionError'

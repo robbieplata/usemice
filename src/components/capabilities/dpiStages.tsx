@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
-import { type ReadyDeviceWithCapabilities } from '@/lib/device/device'
+import { type Ready, type RazerDevice } from '@/lib/device/device'
 import { Button } from '../ui/button'
 import { Card } from '../ui/card'
 import { Slider } from '../ui/slider'
@@ -8,7 +8,7 @@ import { observer } from 'mobx-react-lite'
 import { Trash, Plus, Target, Link, Unlink, GripVertical } from 'lucide-react'
 
 type DpiStagesProps = {
-  device: ReadyDeviceWithCapabilities<'dpiStages'>
+  device: Ready<RazerDevice<'dpiStages'>>
 }
 
 export const DpiStages = observer(({ device }: DpiStagesProps) => {
@@ -33,7 +33,7 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
   useEffect(() => setLocalDpiLevels(dpiLevels), [dpiLevels])
 
   const commitLevels = (nextLevels: typeof localDpiLevels) => {
-    device.set('dpiStages', {
+    device.capabilities.dpiStages.set({
       ...device.capabilities.dpiStages.data,
       dpiLevels: nextLevels
     })
@@ -144,7 +144,7 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
     setInputTextX((t) => t.filter((_, i) => i !== index))
     setInputTextY((t) => t.filter((_, i) => i !== index))
 
-    device.set('dpiStages', {
+    device.capabilities.dpiStages.set({
       ...device.capabilities.dpiStages.data,
       dpiLevels: nextLevels,
       activeStage: newActiveStage
@@ -161,7 +161,7 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
     setInputTextX((t) => [...t, String(defaultDpi)])
     setInputTextY((t) => [...t, String(defaultDpi)])
 
-    device.set('dpiStages', {
+    device.capabilities.dpiStages.set({
       ...device.capabilities.dpiStages.data,
       dpiLevels: nextLevels
     })
@@ -173,7 +173,7 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
       const nextLevels = localDpiLevels.map(([x]) => [x, x] as [number, number])
       setLocalDpiLevels(nextLevels)
       setInputTextY(nextLevels.map((lvl) => String(lvl[1])))
-      device.set('dpiStages', {
+      device.capabilities.dpiStages.set({
         ...device.capabilities.dpiStages.data,
         dpiLevels: nextLevels
       })
@@ -234,7 +234,7 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
       setInputTextX(nextInputX)
       setInputTextY(nextInputY)
 
-      device.set('dpiStages', {
+      device.capabilities.dpiStages.set({
         ...device.capabilities.dpiStages.data,
         dpiLevels: nextLevels,
         activeStage: newActiveStage
@@ -315,7 +315,7 @@ export const DpiStages = observer(({ device }: DpiStagesProps) => {
                     className={`min-w-20 justify-center ${isActive ? 'text-primary-foreground' : ''}`}
                     variant={isActive ? 'default' : 'outline'}
                     onClick={() =>
-                      device.set('dpiStages', {
+                      device.capabilities.dpiStages.set({
                         ...device.capabilities.dpiStages.data,
                         activeStage: originalIndex + 1
                       })

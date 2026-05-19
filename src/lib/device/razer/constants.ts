@@ -1,7 +1,60 @@
 export const VID_RAZER = 0x1532
-/**
- * if wireless device then add to RAZER_WIRELESS_RECEIVERS below for extended command response wait times
- */
+
+export enum V2PollingCode {
+  Hz8000 = 0x01,
+  Hz4000 = 0x02,
+  Hz2000 = 0x04,
+  Hz1000 = 0x08,
+  Hz500 = 0x10,
+  Hz250 = 0x20,
+  Hz125 = 0x40
+}
+
+export enum LegacyPollingCode {
+  Hz1000 = 0x01,
+  Hz500 = 0x02,
+  Hz125 = 0x08
+}
+
+export const LEGACY_CODE_TO_INTERVAL: Record<LegacyPollingCode, number> = {
+  [LegacyPollingCode.Hz1000]: 1000,
+  [LegacyPollingCode.Hz500]: 500,
+  [LegacyPollingCode.Hz125]: 125
+}
+
+export const LEGACY_INTERVAL_TO_CODE: Record<number, LegacyPollingCode> = Object.fromEntries(
+  Object.entries(LEGACY_CODE_TO_INTERVAL).map(([code, interval]) => [interval, Number(code)])
+)
+
+export const V2_CODE_TO_INTERVAL: Record<V2PollingCode, number> = {
+  [V2PollingCode.Hz8000]: 8000,
+  [V2PollingCode.Hz4000]: 4000,
+  [V2PollingCode.Hz2000]: 2000,
+  [V2PollingCode.Hz1000]: 1000,
+  [V2PollingCode.Hz500]: 500,
+  [V2PollingCode.Hz250]: 250,
+  [V2PollingCode.Hz125]: 125
+}
+
+export const V2_INTERVAL_TO_CODE: Record<number, V2PollingCode> = Object.fromEntries(
+  Object.entries(V2_CODE_TO_INTERVAL).map(([code, interval]) => [interval, Number(code)])
+)
+
+export const DongleLedMode = {
+  CONNECTION_STATUS: 0x01,
+  BATTERY_STATUS: 0x02,
+  BATTERY_WARNING: 0x03
+} as const
+
+export const DongleLedMultiMode = {
+  OFF: 0x00,
+  BATTERY_STATUS: 0x01,
+  CONNECTION_STATUS: 0x02,
+  POLLING_RATE_INDICATOR: 0x03,
+  DPI_INDICATOR: 0x04
+} as const
+
+/** if wireless device then add to RAZER_WIRELESS_RECEIVERS below for extended command response wait times */
 export const PID_RAZER = {
   OROCHI2011: 0x0013,
   NAGA: 0x0015,

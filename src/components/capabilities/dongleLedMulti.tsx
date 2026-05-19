@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import type { ReadyDeviceWithCapabilities } from '@/lib/device/device'
-import { DongleLedMultiMode } from '@/lib/capabilities/dongleLedMulti'
+import { type Ready, type RazerDevice } from '@/lib/device/device'
+import { DongleLedMultiMode } from '@/lib/device/razer'
 import { Card } from '../ui/card'
 import { Button } from '../ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
@@ -8,7 +8,7 @@ import { observer } from 'mobx-react-lite'
 import { Lightbulb, ChevronDown } from 'lucide-react'
 
 type DongleLedMultiProps = {
-  device: ReadyDeviceWithCapabilities<'dongleLedMulti'>
+  device: Ready<RazerDevice<'dongleLedMulti'>>
 }
 
 const modeLabels: Record<number, string> = {
@@ -33,7 +33,7 @@ export const DongleLedMulti = observer(({ device }: DongleLedMultiProps) => {
     const newModes: [number, number, number] = [...modes] as [number, number, number]
     newModes[index] = value
     setModes(newModes)
-    device.set('dongleLedMulti', { vendor: 'razer', modes: newModes })
+    device.capabilities.dongleLedMulti.set({ modes: newModes })
   }
 
   const ledLabels = ['Left Mode', 'Middle Mode', 'Right Mode']

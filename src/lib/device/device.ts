@@ -1,123 +1,102 @@
-// src/lib/device/device.ts
-import { action, observable, reaction, runInAction, type IReactionDisposer } from 'mobx'
+import { action, observable, reaction, type IReactionDisposer } from 'mobx'
 import { Mutex } from '../mutex'
-import { getDeviceDefinition } from './definitions'
 import { toast } from 'sonner'
-import type { ChargeLevelInfo, ChargeLevelData } from '../capabilities/chargeLevel'
-import type { ChargeStatusInfo, ChargeStatusData } from '../capabilities/chargeStatus'
-import type { DongleLedInfo, DongleLedData } from '../capabilities/dongleLed'
-import type { DongleLedMultiInfo, DongleLedMultiData } from '../capabilities/dongleLedMulti'
-import type { DpiInfo, DpiData } from '../capabilities/dpi'
-import type { DpiStagesInfo, DpiStagesData } from '../capabilities/dpiStages'
-import type { FirmwareVersionInfo, FirmwareVersionData } from '../capabilities/firmwareVersion'
-import type { IdleTimeInfo, IdleTimeData } from '../capabilities/idleTime'
-import type { PollingInfo, PollingData } from '../capabilities/polling'
-import type { SerialInfo, SerialData } from '../capabilities/serial'
+import { type DiscoveredRazerCapabilities, type RazerCapabilityKey, type RazerCapabilityClasses } from './razer'
 
 export type DeviceStatus = 'Initializing' | 'Ready' | 'Failed'
+export type CapabilityKey = RazerCapabilityKey
 
-export type CapabilityInfoMap = {
-  chargeLevel: ChargeLevelInfo
-  chargeStatus: ChargeStatusInfo
-  dpi: DpiInfo
-  dpiStages: DpiStagesInfo
-  dongleLed: DongleLedInfo
-  dongleLedMulti: DongleLedMultiInfo
-  firmwareVersion: FirmwareVersionInfo
-  idleTime: IdleTimeInfo
-  polling: PollingInfo
-  serial: SerialInfo
-}
-
-export type CapabilityDataMap = {
-  chargeLevel: ChargeLevelData
-  chargeStatus: ChargeStatusData
-  dpi: DpiData
-  dpiStages: DpiStagesData
-  dongleLed: DongleLedData
-  dongleLedMulti: DongleLedMultiData
-  firmwareVersion: FirmwareVersionData
-  idleTime: IdleTimeData
-  polling: PollingData
-  serial: SerialData
-}
-
-export type CapabilityKey = keyof CapabilityInfoMap
-
-export type CapabilityState<K extends CapabilityKey, S extends DeviceStatus> = S extends 'Ready'
-  ? { info: CapabilityInfoMap[K]; data: CapabilityDataMap[K]; command: CapabilityCommand<K, CapabilityDataMap[K]> }
-  : { info: CapabilityInfoMap[K]; data?: CapabilityDataMap[K]; command: CapabilityCommand<K, CapabilityDataMap[K]> }
-
-export type Capabilities<S extends DeviceStatus> = Partial<{
-  [K in CapabilityKey]: CapabilityState<K, S>
-}>
-
-export type EnabledCapabilities<S extends DeviceStatus, K extends CapabilityKey> = Capabilities<S> & {
-  [P in K]-?: CapabilityState<P, S>
-}
-
-export type CapabilityCommand<C extends CapabilityKey, T> = {
-  get?: (device: DeviceWithCapabilities<C>) => Promise<T>
-  set?: (device: DeviceWithCapabilities<C>, value: T) => Promise<void>
-}
-
-export type CapabilityEntry<K extends CapabilityKey> = {
-  info: CapabilityInfoMap[K]
-  command: CapabilityCommand<K, CapabilityDataMap[K]>
-}
-
-export type DeviceWithCapabilities<K extends CapabilityKey> = Device & {
-  capabilities: EnabledCapabilities<DeviceStatus, K>
-}
-
-export type ReadyDeviceWithCapabilities<K extends CapabilityKey, S extends DeviceStatus = 'Ready'> = Device & {
-  status: S
-  failureReason: null
+export type IDevice = {
+  readonly hid: HIDDevice
+  readonly _lock: Mutex
+  id: number
+  status: DeviceStatus
+  failureReason: Error | null
+  capabilities: DiscoveredRazerCapabilities
   commandErrors: CommandError[]
-  capabilities: EnabledCapabilities<S, K>
+  reset(): void
+  setCapabilities(capabilities: DiscoveredRazerCapabilities): void
+  clearCommandErrors(): void
+  addCommandError(command: string, error: Error | string): void
 }
 
-export type DeviceInStatus<S extends DeviceStatus> = Device & {
+export type RazerDevice<K extends RazerCapabilityKey = never> = IDevice & {
+  capabilities: RazerCapabilities<K>
+}
+
+export type RazerCapabilities<K extends RazerCapabilityKey = never> = {
+  [P in K]: RazerCapabilityClasses[P]
+} & {
+  [P in Exclude<RazerCapabilityKey, K>]?: RazerCapabilityClasses[P]
+}
+
+export type RazerCapabilitiesReady<K extends RazerCapabilityKey> = {
+  [P in K]: RazerCapabilityClasses[P]
+}
+
+export type Capabilities = DiscoveredRazerCapabilities
+
+export type Ready<T> =
+  T extends RazerDevice<infer K>
+    ? Omit<T, 'status' | 'failureReason' | 'capabilities'> & {
+        status: 'Ready'
+        failureReason: null
+        capabilities: RazerCapabilitiesReady<K>
+      }
+    : T & { status: 'Ready'; failureReason: null }
+
+type CapableOf<T, K> =
+  T extends Ready<RazerDevice>
+    ? [K] extends [RazerCapabilityKey]
+      ? Ready<RazerDevice<K>>
+      : never
+    : T extends RazerDevice
+      ? [K] extends [RazerCapabilityKey]
+        ? RazerDevice<K>
+        : never
+      : never
+
+export type DeviceInStatus<S extends DeviceStatus> = RazerDevice & {
   status: S
   failureReason: S extends 'Failed' ? Error : null
-  commandErrors: CommandError[]
-  capabilities: Capabilities<S>
 }
 export type DeviceInStatusVariant = DeviceInStatus<'Initializing'> | DeviceInStatus<'Ready'> | DeviceInStatus<'Failed'>
 
-export function assertStatus<S extends DeviceStatus>(device: Device, status: S): asserts device is DeviceInStatus<S> {
+export function assertStatus<S extends DeviceStatus>(
+  device: IDevice,
+  status: S
+): asserts device is IDevice & { status: S } {
   if (device.status !== status) {
     throw new Error(`Expected device status to be '${status}', but was '${device.status}'`)
   }
 }
 
-export function isStatus<S extends DeviceStatus>(device: Device, status: S): device is DeviceInStatus<S> {
+type InStatus<D, S extends DeviceStatus> = S extends 'Ready'
+  ? D extends RazerDevice
+    ? Ready<RazerDevice>
+    : D & { status: S }
+  : D & { status: S }
+
+export function isStatus<D extends IDevice, S extends DeviceStatus>(
+  device: D,
+  status: S
+): device is InStatus<D, S> & D {
   return device.status === status
 }
 
-export function isCapableOf<K extends CapabilityKey>(device: Device, keys: K[]): device is DeviceWithCapabilities<K> {
+export function isCapableOf<D extends RazerDevice, K extends RazerCapabilityKey>(
+  device: D,
+  keys: K[]
+): device is CapableOf<D, K> & D {
   for (const key of keys) {
-    if (device.capabilities[key] === undefined) {
+    if ((device.capabilities as Record<string, unknown>)[key] === undefined) {
       return false
     }
   }
   return true
 }
 
-export function buildCapabilities(hid: HIDDevice): Capabilities<'Initializing'> {
-  const definition = getDeviceDefinition(hid)
-  const caps = {} as Record<CapabilityKey, CapabilityState<CapabilityKey, 'Initializing'>>
-  for (const key of Object.keys(definition) as CapabilityKey[]) {
-    const entry = definition[key]
-    if (!entry) continue
-    caps[key] = {
-      info: entry.info,
-      command: entry.command,
-      data: undefined
-    } as CapabilityState<CapabilityKey, 'Initializing'>
-  }
-  return caps as Capabilities<'Initializing'>
-}
+export type ReadyRazerDeviceWithCapabilities<K extends RazerCapabilityKey> = Ready<RazerDevice<K>>
 
 export class DeviceNotSupportedError extends Error {
   readonly name = 'DeviceNotSupportedError'
@@ -146,11 +125,11 @@ export class CommandError extends Error {
   }
 }
 
-export class Device {
-  @observable accessor id: number
+export class Device implements IDevice {
   @observable accessor status: DeviceStatus
+  @observable accessor id: number
   @observable accessor failureReason: Error | null
-  @observable accessor capabilities: Capabilities<DeviceStatus>
+  @observable accessor capabilities: Capabilities = {}
   @observable accessor commandErrors: CommandError[] = []
 
   readonly hid: HIDDevice
@@ -161,7 +140,6 @@ export class Device {
     this.hid = hid
     this.id = (hid.vendorId << 16) + hid.productId
     this._lock = new Mutex()
-    this.capabilities = buildCapabilities(hid)
     this.status = 'Initializing'
     this.failureReason = null
     this.commandErrors = []
@@ -186,67 +164,17 @@ export class Device {
   }
 
   @action.bound
+  setCapabilities(capabilities: DiscoveredRazerCapabilities) {
+    this.capabilities = capabilities
+  }
+
+  @action.bound
   clearCommandErrors() {
     this.commandErrors = []
   }
 
-  private entry<K extends CapabilityKey>(key: K) {
-    const entry = this.capabilities[key]
-    if (!entry) throw new Error(`Capability "${String(key)}" is disabled for this device`)
-    return entry
-  }
-
-  @action
-  setCapabilityData<K extends CapabilityKey>(key: K, data: CapabilityDataMap[K]) {
-    const cap = this.capabilities[key]
-    if (!cap) throw new Error(`Capability "${String(key)}" is disabled for this device`)
-    cap.data = data
-  }
-
-  @action
-  async get<K extends CapabilityKey>(key: K): Promise<CapabilityDataMap[K]> {
-    const entry = this.entry(key)
-    if (!isCapableOf(this, [key])) throw new Error(`Capability "${String(key)}" is disabled for this device`)
-    if (!entry.command.get) throw new Error(`Cannot get ${String(key)}`)
-    return await entry.command
-      .get(this)
-      .then((data) => {
-        this.setCapabilityData(key, data)
-        return data
-      })
-      .catch((err) => {
-        runInAction(() => {
-          if (err instanceof Error) {
-            this.commandErrors.push(new CommandError(key, err))
-          } else {
-            this.commandErrors.push(new CommandError(key, String(err)))
-          }
-        })
-        throw err
-      })
-  }
-
-  @action
-  async set<K extends CapabilityKey>(key: K, value: CapabilityDataMap[K]): Promise<void> {
-    const entry = this.entry(key)
-    if (!isCapableOf(this, [key])) throw new Error(`Capability "${String(key)}" is disabled for this device`)
-    if (!entry.command.set) throw new Error(`Cannot set ${String(key)}`)
-    await entry.command
-      .set(this, value)
-      .then(async () => {
-        if (entry.command.get) {
-          const data = await entry.command.get(this)
-          this.setCapabilityData(key, data)
-        }
-      })
-      .catch((err) => {
-        runInAction(() => {
-          if (err instanceof Error) {
-            this.commandErrors.push(new CommandError(key, err))
-          } else {
-            this.commandErrors.push(new CommandError(key, String(err)))
-          }
-        })
-      })
+  @action.bound
+  addCommandError(command: string, error: Error | string) {
+    this.commandErrors.push(new CommandError(command, error))
   }
 }

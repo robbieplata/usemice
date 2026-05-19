@@ -1,4 +1,4 @@
-import type { ReadyDeviceWithCapabilities } from '@/lib/device/device'
+import { type Ready, type RazerDevice } from '@/lib/device/device'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
 import { Button } from '../ui/button'
 import { Card } from '../ui/card'
@@ -6,7 +6,7 @@ import { observer } from 'mobx-react-lite'
 import { Gauge } from 'lucide-react'
 
 type PollingProps = {
-  device: ReadyDeviceWithCapabilities<'polling'>
+  device: Ready<RazerDevice<'polling'>>
 }
 
 export const Polling = observer(({ device }: PollingProps) => {
@@ -33,7 +33,7 @@ export const Polling = observer(({ device }: PollingProps) => {
               {info.supportedIntervals.map((interval) => (
                 <DropdownMenuItem
                   key={interval}
-                  onClick={() => device.set('polling', { vendor: 'razer', interval })}
+                  onClick={() => device.capabilities.polling.set({ interval })}
                   className='flex items-center justify-between'
                 >
                   <span className='tabular-nums'>{interval} Hz</span>

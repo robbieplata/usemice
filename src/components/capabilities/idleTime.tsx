@@ -1,17 +1,17 @@
 import { useEffect, useMemo, useState } from 'react'
 import debounce from 'lodash/debounce'
-import type { ReadyDeviceWithCapabilities } from '@/lib/device/device'
+import { type Ready, type RazerDevice } from '@/lib/device/device'
 import { Slider } from '../ui/slider'
 import { Card } from '../ui/card'
 import { Clock } from 'lucide-react'
 import { observer } from 'mobx-react-lite'
 
 type IdleTimeProps = {
-  device: ReadyDeviceWithCapabilities<'idleTime'>
+  device: Ready<RazerDevice<'idleTime'>>
 }
 
 type IdleTimeInnerProps = {
-  device: ReadyDeviceWithCapabilities<'idleTime'>
+  device: Ready<RazerDevice<'idleTime'>>
   initialSeconds: number
 }
 
@@ -21,7 +21,7 @@ const IdleTimeInner = observer(({ device, initialSeconds }: IdleTimeInnerProps) 
   const debouncedUpdateIdleTime = useMemo(
     () =>
       debounce((value: number) => {
-        device.set('idleTime', { vendor: 'razer', seconds: value })
+        device.capabilities.idleTime.set({ seconds: value })
       }, 300),
     [device]
   )

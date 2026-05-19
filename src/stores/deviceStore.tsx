@@ -2,13 +2,14 @@ import { action, computed, flow, observable, reaction, runInAction, type IReacti
 import {
   assertStatus,
   Device,
-  type CapabilityKey,
   type DeviceInStatus,
-  type DeviceInStatusVariant
+  type DeviceInStatusVariant,
+  type IDevice
 } from '../lib/device/device'
 import { getHidInterfaces, probeDevice, RequestHidDeviceError, requestHidInterface } from '../lib/device/hid'
 import { toast } from 'sonner'
 import type { Result } from '@/lib/result'
+import { discoverRazerCapabilities } from '@/lib/device/razer/capabilities'
 
 const SELECTED_DEVICE_KEY = 'usemice:selectedDeviceId'
 
@@ -158,7 +159,7 @@ export class DeviceStore {
   }
 
   @flow.bound
-  private *initializeDevice(device: Device) {
+  private *initializeDevice(device: IDevice) {
     if (!device.hid.opened) {
       try {
         yield device.hid.open()
@@ -171,20 +172,20 @@ export class DeviceStore {
       }
     }
 
-    const capabilityKeys = Object.keys(device.capabilities) as CapabilityKey[]
-
     try {
-      for (const key of capabilityKeys) {
-        yield device.get(key)
-      }
+      const capabilities: Awaited<ReturnType<typeof discoverRazerCapabilities>> =
+        yield discoverRazerCapabilities(device)
+      device.setCapabilities(capabilities)
       device.status = 'Ready'
       assertStatus(device, 'Ready')
+      return { value: device }
     } catch (e) {
+      const error = e instanceof Error ? e : new Error('Failed to discover device capabilities')
       device.status = 'Failed'
-      device.failureReason = e instanceof Error ? e : new Error('Unknown error during device initialization')
-      assertStatus(device, 'Failed')
+      device.failureReason = error
+      this.initErrors.push(error)
+      return { error }
     }
-    return { value: device }
   }
 
   @action.bound

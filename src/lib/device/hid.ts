@@ -1,4 +1,4 @@
-import { VID_RAZER } from './constants'
+import { VID_RAZER } from './razer/constants'
 import type { Mutex } from '../mutex'
 import { groupBy, some } from 'lodash'
 

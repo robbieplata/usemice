@@ -1,10 +1,10 @@
 import { Battery } from 'lucide-react'
 import { Card } from '../ui/card'
-import type { ReadyDeviceWithCapabilities } from '@/lib/device/device'
+import { type Ready, type RazerDevice } from '@/lib/device/device'
 import { observer } from 'mobx-react-lite'
 
 type ChargeLevelProps = {
-  device: ReadyDeviceWithCapabilities<'chargeLevel'>
+  device: Ready<RazerDevice<'chargeLevel'>>
 }
 
 export const ChargeLevel = observer(({ device }: ChargeLevelProps) => {
