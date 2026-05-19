@@ -13,6 +13,7 @@ import type { Result } from '@/lib/result'
 import { VID_LOGITECH } from '@/lib/device/logitech/constants'
 import { discoverHidppCapabilities } from '@/lib/device/logitech/capabilities'
 import { discoverRazerCapabilities } from '@/lib/device/razer/capabilities'
+import { getEnabledMockDevices } from '@/lib/device/mock'
 
 const SELECTED_DEVICE_KEY = 'usemice:selectedDeviceId'
 
@@ -64,6 +65,12 @@ export class DeviceStore {
     )
     navigator.hid.addEventListener('connect', this.onConnect)
     navigator.hid.addEventListener('disconnect', this.onDisconnect)
+    runInAction(() => {
+      for (const mock of getEnabledMockDevices()) {
+        if (this.devices.some((d) => d.id === mock.id)) continue
+        this.devices.push(mock as unknown as DeviceInStatus<'Ready'>)
+      }
+    })
     getHidInterfaces().then((d) => {
       d.forEach(this.addDevice)
       runInAction(() => {
