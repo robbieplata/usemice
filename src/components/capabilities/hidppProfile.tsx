@@ -1,4 +1,4 @@
-import { type HidppDevice, type Ready } from '../../lib/device/device.ts'
+import { type HidppDevice, type Ready } from '../../lib/device.ts'
 import { Button } from '../ui/button.tsx'
 import { Card } from '../ui/card.tsx'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu.tsx'

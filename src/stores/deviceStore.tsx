@@ -6,14 +6,14 @@ import {
   type DeviceInStatusVariant,
   type IDevice,
   isDeviceType,
-} from '../lib/device/device.ts'
-import { getHidInterfaces, probeDevice, RequestHidDeviceError, requestHidInterface } from '../lib/device/hid.ts'
+} from '../lib/device.ts'
+import { getHidInterfaces, probeDevice, RequestHidDeviceError, requestHidInterface } from '../lib/hid.ts'
 import { toast } from 'sonner'
 import type { Result } from '../lib/result.ts'
-import { VID_LOGITECH } from '../lib/device/logitech/constants.ts'
-import { discoverHidppCapabilities } from '../lib/device/logitech/capabilities.ts'
-import { discoverRazerCapabilities } from '../lib/device/razer/capabilities.ts'
-import { getEnabledMockDevices } from '../lib/device/mock/index.ts'
+import { VID_LOGITECH } from '../lib/logitech/constants.ts'
+import { discoverHidppCapabilities } from '../lib/logitech/capabilities.ts'
+import { discoverRazerCapabilities } from '../lib/razer/capabilities.ts'
+import { getEnabledMockDevices } from '../lib/mock/index.ts'
 
 const SELECTED_DEVICE_KEY = 'usemice:selectedDeviceId'
 

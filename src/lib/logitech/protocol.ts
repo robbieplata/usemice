@@ -464,7 +464,7 @@ export async function logitechWriteProfile(
 ): Promise<void> {
   const data = await logitechReadProfileSector(device, sector, sectorSize)
 
-  data[0] = Math.max(1, Math.round(1000 / Math.max(1, profile.reportRateMs)))
+  data[0] = Math.max(1, Math.round(profile.reportRateMs))
   data[1] = profile.defaultDpiIndex & 0xff
   data[2] = profile.dpiShiftIndex & 0xff
 

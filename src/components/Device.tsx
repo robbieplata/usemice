@@ -6,7 +6,7 @@ import {
   isDeviceType,
   type RazerDevice,
   type Ready,
-} from '../lib/device/device.ts'
+} from '../lib/device.ts'
 import { Button } from './ui/button.tsx'
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from './ui/card.tsx'
 import { ScrollArea } from './ui/scroll-area.tsx'

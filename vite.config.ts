@@ -1,14 +1,13 @@
-import { defineConfig } from 'rolldown-vite'
+import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react-swc'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import { fileURLToPath } from 'node:url'
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   appType: 'spa',
   plugins: [
     react({
-      oxc: false,
       plugins: [],
       tsDecorators: true,
       useAtYourOwnRisk_mutateSwcOptions(options) {
@@ -30,7 +29,7 @@ export default defineConfig({
         'android-chrome-512x512.png',
       ],
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,webmanifest}'],
+        globPatterns: command === 'serve' ? [] : ['**/*.{js,css,html,ico,png,webmanifest}'],
         navigateFallback: '/index.html',
       },
       devOptions: {
@@ -49,13 +48,19 @@ export default defineConfig({
         manualChunks(id) {
           if (!id.includes('node_modules')) return
           if (id.includes('recharts') || id.includes('d3-')) return 'recharts'
-          if (id.includes('react-dom') || id.includes('/react/') || id.includes('scheduler')) {
+          if (
+            id.includes('react-dom') ||
+            id.includes('/react/') ||
+            id.includes('scheduler')
+          ) {
             return 'react'
           }
-          if (id.includes('radix-ui') || id.includes('@radix-ui')) return 'radix'
+          if (id.includes('radix-ui') || id.includes('@radix-ui')) {
+            return 'radix'
+          }
           if (id.includes('mobx')) return 'mobx'
         },
       },
     },
   },
-})
+}))

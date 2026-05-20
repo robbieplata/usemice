@@ -8,7 +8,7 @@ import {
   type HidppProfileData,
   type IHidppDeviceCore,
 } from '../capabilities.ts'
-import { Mutex } from '../../../mutex.ts'
+import { Mutex } from '../../mutex.ts'
 
 const baseData = (): HidppProfileData => ({
   description: {

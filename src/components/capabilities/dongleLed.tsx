@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { type RazerDevice, type Ready } from '../../lib/device/device.ts'
-import { DongleLedMode } from '../../lib/device/razer/index.ts'
+import { type RazerDevice, type Ready } from '../../lib/device.ts'
+import { DongleLedMode } from '../../lib/razer/index.ts'
 import { Card } from '../ui/card.tsx'
 import { Button } from '../ui/button.tsx'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu.tsx'

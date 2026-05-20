@@ -15,6 +15,7 @@ import {
   logitechSetActiveProfile,
   logitechSetDpi,
   logitechSetPollingRate,
+  logitechWriteProfile,
 } from '../protocol.ts'
 import { createMockSession, type RecordedSend } from './mockHidDevice.ts'
 
@@ -413,6 +414,48 @@ describe('onboard profiles (HID++ feature 0x8100)', () => {
     expect(result.activeProfileIndex).toBe(2)
     expect(result.profiles[0].name).toBe('Profile 1')
     expect(result.profiles[5].name).toBe('Profile 6')
+  })
+
+  it('writes profile polling as the stored ms period byte', async () => {
+    const session = createMockSession()
+    const sectorSize = 256
+    const sectorData = new Uint8Array(sectorSize)
+    sectorData[0] = 1
+
+    let memoryAddrWrite: Uint8Array | undefined
+    const writtenChunks: Uint8Array[] = []
+
+    session.hid.responder = buildDevice(new Map([[HIDPP_PAGE.ONBOARD_PROFILES, 9]]), {
+      [HIDPP_PAGE.ONBOARD_PROFILES]: (fn, p, s) => {
+        if (fn === CMD_ONBOARD_PROFILES.MEMORY_READ) {
+          const offset = (p[2] << 8) | p[3]
+          return long(s.data[1], s.data[2], sectorData.slice(offset, offset + 16))
+        }
+        if (fn === CMD_ONBOARD_PROFILES.MEMORY_ADDR_WRITE) {
+          memoryAddrWrite = p.slice(0, 6)
+          return short(s.data[1], s.data[2], [0])
+        }
+        if (fn === CMD_ONBOARD_PROFILES.MEMORY_WRITE) {
+          writtenChunks.push(p.slice(0, 16))
+          return short(s.data[1], s.data[2], [0])
+        }
+        if (fn === CMD_ONBOARD_PROFILES.MEMORY_WRITE_END) {
+          return short(s.data[1], s.data[2], [0])
+        }
+        return undefined
+      },
+    })
+
+    await logitechWriteProfile(session, 0x0101, sectorSize, {
+      reportRateMs: 8,
+      defaultDpiIndex: 0,
+      dpiShiftIndex: 1,
+      dpiStages: [800, 1600],
+      name: 'Polling Test',
+    })
+
+    expect(memoryAddrWrite).toBeDefined()
+    expect(writtenChunks[0][0]).toBe(8)
   })
 })
 

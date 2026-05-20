@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { type RazerDevice, type Ready } from '../../lib/device/device.ts'
+import { type RazerDevice, type Ready } from '../../lib/device.ts'
 import { Button } from '../ui/button.tsx'
 import { Card } from '../ui/card.tsx'
 import { Slider } from '../ui/slider.tsx'

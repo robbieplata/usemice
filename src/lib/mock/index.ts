@@ -1,4 +1,4 @@
-/// <reference path="../../../vite-env.d.ts" />
+/// <reference path="../../vite-env.d.ts" />
 
 import type { Device } from '../device.ts'
 import { buildDeathadderV3ProWirelessMock, buildGProXSuperlight2Mock } from './devices.ts'

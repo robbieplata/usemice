@@ -1,6 +1,6 @@
 import { VID_RAZER } from './razer/constants.ts'
 import { VID_LOGITECH } from './logitech/index.ts'
-import type { Mutex } from '../mutex.ts'
+import type { Mutex } from './mutex.ts'
 import { groupBy, some } from 'lodash-es'
 
 const RAZER_FILTER: HIDDeviceFilter = {

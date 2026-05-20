@@ -1,4 +1,4 @@
-import { Mutex } from '../../../mutex.ts'
+import { Mutex } from '../../mutex.ts'
 import type { HidSession } from '../../hid.ts'
 
 export type RecordedSend = {

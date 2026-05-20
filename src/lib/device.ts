@@ -1,5 +1,5 @@
 import { action, type IReactionDisposer, observable, reaction } from 'mobx'
-import { Mutex } from '../mutex.ts'
+import { Mutex } from './mutex.ts'
 import { toast } from 'sonner'
 import {
   type DiscoveredRazerCapabilities,
