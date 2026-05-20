@@ -95,7 +95,7 @@ describe('battery level', () => {
     const session = createMockSession()
     session.hid.responder = buildDevice(new Map([[HIDPP_PAGE.UNIFIED_BATTERY, 6]]), {
       [HIDPP_PAGE.UNIFIED_BATTERY]: (fn, _p, s) => {
-        if (fn === 0x00) return short(s.data[1], s.data[2], [60, 0, 0x02])
+        if (fn === 0x01) return short(s.data[1], s.data[2], [60, 0, 0x02])
         return undefined
       },
     })
@@ -103,6 +103,7 @@ describe('battery level', () => {
     const info = await logitechGetBatteryLevel(session)
     expect(info.level).toBe(60)
     expect(info.status).toBe(0x02)
+    expect(session.hid.sends.some((s) => s.data[1] === 6 && (s.data[2] >> 4) === 0x01)).toBe(true)
   })
 
   it('falls back to BATTERY_VOLTAGE (0x1001) and converts millivolts to %', async () => {
@@ -139,8 +140,9 @@ describe('DPI (0x2201)', () => {
         if (fn === 0x00) return short(s.data[1], s.data[2], [1])
         if (fn === 0x01) {
           const params = new Uint8Array(16)
+          params[0] = 0x00 // echoed sensor index
           // Build a list of 400, 800, 1600, 3200 then 0 terminator
-          for (const [i, dpi] of [400, 800, 1600, 3200].entries()) setBE16(params, i * 2, dpi)
+          for (const [i, dpi] of [400, 800, 1600, 3200].entries()) setBE16(params, 1 + i * 2, dpi)
           return long(s.data[1], s.data[2], params)
         }
         return undefined
@@ -152,19 +154,21 @@ describe('DPI (0x2201)', () => {
     expect(info.dpiList).toEqual([400, 800, 1600, 3200])
     expect(info.dpiMin).toBe(400)
     expect(info.dpiMax).toBe(3200)
+    const listRequest = session.hid.sends.find((s) => (s.data[2] >> 4) === 0x01 && s.data[1] === 4)!
+    expect(Array.from(listRequest.data.slice(3, 6))).toEqual([0, 0, 0])
   })
 
-  it('parses range-form DPI lists (0xE000 family marker)', async () => {
+  it('parses compact stepped DPI lists (0b111 marker + last value)', async () => {
     const session = createMockSession()
     session.hid.responder = buildDevice(new Map([[HIDPP_PAGE.ADJUSTABLE_DPI, 4]]), {
       [HIDPP_PAGE.ADJUSTABLE_DPI]: (fn, _p, s) => {
         if (fn === 0x00) return short(s.data[1], s.data[2], [1])
         if (fn === 0x01) {
           const params = new Uint8Array(16)
-          setBE16(params, 0, 0xe001)
-          setBE16(params, 2, 200) // min
-          setBE16(params, 4, 25600) // max
-          setBE16(params, 6, 50) // step
+          params[0] = 0x00
+          setBE16(params, 1, 200)
+          setBE16(params, 3, 0xe032) // step marker: 0x32 = 50 DPI
+          setBE16(params, 5, 25600)
           return long(s.data[1], s.data[2], params)
         }
         return undefined
@@ -175,6 +179,7 @@ describe('DPI (0x2201)', () => {
     expect(info.dpiMin).toBe(200)
     expect(info.dpiMax).toBe(25600)
     expect(info.dpiStep).toBe(50)
+    expect(info.dpiList.slice(0, 4)).toEqual([200, 250, 300, 350])
   })
 
   it('logitechGetDpi reads current and default DPI', async () => {
@@ -261,6 +266,25 @@ describe('polling rate (HID++ feature 0x8060)', () => {
     await logitechSetPollingRate(session, 1000)
     const sent2 = session.hid.sends.filter((s) => (s.data[2] >> 4) === 0x02 && s.data[1] === 8)[1]!
     expect(sent2.data[3]).toBe(1) // 1000Hz -> 1ms period
+  })
+
+  it('prefers extended report-rate feature 0x8061 when available', async () => {
+    const session = createMockSession()
+    session.hid.responder = buildDevice(new Map([[HIDPP_PAGE.EXTENDED_ADJUSTABLE_REPORT_RATE, 12]]), {
+      [HIDPP_PAGE.EXTENDED_ADJUSTABLE_REPORT_RATE]: (fn, _p, s) => {
+        if (fn === 0x01) return short(s.data[1], s.data[2], [0x00, 0x78]) // 1ms, 500us, 250us, 125us
+        if (fn === 0x02) return short(s.data[1], s.data[2], [4]) // 500us = 2000Hz
+        if (fn === 0x03) return short(s.data[1], s.data[2], [0])
+        return undefined
+      },
+    })
+
+    expect((await logitechGetPollingRateInfo(session)).supportedRates).toEqual([8000, 4000, 2000, 1000])
+    expect(await logitechGetPollingRate(session)).toBe(2000)
+
+    await logitechSetPollingRate(session, 4000)
+    const setSend = session.hid.sends.find((s) => s.data[1] === 12 && (s.data[2] >> 4) === 0x03)!
+    expect(setSend.data[3]).toBe(5)
   })
 })
 

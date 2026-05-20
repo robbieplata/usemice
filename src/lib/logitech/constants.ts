@@ -30,6 +30,7 @@ export const HIDPP_PAGE = {
   MOUSE_POINTER_BASIC: 0x2200,
   ADJUSTABLE_DPI: 0x2201,
   ADJUSTABLE_REPORT_RATE: 0x8060,
+  EXTENDED_ADJUSTABLE_REPORT_RATE: 0x8061,
   COLOR_LED_EFFECTS: 0x8070,
   RGB_EFFECTS: 0x8071,
   ONBOARD_PROFILES: 0x8100,
@@ -108,6 +109,17 @@ export const REPORT_RATE_MS_TO_HZ: Record<number, number> = {
   0x02: 500,
   0x04: 250,
   0x08: 125,
+}
+
+/** Feature 0x8061 extended report-rate index values. */
+export const EXTENDED_REPORT_RATE_INDEX_TO_HZ: Record<number, number> = {
+  0: 125,
+  1: 250,
+  2: 500,
+  3: 1000,
+  4: 2000,
+  5: 4000,
+  6: 8000,
 }
 
 // timings

@@ -1,6 +1,12 @@
 import type { HidSession } from '../hid.ts'
 import { getFeatures } from './features.ts'
-import { CMD_ONBOARD_PROFILES, HIDPP_PAGE, ONBOARD_PROFILE, REPORT_RATE_MS_TO_HZ } from './constants.ts'
+import {
+  CMD_ONBOARD_PROFILES,
+  EXTENDED_REPORT_RATE_INDEX_TO_HZ,
+  HIDPP_PAGE,
+  ONBOARD_PROFILE,
+  REPORT_RATE_MS_TO_HZ,
+} from './constants.ts'
 import { crcCcitt, getBE16, getLE16, HidppNotSupportedError, setBE16, setLE16 } from './hidppReport.ts'
 
 const CMD_BATTERY_LEVEL_STATUS_GET = 0x00
@@ -24,7 +30,7 @@ export async function logitechGetBatteryLevel(device: HidSession): Promise<Logit
   }
 
   if (await features.hasFeature(HIDPP_PAGE.UNIFIED_BATTERY)) {
-    const response = await features.featureRequest(HIDPP_PAGE.UNIFIED_BATTERY, 0x00)
+    const response = await features.featureRequest(HIDPP_PAGE.UNIFIED_BATTERY, 0x01)
     return {
       level: response.getParameter(0),
       nextLevel: 0,
@@ -66,6 +72,38 @@ export type LogitechDpiValue = {
   defaultDpi: number
 }
 
+const parseDpiList = (dpiBytes: Uint8Array): Pick<LogitechDpiInfo, 'dpiList' | 'dpiMin' | 'dpiMax' | 'dpiStep'> => {
+  const dpiList: number[] = []
+  let dpiStep = 0
+
+  for (let offset = 0; offset + 1 < dpiBytes.length;) {
+    const value = getBE16(dpiBytes, offset)
+    if (value === 0) break
+
+    if (value >> 13 === 0b111) {
+      if (dpiList.length === 0 || offset + 3 >= dpiBytes.length) break
+      const step = value & 0x1fff
+      const last = getBE16(dpiBytes, offset + 2)
+      dpiStep = step
+      for (let dpi = dpiList[dpiList.length - 1] + step; dpi <= last; dpi += step) {
+        dpiList.push(dpi)
+      }
+      offset += 4
+      continue
+    }
+
+    dpiList.push(value)
+    offset += 2
+  }
+
+  return {
+    dpiList,
+    dpiMin: dpiList.length > 0 ? Math.min(...dpiList) : 0,
+    dpiMax: dpiList.length > 0 ? Math.max(...dpiList) : 0,
+    dpiStep,
+  }
+}
+
 export async function logitechGetDpiInfo(device: HidSession): Promise<LogitechDpiInfo> {
   const features = getFeatures(device)
 
@@ -76,37 +114,27 @@ export async function logitechGetDpiInfo(device: HidSession): Promise<LogitechDp
   const countResponse = await features.featureRequest(HIDPP_PAGE.ADJUSTABLE_DPI, CMD_ADJUSTABLE_DPI_GET_SENSOR_COUNT)
   const sensorCount = countResponse.getParameter(0)
 
-  const params = new Uint8Array([0]) // sensor index 0
-  const listResponse = await features.featureRequest(
-    HIDPP_PAGE.ADJUSTABLE_DPI,
-    CMD_ADJUSTABLE_DPI_GET_SENSOR_DPI_LIST,
-    params,
-  )
-
-  const dpiList: number[] = []
-  let dpiMin = 0
-  let dpiMax = 0
-  let dpiStep = 0
-
-  // If first value is 0xE001, it's a range (min, max, step)
-  const firstValue = listResponse.getParameterBE16(0)
-  if ((firstValue & 0xe000) === 0xe000) {
-    // Range format: 0xE001 means DPI range follows
-    dpiMin = listResponse.getParameterBE16(2)
-    dpiMax = listResponse.getParameterBE16(4)
-    dpiStep = listResponse.getParameterBE16(6) || 50 // default step
-  } else {
-    // each 16-bit value is a supported DPI
-    for (let i = 0; i < 7; i++) {
-      const dpi = listResponse.getParameterBE16(i * 2)
-      if (dpi === 0) break
-      dpiList.push(dpi)
-    }
-    if (dpiList.length > 0) {
-      dpiMin = Math.min(...dpiList)
-      dpiMax = Math.max(...dpiList)
-    }
+  const chunks: Uint8Array[] = []
+  for (let page = 0; page < 0x100; page++) {
+    const params = new Uint8Array([0, 0, page]) // sensor index, direction, page
+    const listResponse = await features.featureRequest(
+      HIDPP_PAGE.ADJUSTABLE_DPI,
+      CMD_ADJUSTABLE_DPI_GET_SENSOR_DPI_LIST,
+      params,
+    )
+    const chunk = listResponse.parameters.slice(1)
+    chunks.push(chunk)
+    if (chunk.length >= 2 && chunk[chunk.length - 2] === 0 && chunk[chunk.length - 1] === 0) break
   }
+
+  const dpiBytes = new Uint8Array(chunks.reduce((sum, chunk) => sum + chunk.length, 0))
+  let offset = 0
+  for (const chunk of chunks) {
+    dpiBytes.set(chunk, offset)
+    offset += chunk.length
+  }
+
+  const { dpiList, dpiMin, dpiMax, dpiStep } = parseDpiList(dpiBytes)
 
   return { sensorCount, dpiList, dpiMin, dpiMax, dpiStep }
 }
@@ -145,6 +173,9 @@ export async function logitechSetDpi(device: HidSession, dpi: number, sensorInde
 const CMD_REPORT_RATE_GET_LIST = 0x00
 const CMD_REPORT_RATE_GET = 0x01
 const CMD_REPORT_RATE_SET = 0x02
+const CMD_EXTENDED_REPORT_RATE_GET_LIST = 0x01
+const CMD_EXTENDED_REPORT_RATE_GET = 0x02
+const CMD_EXTENDED_REPORT_RATE_SET = 0x03
 
 export type LogitechPollingInfo = {
   supportedRates: number[] // in Hz
@@ -152,6 +183,22 @@ export type LogitechPollingInfo = {
 
 export async function logitechGetPollingRateInfo(device: HidSession): Promise<LogitechPollingInfo> {
   const features = getFeatures(device)
+
+  if (await features.hasFeature(HIDPP_PAGE.EXTENDED_ADJUSTABLE_REPORT_RATE)) {
+    const response = await features.featureRequest(
+      HIDPP_PAGE.EXTENDED_ADJUSTABLE_REPORT_RATE,
+      CMD_EXTENDED_REPORT_RATE_GET_LIST,
+    )
+    const bitflags = response.getParameterBE16(0)
+    const supportedRates: number[] = []
+    for (const [index, hz] of Object.entries(EXTENDED_REPORT_RATE_INDEX_TO_HZ)) {
+      if (bitflags & (1 << Number(index))) {
+        supportedRates.push(hz)
+      }
+    }
+    supportedRates.sort((a, b) => b - a)
+    return { supportedRates }
+  }
 
   if (!(await features.hasFeature(HIDPP_PAGE.ADJUSTABLE_REPORT_RATE))) {
     throw new HidppNotSupportedError(HIDPP_PAGE.ADJUSTABLE_REPORT_RATE)
@@ -172,6 +219,15 @@ export async function logitechGetPollingRateInfo(device: HidSession): Promise<Lo
 
 export async function logitechGetPollingRate(device: HidSession): Promise<number> {
   const features = getFeatures(device)
+
+  if (await features.hasFeature(HIDPP_PAGE.EXTENDED_ADJUSTABLE_REPORT_RATE)) {
+    const response = await features.featureRequest(
+      HIDPP_PAGE.EXTENDED_ADJUSTABLE_REPORT_RATE,
+      CMD_EXTENDED_REPORT_RATE_GET,
+    )
+    return EXTENDED_REPORT_RATE_INDEX_TO_HZ[response.getParameter(0)] ?? 1000
+  }
+
   if (!(await features.hasFeature(HIDPP_PAGE.ADJUSTABLE_REPORT_RATE))) {
     throw new HidppNotSupportedError(HIDPP_PAGE.ADJUSTABLE_REPORT_RATE)
   }
@@ -183,6 +239,18 @@ export async function logitechGetPollingRate(device: HidSession): Promise<number
 
 export async function logitechSetPollingRate(device: HidSession, rateHz: number): Promise<void> {
   const features = getFeatures(device)
+
+  if (await features.hasFeature(HIDPP_PAGE.EXTENDED_ADJUSTABLE_REPORT_RATE)) {
+    const entry = Object.entries(EXTENDED_REPORT_RATE_INDEX_TO_HZ).find(([, hz]) => hz === rateHz)
+    if (!entry) throw new HidppNotSupportedError(HIDPP_PAGE.EXTENDED_ADJUSTABLE_REPORT_RATE)
+    await features.featureRequest(
+      HIDPP_PAGE.EXTENDED_ADJUSTABLE_REPORT_RATE,
+      CMD_EXTENDED_REPORT_RATE_SET,
+      new Uint8Array([Number(entry[0])]),
+    )
+    return
+  }
+
   if (!(await features.hasFeature(HIDPP_PAGE.ADJUSTABLE_REPORT_RATE))) {
     throw new HidppNotSupportedError(HIDPP_PAGE.ADJUSTABLE_REPORT_RATE)
   }
