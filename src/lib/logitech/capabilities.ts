@@ -222,7 +222,7 @@ export class HidppDerivedPollingCapability {
 
   async set(value: { interval: number }): Promise<void> {
     await logitechSetPollingRate(this.device, value.interval)
-    const reportRateMs = Math.max(1, Math.round(1000 / Math.max(1, value.interval)))
+    const reportRateMs = 1000 / Math.max(1, value.interval)
     this.profileCap.updateActiveProfile((p) => ({ ...p, reportRateMs, dirty: true }))
   }
 }

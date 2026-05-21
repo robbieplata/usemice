@@ -8,6 +8,7 @@ import {
   type HidppProfileData,
   type IHidppDeviceCore,
 } from '../capabilities.ts'
+import { MockHidppDerivedPollingCapability } from '../../mock/capabilities.ts'
 import { Mutex } from '../../mutex.ts'
 
 const baseData = (): HidppProfileData => ({
@@ -176,5 +177,29 @@ describe('HidppDerivedPollingCapability', () => {
       profile.updateActiveProfile((p) => ({ ...p, reportRateMs: 8 }))
     })
     expect(polling.data.interval).toBe(125)
+  })
+
+  it('preserves high polling rates that use sub-millisecond periods', async () => {
+    const profile = new HidppProfileCapability(
+      stubDevice(),
+      {
+        profileCount: 2,
+        dpiMin: 200,
+        dpiMax: 25600,
+        dpiStep: 50,
+        maxDpiStages: 5,
+        hasGShift: false,
+        hasDpiShift: false,
+      },
+      baseData(),
+    )
+    const polling = new MockHidppDerivedPollingCapability(stubDevice(), profile, {
+      supportedIntervals: [125, 250, 500, 1000, 2000],
+    })
+
+    await polling.set({ interval: 2000 })
+
+    expect(profile.activeProfile.reportRateMs).toBe(0.5)
+    expect(polling.data.interval).toBe(2000)
   })
 })
