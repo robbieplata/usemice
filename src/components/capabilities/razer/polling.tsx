@@ -1,12 +1,12 @@
-import { type HidppDevice, type RazerDevice, type Ready } from '../../lib/device.ts'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu.tsx'
-import { Button } from '../ui/button.tsx'
-import { Card } from '../ui/card.tsx'
+import { type RazerDevice, type Ready } from '../../../lib/device.ts'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../ui/dropdown-menu.tsx'
+import { Button } from '../../ui/button.tsx'
+import { Card } from '../../ui/card.tsx'
 import { observer } from 'mobx-react-lite'
 import { Gauge } from 'lucide-react'
 
 type PollingProps = {
-  device: Ready<RazerDevice<'polling'>> | Ready<HidppDevice<'polling'>>
+  device: Ready<RazerDevice<'polling'>>
 }
 
 export const Polling = observer(({ device }: PollingProps) => {

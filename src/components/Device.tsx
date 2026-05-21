@@ -11,19 +11,22 @@ import { Button } from './ui/button.tsx'
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from './ui/card.tsx'
 import { ScrollArea } from './ui/scroll-area.tsx'
 import { useStore } from '../stores/index.tsx'
-import { IdleTime } from './capabilities/idleTime.tsx'
-import { DpiStages } from './capabilities/dpiStages.tsx'
-import { Polling } from './capabilities/polling.tsx'
-import { DongleLedMulti } from './capabilities/dongleLedMulti.tsx'
+import { IdleTime } from './capabilities/razer/idleTime.tsx'
+import { DpiStages as RazerDpiStages } from './capabilities/razer/dpiStages.tsx'
+import { Polling as RazerPolling } from './capabilities/razer/polling.tsx'
+import { DongleLedMulti } from './capabilities/razer/dongleLedMulti.tsx'
 import { NoDeviceDetected } from './NoDeviceDetected.tsx'
 import { SkeletonDevice } from './SkeletonDevice.tsx'
 import { AlertCircle, Mouse, Power, RotateCcw } from 'lucide-react'
-import { DongleLed } from './capabilities/dongleLed.tsx'
-import { ChargeStatus } from './capabilities/chargeStatus.tsx'
-import { ChargeLevel } from './capabilities/chargeLevel.tsx'
-import { FirmwareVersion } from './capabilities/firmwareVersion.tsx'
-import { Serial } from './capabilities/serial.tsx'
-import { HidppProfile } from './capabilities/hidppProfile.tsx'
+import { DongleLed } from './capabilities/razer/dongleLed.tsx'
+import { ChargeStatus } from './capabilities/razer/chargeStatus.tsx'
+import { ChargeLevel as RazerChargeLevel } from './capabilities/razer/chargeLevel.tsx'
+import { FirmwareVersion } from './capabilities/razer/firmwareVersion.tsx'
+import { Serial } from './capabilities/razer/serial.tsx'
+import { ChargeLevel as LogitechChargeLevel } from './capabilities/logitech/chargeLevel.tsx'
+import { Profile as LogitechProfile } from './capabilities/logitech/profile.tsx'
+import { DpiStages as LogitechDpiStages } from './capabilities/logitech/dpiStages.tsx'
+import { Polling as LogitechPolling } from './capabilities/logitech/polling.tsx'
 
 type DeviceProps = {
   device?: DeviceInStatusVariant
@@ -36,13 +39,13 @@ const Razer = observer(({ device }: { device: Ready<RazerDevice> }) => {
       <div className='animate-stagger-children grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4'>
         {isCapableOf(device, ['serial']) && <Serial device={device} />}
         {isCapableOf(device, ['firmwareVersion']) && <FirmwareVersion device={device} />}
-        {isCapableOf(device, ['chargeLevel']) && <ChargeLevel device={device} />}
+        {isCapableOf(device, ['chargeLevel']) && <RazerChargeLevel device={device} />}
         {isCapableOf(device, ['chargeStatus']) && <ChargeStatus device={device} />}
       </div>
       <div className='animate-stagger-children mt-6 space-y-6'>
         {isCapableOf(device, ['idleTime']) && <IdleTime device={device} />}
-        {isCapableOf(device, ['dpiStages']) && <DpiStages device={device} />}
-        {isCapableOf(device, ['polling']) && <Polling device={device} />}
+        {isCapableOf(device, ['dpiStages']) && <RazerDpiStages device={device} />}
+        {isCapableOf(device, ['polling']) && <RazerPolling device={device} />}
         {isCapableOf(device, ['dongleLed']) && <DongleLed device={device} />}
         {isCapableOf(device, ['dongleLedMulti']) && <DongleLedMulti device={device} />}
       </div>
@@ -54,11 +57,12 @@ const Hidpp = observer(({ device }: { device: Ready<HidppDevice> }) => {
   return (
     <>
       <div className='animate-stagger-children grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4'>
-        {isCapableOf(device, ['chargeLevel']) && <ChargeLevel device={device} />}
+        {isCapableOf(device, ['chargeLevel']) && <LogitechChargeLevel device={device} />}
       </div>
       <div className='animate-stagger-children mt-6 space-y-6'>
-        {isCapableOf(device, ['profile', 'dpi']) && <HidppProfile device={device} />}
-        {isCapableOf(device, ['polling']) && <Polling device={device} />}
+        {isCapableOf(device, ['profile']) && <LogitechProfile device={device} />}
+        {isCapableOf(device, ['profile', 'dpi']) && <LogitechDpiStages device={device} />}
+        {isCapableOf(device, ['polling']) && <LogitechPolling device={device} />}
       </div>
     </>
   )

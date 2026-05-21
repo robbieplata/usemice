@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { debounce } from 'lodash-es'
-import { type RazerDevice, type Ready } from '../../lib/device.ts'
-import { Slider } from '../ui/slider.tsx'
-import { Card } from '../ui/card.tsx'
+import { type RazerDevice, type Ready } from '../../../lib/device.ts'
+import { Slider } from '../../ui/slider.tsx'
+import { Card } from '../../ui/card.tsx'
 import { Clock } from 'lucide-react'
 import { observer } from 'mobx-react-lite'
 

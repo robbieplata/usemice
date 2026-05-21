@@ -1,5 +1,5 @@
-import { Card } from '../ui/card.tsx'
-import { type RazerDevice, type Ready } from '../../lib/device.ts'
+import { Card } from '../../ui/card.tsx'
+import { type RazerDevice, type Ready } from '../../../lib/device.ts'
 import { Hash } from 'lucide-react'
 import { observer } from 'mobx-react-lite'
 

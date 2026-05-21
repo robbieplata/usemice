@@ -1,10 +1,10 @@
 import { Battery } from 'lucide-react'
-import { Card } from '../ui/card.tsx'
-import { type HidppDevice, type RazerDevice, type Ready } from '../../lib/device.ts'
+import { Card } from '../../ui/card.tsx'
+import { type RazerDevice, type Ready } from '../../../lib/device.ts'
 import { observer } from 'mobx-react-lite'
 
 type ChargeLevelProps = {
-  device: Ready<RazerDevice<'chargeLevel'>> | Ready<HidppDevice<'chargeLevel'>>
+  device: Ready<RazerDevice<'chargeLevel'>>
 }
 
 export const ChargeLevel = observer(({ device }: ChargeLevelProps) => {
