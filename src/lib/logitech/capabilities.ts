@@ -14,6 +14,7 @@ import type { OnboardProfilesDescription } from './protocol.ts'
 import type { HidSession } from '../hid.ts'
 import { getFeatures } from './features.ts'
 import { HIDPP_PAGE, ONBOARD_PROFILE } from './constants.ts'
+import { decodeLogitechProfileFile, encodeLogitechProfileFile, validateLogitechProfileFile } from './profileFile.ts'
 
 export interface IHidppDeviceCore extends HidSession {
   readonly type: 'hidpp'
@@ -124,6 +125,42 @@ export class HidppProfileCapability {
     const idx = this.data.activeProfileIndex
     const profiles = this.data.profiles.map((p, i) => (i === idx ? updater(p) : p))
     this.data = { ...this.data, profiles }
+  }
+
+  exportBinary(): Uint8Array {
+    return encodeLogitechProfileFile({
+      activeProfileIndex: this.data.activeProfileIndex,
+      profiles: this.data.profiles.map((profile) => ({
+        name: profile.name,
+        reportRateMs: profile.reportRateMs,
+        dpiStages: profile.dpiStages,
+        activeDpiIndex: profile.activeDpiIndex,
+        dpiShiftIndex: profile.dpiShiftIndex,
+      })),
+    })
+  }
+
+  @action
+  importBinary(bytes: Uint8Array): void {
+    const imported = decodeLogitechProfileFile(bytes)
+    validateLogitechProfileFile(imported, {
+      profileCount: this.info.profileCount,
+      dpiMin: this.info.dpiMin,
+      dpiMax: this.info.dpiMax,
+      dpiStep: this.info.dpiStep,
+      maxDpiStages: this.info.maxDpiStages,
+      hasDpiShift: this.info.hasDpiShift,
+    })
+
+    this.data = {
+      ...this.data,
+      activeProfileIndex: imported.activeProfileIndex,
+      profiles: imported.profiles.map((profile, index) => ({
+        ...profile,
+        sector: this.data.profiles[index].sector,
+        dirty: true,
+      })),
+    }
   }
 
   private async saveProfile(profile: HidppProfile): Promise<void> {

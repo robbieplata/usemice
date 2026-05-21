@@ -125,6 +125,96 @@ describe('HidppProfileCapability state management', () => {
     await cap.set(next)
     expect(cap.data.activeProfileIndex).toBe(1)
   })
+
+  it('exports and imports all profiles as dirty state mapped to current sectors', () => {
+    const source = new HidppProfileCapability(
+      stubDevice(),
+      {
+        profileCount: 2,
+        dpiMin: 200,
+        dpiMax: 25600,
+        dpiStep: 50,
+        maxDpiStages: 5,
+        hasGShift: false,
+        hasDpiShift: true,
+      },
+      baseData(),
+    )
+    const targetData = baseData()
+    targetData.profiles[0].sector = 0x0201
+    targetData.profiles[1].sector = 0x0202
+    const target = new HidppProfileCapability(
+      stubDevice(),
+      {
+        profileCount: 2,
+        dpiMin: 200,
+        dpiMax: 25600,
+        dpiStep: 50,
+        maxDpiStages: 5,
+        hasGShift: false,
+        hasDpiShift: true,
+      },
+      targetData,
+    )
+
+    const importedData = baseData()
+    importedData.activeProfileIndex = 1
+    importedData.profiles[0] = {
+      ...importedData.profiles[0],
+      name: 'Imported A',
+      dpiStages: [500, 1000, 1500],
+      activeDpiIndex: 2,
+      dirty: true,
+    }
+    source.updateActiveProfile(() => importedData.profiles[0])
+    source.data = importedData
+
+    target.importBinary(source.exportBinary())
+
+    expect(target.data.activeProfileIndex).toBe(1)
+    expect(target.data.profiles[0]).toEqual({
+      sector: 0x0201,
+      name: 'Imported A',
+      reportRateMs: 1,
+      dpiStages: [500, 1000, 1500],
+      activeDpiIndex: 2,
+      dpiShiftIndex: 2,
+      dirty: true,
+    })
+    expect(target.data.profiles[1].sector).toBe(0x0202)
+    expect(target.data.profiles[1].dirty).toBe(true)
+  })
+
+  it('rejects imported profiles that do not fit device DPI bounds', () => {
+    const source = new HidppProfileCapability(
+      stubDevice(),
+      {
+        profileCount: 2,
+        dpiMin: 200,
+        dpiMax: 25600,
+        dpiStep: 50,
+        maxDpiStages: 5,
+        hasGShift: false,
+        hasDpiShift: true,
+      },
+      baseData(),
+    )
+    const target = new HidppProfileCapability(
+      stubDevice(),
+      {
+        profileCount: 2,
+        dpiMin: 200,
+        dpiMax: 1000,
+        dpiStep: 50,
+        maxDpiStages: 5,
+        hasGShift: false,
+        hasDpiShift: true,
+      },
+      baseData(),
+    )
+
+    expect(() => target.importBinary(source.exportBinary())).toThrow('outside 200-1000')
+  })
 })
 
 describe('HidppDerivedDpiCapability', () => {

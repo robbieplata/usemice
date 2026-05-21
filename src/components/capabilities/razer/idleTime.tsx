@@ -10,13 +10,9 @@ type IdleTimeProps = {
   device: Ready<RazerDevice<'idleTime'>>
 }
 
-type IdleTimeInnerProps = {
-  device: Ready<RazerDevice<'idleTime'>>
-  initialSeconds: number
-}
-
-const IdleTimeInner = observer(({ device, initialSeconds }: IdleTimeInnerProps) => {
-  const [seconds, setSeconds] = useState(initialSeconds)
+export const IdleTime = observer(({ device }: IdleTimeProps) => {
+  const deviceSeconds = device.capabilities.idleTime.data.seconds
+  const [seconds, setSeconds] = useState(deviceSeconds)
 
   const debouncedUpdateIdleTime = useMemo(
     () =>
@@ -25,6 +21,10 @@ const IdleTimeInner = observer(({ device, initialSeconds }: IdleTimeInnerProps) 
       }, 300),
     [device],
   )
+
+  useEffect(() => {
+    setSeconds(deviceSeconds)
+  }, [deviceSeconds])
 
   useEffect(() => {
     return () => {
@@ -67,9 +67,3 @@ const IdleTimeInner = observer(({ device, initialSeconds }: IdleTimeInnerProps) 
     </section>
   )
 })
-
-// Use key to reset internal state when device seconds change externally
-export const IdleTime = ({ device }: IdleTimeProps) => {
-  const deviceSeconds = device.capabilities.idleTime.data.seconds
-  return <IdleTimeInner key={deviceSeconds} device={device} initialSeconds={deviceSeconds} />
-}

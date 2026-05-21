@@ -15,6 +15,7 @@ import { IdleTime } from './capabilities/razer/idleTime.tsx'
 import { DpiStages as RazerDpiStages } from './capabilities/razer/dpiStages.tsx'
 import { Polling as RazerPolling } from './capabilities/razer/polling.tsx'
 import { DongleLedMulti } from './capabilities/razer/dongleLedMulti.tsx'
+import { SettingsImportExport as RazerSettingsImportExport } from './capabilities/razer/settingsImportExport.tsx'
 import { NoDeviceDetected } from './NoDeviceDetected.tsx'
 import { SkeletonDevice } from './SkeletonDevice.tsx'
 import { AlertCircle, Mouse, Power, RotateCcw } from 'lucide-react'
@@ -25,6 +26,7 @@ import { FirmwareVersion } from './capabilities/razer/firmwareVersion.tsx'
 import { Serial } from './capabilities/razer/serial.tsx'
 import { ChargeLevel as LogitechChargeLevel } from './capabilities/logitech/chargeLevel.tsx'
 import { Profile as LogitechProfile } from './capabilities/logitech/profile.tsx'
+import { ProfileImportExport as LogitechProfileImportExport } from './capabilities/logitech/profileImportExport.tsx'
 import { DpiStages as LogitechDpiStages } from './capabilities/logitech/dpiStages.tsx'
 import { Polling as LogitechPolling } from './capabilities/logitech/polling.tsx'
 import { ProfileSaveBar as LogitechProfileSaveBar } from './capabilities/logitech/profileSaveBar.tsx'
@@ -44,6 +46,7 @@ const Razer = observer(({ device }: { device: Ready<RazerDevice> }) => {
         {isCapableOf(device, ['chargeStatus']) && <ChargeStatus device={device} />}
       </div>
       <div className='animate-stagger-children mt-6 space-y-6'>
+        <RazerSettingsImportExport device={device} />
         {isCapableOf(device, ['idleTime']) && <IdleTime device={device} />}
         {isCapableOf(device, ['dpiStages']) && <RazerDpiStages device={device} />}
         {isCapableOf(device, ['polling']) && <RazerPolling device={device} />}
@@ -62,6 +65,7 @@ const Hidpp = observer(({ device }: { device: Ready<HidppDevice> }) => {
       </div>
       <div className='animate-stagger-children mt-6 space-y-6 pb-20'>
         {isCapableOf(device, ['profile']) && <LogitechProfile device={device} />}
+        {isCapableOf(device, ['profile']) && <LogitechProfileImportExport device={device} />}
         {isCapableOf(device, ['profile', 'dpi']) && <LogitechDpiStages device={device} />}
         {isCapableOf(device, ['polling']) && <LogitechPolling device={device} />}
         {isCapableOf(device, ['profile']) && <LogitechProfileSaveBar device={device} />}
