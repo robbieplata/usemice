@@ -27,6 +27,7 @@ import { ChargeLevel as LogitechChargeLevel } from './capabilities/logitech/char
 import { Profile as LogitechProfile } from './capabilities/logitech/profile.tsx'
 import { DpiStages as LogitechDpiStages } from './capabilities/logitech/dpiStages.tsx'
 import { Polling as LogitechPolling } from './capabilities/logitech/polling.tsx'
+import { ProfileSaveBar as LogitechProfileSaveBar } from './capabilities/logitech/profileSaveBar.tsx'
 
 type DeviceProps = {
   device?: DeviceInStatusVariant
@@ -59,10 +60,11 @@ const Hidpp = observer(({ device }: { device: Ready<HidppDevice> }) => {
       <div className='animate-stagger-children grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4'>
         {isCapableOf(device, ['chargeLevel']) && <LogitechChargeLevel device={device} />}
       </div>
-      <div className='animate-stagger-children mt-6 space-y-6'>
+      <div className='animate-stagger-children mt-6 space-y-6 pb-20'>
         {isCapableOf(device, ['profile']) && <LogitechProfile device={device} />}
         {isCapableOf(device, ['profile', 'dpi']) && <LogitechDpiStages device={device} />}
         {isCapableOf(device, ['polling']) && <LogitechPolling device={device} />}
+        {isCapableOf(device, ['profile']) && <LogitechProfileSaveBar device={device} />}
       </div>
     </>
   )
