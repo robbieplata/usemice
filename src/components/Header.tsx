@@ -15,7 +15,7 @@ export const Header = observer(({ drawerOpen, setDrawerOpen }: HeaderProps) => {
   const [errorsDrawerOpen, setErrorsDrawerOpen] = useState(false)
 
   return (
-    <header className='flex items-center justify-between rounded-xl border bg-card px-4 py-3 shadow-sm'>
+    <header className='glass-surface flex items-center justify-between rounded-xl border bg-card px-4 py-3'>
       <div className='flex min-w-0 items-center gap-3'>
         <DevicesSidebar open={drawerOpen} onOpenChange={setDrawerOpen} />
         <div className='h-6 w-px bg-border' />

@@ -63,7 +63,7 @@ const Hidpp = observer(({ device }: { device: Ready<HidppDevice> }) => {
       <div className='animate-stagger-children grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4'>
         {isCapableOf(device, ['chargeLevel']) && <LogitechChargeLevel device={device} />}
       </div>
-      <div className='animate-stagger-children mt-6 space-y-6 pb-20'>
+      <div className='animate-stagger-children mt-6 space-y-6 pb-6'>
         {isCapableOf(device, ['profile']) && <LogitechProfile device={device} />}
         {isCapableOf(device, ['profile']) && <LogitechProfileImportExport device={device} />}
         {isCapableOf(device, ['profile', 'dpi']) && <LogitechDpiStages device={device} />}
@@ -130,33 +130,37 @@ const Device = observer(({ device, onOpenSidebar }: DeviceProps) => {
   }
 
   return (
-    <Card className='xl:col-span-7 h-[90vh] overflow-hidden flex flex-col'>
-      {device && device.status === 'Ready' && (
-        <CardHeader>
-          <div className='flex items-center gap-3'>
-            <div className='rounded-lg bg-primary/10 p-2'>
-              <Mouse className='size-5 text-primary' />
-            </div>
+    <Card className='xl:col-span-7 h-[90vh] overflow-hidden flex flex-col py-0'>
+      <CardContent className='flex-1 min-h-0 px-0'>
+        <ScrollArea className='h-full'>
+          <div className='min-h-full py-6 pl-6 pr-3'>
+            {device && device.status === 'Ready' && (
+              <CardHeader className='px-0 pb-6'>
+                <div className='flex items-center gap-3'>
+                  <div className='rounded-lg bg-primary/10 p-2'>
+                    <Mouse className='size-5 text-primary' />
+                  </div>
+                  <div>
+                    <CardTitle>{device.hid.productName}</CardTitle>
+                  </div>
+                </div>
+                <CardAction>
+                  <Button
+                    variant='ghost'
+                    size='icon'
+                    onClick={disconnect}
+                    className='size-8 hover:text-destructive hover:bg-destructive/10'
+                    title='Disconnect device'
+                  >
+                    <Power className='size-4' />
+                  </Button>
+                </CardAction>
+              </CardHeader>
+            )}
             <div>
-              <CardTitle>{device.hid.productName}</CardTitle>
+              {DeviceContent()}
             </div>
           </div>
-          <CardAction>
-            <Button
-              variant='ghost'
-              size='icon'
-              onClick={disconnect}
-              className='size-8 hover:text-destructive hover:bg-destructive/10'
-              title='Disconnect device'
-            >
-              <Power className='size-4' />
-            </Button>
-          </CardAction>
-        </CardHeader>
-      )}
-      <CardContent className='flex-1 min-h-0 pr-0'>
-        <ScrollArea className='h-full'>
-          <div className='pr-3 min-h-full'>{DeviceContent()}</div>
         </ScrollArea>
       </CardContent>
     </Card>
